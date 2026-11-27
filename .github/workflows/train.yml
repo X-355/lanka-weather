@@ -1,0 +1,80 @@
+name: Train model
+
+# Monthly retrain on the latest data, or run by hand.
+# Fetching is resumable: if Open-Meteo's free-tier limits stop the first bootstrap early,
+# the data so far is committed and the job ends without training. The daily job keeps
+# filling the gaps, and a later run of this workflow trains.
+
+on:
+  schedule:
+    - cron: "17 21 1 * *"   # 1st of each month, 02:47 Sri Lanka time
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: data-writes
+  cancel-in-progress: false
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    outputs:
+      trained: ${{ steps.check.outputs.complete }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+
+      - name: Fetch ERA5 history, archived NWP forecasts, NASA POWER
+        run: python -m lankaweather fetch
+
+      - name: Is the history complete?
+        id: check
+        run: |
+          if python -m lankaweather check; then echo "complete=true" >> "$GITHUB_OUTPUT"; else echo "complete=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Train and evaluate
+        if: steps.check.outputs.complete == 'true'
+        run: |
+          python -m lankaweather train
+          python -m lankaweather score
+          python -m lankaweather site
+          cat reports/REPORT.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit data, model and reports
+        run: |
+          git config user.name "lanka-weather-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data models reports predictions site/data
+          git diff --cached --quiet && exit 0
+          git commit -m "train: data + model $(date -u +%F)"
+          for i in 1 2 3; do git pull --rebase && git push && break; sleep 10; done
+
+      - name: Publish model to Hugging Face
+        if: steps.check.outputs.complete == 'true' && env.HF_TOKEN != ''
+        env:
+          HF_MODEL_REPO: ${{ vars.HF_MODEL_REPO }}
+        run: python -m lankaweather publish-hf
+
+      - name: Publish site to a Hugging Face Space (optional)
+        if: steps.check.outputs.complete == 'true' && env.HF_TOKEN != '' && vars.HF_SPACE_REPO != ''
+        env:
+          HF_SPACE_REPO: ${{ vars.HF_SPACE_REPO }}
+        run: python -m lankaweather publish-space
+
+  pages:
+    needs: train
+    if: needs.train.outputs.trained == 'true'
+    uses: ./.github/workflows/pages.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

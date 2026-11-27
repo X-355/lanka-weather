@@ -1,0 +1,124 @@
+:root {
+  color-scheme: light;
+  --bg: #f7f6f2;
+  --surface-1: #ffffff;
+  --surface-2: #f0efea;
+  --border: #e2e0d8;
+  --text-primary: #191919;
+  --text-secondary: #5f5f5f;
+  --text-tertiary: #8a8a8a;
+  --grid: #ebe9e2;
+  --axis: #c9c6bc;
+  --series-1: #257de0;   /* Weather Lab model */
+  --series-2: #f47230;   /* ECMWF / NWP / this year */
+  --series-3: #00b894;   /* Markov baseline */
+  --neutral: #a9a69c;    /* climatology / normal */
+  --neutral-soft: #dcd9cf;
+  --good: #0aac23;
+  --warning: #fbb315;
+  --serious: #f18a59;
+  --critical: #dc3c3d;
+  --accent: #0f6e5a;
+  --radius: 10px;
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --bg: #121212; --surface-1: #191919; --surface-2: #222222; --border: #2e2e2e;
+    --text-primary: #efefef; --text-secondary: #a8a8a8; --text-tertiary: #7a7a7a;
+    --grid: #262626; --axis: #3a3a3a;
+    --series-1: #338ced; --series-2: #e76624; --series-3: #00a888;
+    --neutral: #6f6c64; --neutral-soft: #383838; --accent: #3fbf9c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121212; --surface-1: #191919; --surface-2: #222222; --border: #2e2e2e;
+  --text-primary: #efefef; --text-secondary: #a8a8a8; --text-tertiary: #7a7a7a;
+  --grid: #262626; --axis: #3a3a3a;
+  --series-1: #338ced; --series-2: #e76624; --series-3: #00a888;
+  --neutral: #6f6c64; --neutral-soft: #383838; --accent: #3fbf9c;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text-primary); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+a { color: var(--accent); }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+header.top { border-bottom: 1px solid var(--border); background: var(--surface-1); position: sticky; top: 0; z-index: 10; }
+header.top .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
+.brand { font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; }
+.brand small { color: var(--text-tertiary); font-weight: 450; margin-left: 6px; }
+nav.tabs { display: flex; gap: 4px; overflow-x: auto; flex: 1; }
+nav.tabs button { border: 0; background: none; color: var(--text-secondary); font: inherit; padding: 8px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { background: var(--surface-2); color: var(--text-primary); font-weight: 560; }
+nav.tabs button:hover { color: var(--text-primary); }
+.theme-btn { border: 1px solid var(--border); background: none; color: var(--text-secondary); border-radius: 8px; padding: 5px 9px; cursor: pointer; font: inherit; }
+
+.banner { margin: 16px 0 0; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--warning); background: color-mix(in srgb, var(--warning) 12%, var(--surface-1)); font-size: 14px; }
+main section { scroll-margin-top: 80px; display: none; padding: 28px 0 48px; }
+main section.active { display: block; }
+h1 { font-size: 26px; letter-spacing: -0.02em; margin: 0 0 4px; font-weight: 650; }
+h2 { font-size: 18px; margin: 36px 0 4px; font-weight: 620; letter-spacing: -0.01em; }
+.lede { color: var(--text-secondary); margin: 0 0 18px; max-width: 760px; }
+.sub { color: var(--text-secondary); font-size: 14px; margin: 0 0 14px; max-width: 760px; }
+
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+.grid { display: grid; gap: 12px; }
+.grid.towns { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.grid.two { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.grid.kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+
+.town-card .name { font-weight: 580; }
+.town-card .zone { color: var(--text-tertiary); font-size: 12px; text-transform: capitalize; }
+.town-card .big { font-size: 34px; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin: 6px 0 2px; }
+.town-card .meta { color: var(--text-secondary); font-size: 13px; }
+.meter { position: relative; height: 8px; border-radius: 4px; background: var(--surface-2); margin: 8px 0 6px; }
+.meter .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--series-1); }
+.meter .tick { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text-secondary); border-radius: 1px; }
+
+.kpi .label { color: var(--text-secondary); font-size: 13px; }
+.kpi .value { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.kpi .note { color: var(--text-tertiary); font-size: 12px; }
+
+table.data { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+table.data th { text-align: left; font-weight: 560; color: var(--text-secondary); border-bottom: 1px solid var(--border); padding: 8px 10px; white-space: nowrap; }
+table.data td { border-bottom: 1px solid var(--grid); padding: 8px 10px; }
+table.data td.num, table.data th.num { text-align: right; }
+table.data tr.hl td { background: color-mix(in srgb, var(--series-1) 8%, transparent); font-weight: 560; }
+.table-scroll { overflow-x: auto; }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: 0; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: end; margin: 0 0 14px; }
+.controls label { display: flex; flex-direction: column; font-size: 13px; color: var(--text-secondary); gap: 4px; }
+select, input[type="number"], input[type="date"] { font: inherit; color: var(--text-primary); background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 6px 9px; min-width: 120px; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface-1); color: var(--text-secondary); font: inherit; font-size: 13px; padding: 6px 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--text-primary); font-weight: 560; }
+
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--text-secondary); font-size: 12px; font-family: var(--font); }
+.chart .grid line { stroke: var(--grid); }
+.chart .axis line, .chart .axis path { stroke: var(--axis); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--text-secondary); margin: 2px 0 8px; }
+.legend span { display: inline-flex; align-items: center; }
+.tip { position: fixed; pointer-events: none; z-index: 50; background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,.12); max-width: 260px; display: none; }
+.tip b { font-weight: 600; }
+.tip .row { display: flex; justify-content: space-between; gap: 14px; font-variant-numeric: tabular-nums; }
+
+.verdict { display: inline-flex; align-items: center; gap: 6px; font-weight: 560; padding: 2px 8px; border-radius: 6px; background: var(--surface-2); }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 560; }
+.status .dot { width: 9px; height: 9px; border-radius: 50%; }
+.notice { border-left: 3px solid var(--critical); padding: 10px 14px; background: var(--surface-1); border-radius: 0 var(--radius) var(--radius) 0; margin: 0 0 18px; font-size: 14px; }
+.muted { color: var(--text-tertiary); }
+.small { font-size: 13px; }
+details summary { cursor: pointer; color: var(--text-secondary); }
+footer { border-top: 1px solid var(--border); color: var(--text-tertiary); font-size: 13px; padding: 20px 0 40px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: space-between; }
+@media (max-width: 640px) {
+  header.top .wrap { height: auto; flex-wrap: wrap; padding-top: 10px; padding-bottom: 6px; gap: 8px; }
+  nav.tabs { order: 3; flex-basis: 100%; }
+}

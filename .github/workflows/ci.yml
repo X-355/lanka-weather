@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["lankaweather/**", "tests/**", "config/**", "requirements.txt", ".github/workflows/ci.yml"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt pytest
+      - name: Unit tests (incl. leakage guards)
+        run: pytest -q
+      - name: End-to-end smoke test on synthetic data (in a scratch copy)
+        run: |
+          rm -rf /tmp/smoke && mkdir /tmp/smoke
+          cp -r lankaweather config tests /tmp/smoke/ && cd /tmp/smoke
+          python -m lankaweather synthetic
+          python -m lankaweather train
+          python -m lankaweather predict --offline
+          python -m lankaweather site
+          test -s site/data/metrics.json && test -s site/data/forecast.json

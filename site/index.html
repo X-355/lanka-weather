@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sri Lanka Weather Lab</title>
+<meta name="description" content="An open machine-learning experiment predicting next-day rain for ten Sri Lankan towns, tested honestly against baselines and professional forecasts.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M16 3C11 11 8 15 8 20a8 8 0 0 0 16 0c0-5-3-9-8-17z' fill='%23257de0'/></svg>">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">Sri Lanka Weather Lab <small>experimental</small></div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="forecast" aria-selected="true">Forecast checker</button>
+      <button role="tab" data-tab="monsoon" aria-selected="false">Monsoon &amp; rainfall</button>
+      <button role="tab" data-tab="solar" aria-selected="false">Rooftop solar</button>
+      <button role="tab" data-tab="heavy" aria-selected="false">Heavy-rain risk</button>
+      <button role="tab" data-tab="about" aria-selected="false">Method</button>
+    </nav>
+    <button class="theme-btn" id="theme" title="Toggle dark mode" aria-label="Toggle dark mode">◐ Theme</button>
+  </div>
+</header>
+
+<div class="wrap"><div id="banner"></div></div>
+
+<main class="wrap">
+  <!-- ======================================================= FORECAST -->
+  <section id="forecast" class="active">
+    <h1>Will it rain tomorrow?</h1>
+    <p class="lede" id="fc-lede">Loading…</p>
+    <div class="grid towns" id="fc-cards"></div>
+    <p class="sub small" style="margin-top:10px">The bar shows the model's chance of ≥ 1 mm rain. The dark tick is what's normal for this date (climatology).</p>
+
+    <h2>Live track record</h2>
+    <p class="sub">Each night's forecast is saved before the day happens and can't be changed afterwards. About six days later it's scored against the reanalysis rainfall.</p>
+    <div id="fc-ledger"></div>
+
+    <h2>Backtest on unseen years</h2>
+    <p class="sub" id="fc-test-lede"></p>
+    <div class="card table-scroll" id="fc-scoreboard"></div>
+
+    <h2>Against professional forecasts</h2>
+    <p class="sub" id="fc-nwp-lede"></p>
+    <div class="card table-scroll" id="fc-nwp"></div>
+
+    <div class="grid two" style="margin-top:12px">
+      <div class="card">
+        <h2 style="margin-top:0">When it says 70%, does it rain 70% of the time?</h2>
+        <p class="sub">Reliability on the test years. Points on the dashed line mean the probabilities can be taken at face value.</p>
+        <div id="fc-reliability"></div>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0">Skill by town</h2>
+        <p class="sub">Brier skill score vs climatology (higher is better; 0 = no better than the calendar).</p>
+        <div id="fc-towns"></div>
+      </div>
+    </div>
+
+    <h2>Check any day in the test period</h2>
+    <p class="sub">Pick a town and a date to see what each forecast said and what happened.</p>
+    <div class="controls">
+      <label>Town <select id="ck-town"></select></label>
+      <label>Date <input type="date" id="ck-date"></label>
+    </div>
+    <div class="card" id="ck-result"></div>
+    <div class="card" style="margin-top:12px"><div id="ck-timeline"></div></div>
+  </section>
+
+  <!-- ======================================================= MONSOON -->
+  <section id="monsoon">
+    <h1>Monsoon &amp; rainfall dashboard</h1>
+    <p class="lede">Monthly and seasonal rainfall at each town compared with its normal, from ERA5 reanalysis.</p>
+    <div class="controls">
+      <label>Town <select id="mo-town"></select></label>
+      <label>Compare year <select id="mo-year"></select></label>
+    </div>
+    <div class="grid kpis" id="mo-kpis"></div>
+    <div class="card" style="margin-top:12px">
+      <h2 style="margin-top:0">Monthly rainfall vs normal</h2>
+      <p class="sub" id="mo-monthly-sub"></p>
+      <div id="mo-monthly"></div>
+    </div>
+    <div class="grid two" style="margin-top:12px">
+      <div class="card">
+        <h2 style="margin-top:0">Season totals by year</h2>
+        <div class="controls" style="margin:6px 0 4px"><div class="seg" id="mo-season-seg"></div></div>
+        <div id="mo-seasons"></div>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0">Last 90 days</h2>
+        <p class="sub">Daily rainfall (mm).</p>
+        <div id="mo-recent"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================= SOLAR -->
+  <section id="solar">
+    <h1>Rooftop solar estimator</h1>
+    <p class="lede">A rough yearly and monthly output estimate for a rooftop system, from satellite-derived sunlight records. Use it to get a feel for the numbers. A proper site survey should come first.</p>
+    <div class="controls">
+      <label>Town <select id="so-town"></select></label>
+      <label>System size (kWp) <input type="number" id="so-kwp" value="5" min="0.5" max="100" step="0.5"></label>
+      <label>Roof faces
+        <select id="so-orient">
+          <option value="1.00">Flat / gentle tilt (≤10°)</option>
+          <option value="0.98">South, 10–25°</option>
+          <option value="0.97">North, 10–25°</option>
+          <option value="0.93">East or west, 10–25°</option>
+          <option value="0.85">East or west, steep (&gt;30°)</option>
+        </select>
+      </label>
+      <label>Shading
+        <select id="so-shade"><option value="1">None</option><option value="0.95">Light</option><option value="0.85">Moderate</option><option value="0.7">Heavy</option></select>
+      </label>
+      <label>Performance ratio <input type="number" id="so-pr" step="0.01" min="0.5" max="0.9"></label>
+      <label>Value per kWh (LKR) <input type="number" id="so-tariff" step="1" min="0"></label>
+      <label>Cost per kWp (LKR) <input type="number" id="so-cost" step="5000" min="0"></label>
+    </div>
+    <div class="grid kpis" id="so-kpis"></div>
+    <div class="card" style="margin-top:12px">
+      <h2 style="margin-top:0">Expected output by month</h2>
+      <p class="sub" id="so-sub"></p>
+      <div id="so-chart"></div>
+    </div>
+    <p class="sub small" style="margin-top:12px">Output ≈ kWp × daily sunlight (kWh/m²) × performance ratio × orientation × shading. Tariffs and net-metering rules change, so enter the rate you're actually paid or charged. Cost and payback ignore financing, panel degradation (~0.5%/yr) and inverter replacement.</p>
+  </section>
+
+  <!-- ======================================================= HEAVY -->
+  <section id="heavy">
+    <h1>Heavy-rain risk tracker</h1>
+    <div class="notice"><b>Research only. This is not a warning service.</b> This is an experimental model with low skill for rare events. For warnings, follow the <a href="https://www.meteo.gov.lk" rel="noopener">Department of Meteorology</a> and the <a href="https://www.dmc.gov.lk" rel="noopener">Disaster Management Centre</a>.</div>
+    <p class="lede" id="hv-lede"></p>
+    <div class="card table-scroll" id="hv-table"></div>
+    <h2>How good is it at rare events?</h2>
+    <p class="sub" id="hv-skill"></p>
+    <div class="grid two">
+      <div class="card">
+        <h2 style="margin-top:0">When do heavy-rain days happen?</h2>
+        <div class="controls" style="margin:6px 0"><label>Town <select id="hv-town"></select></label></div>
+        <div id="hv-months"></div>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0">Wettest recent days</h2>
+        <div id="hv-events"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================= ABOUT -->
+  <section id="about">
+    <h1>How this works</h1>
+    <div id="about-body" class="card"></div>
+  </section>
+</main>
+
+<footer><div class="wrap">
+  <span id="foot-model"></span>
+  <span>Data: <a href="https://open-meteo.com" rel="noopener">Open-Meteo</a> (ERA5, archived forecasts, CC BY 4.0) · <a href="https://power.larc.nasa.gov" rel="noopener">NASA POWER</a> · Code: <a href="https://github.com/X-355/lanka-weather" rel="noopener">github.com/X-355/lanka-weather</a></span>
+</div></footer>
+
+<script type="module" src="assets/app.js"></script>
+</body>
+</html>
