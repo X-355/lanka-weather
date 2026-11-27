@@ -13,6 +13,22 @@ towns:
   nuwara_eliya: {name: Nuwara Eliya, lat: 6.9497, lon: 80.7891, elevation: 1890, zone: wet,          region: Central}
   ratnapura:    {name: Ratnapura,    lat: 6.6828, lon: 80.3992, elevation: 35,   zone: wet,          region: Sabaragamuwa}
   hambantota:   {name: Hambantota,   lat: 6.1241, lon: 81.1185, elevation: 15,   zone: dry,          region: Southern}
+  # --- remaining district capitals (appended, so the original ten keep their town codes) ---
+  gampaha:      {name: Gampaha,      lat: 7.0917, lon: 79.9999, elevation: 15,   zone: wet,          region: Western}
+  kalutara:     {name: Kalutara,     lat: 6.5854, lon: 79.9607, elevation: 5,    zone: wet,          region: Western}
+  matale:       {name: Matale,       lat: 7.4675, lon: 80.6234, elevation: 360,  zone: intermediate, region: Central}
+  matara:       {name: Matara,       lat: 5.9549, lon: 80.5550, elevation: 5,    zone: wet,          region: Southern}
+  kilinochchi:  {name: Kilinochchi,  lat: 9.3803, lon: 80.3770, elevation: 25,   zone: dry,          region: Northern}
+  mannar:       {name: Mannar,       lat: 8.9810, lon: 79.9044, elevation: 5,    zone: dry,          region: Northern}
+  vavuniya:     {name: Vavuniya,     lat: 8.7514, lon: 80.4971, elevation: 100,  zone: dry,          region: Northern}
+  mullaitivu:   {name: Mullaitivu,   lat: 9.2671, lon: 80.8142, elevation: 5,    zone: dry,          region: Northern}
+  ampara:       {name: Ampara,       lat: 7.2975, lon: 81.6820, elevation: 30,   zone: dry,          region: Eastern}
+  kurunegala:   {name: Kurunegala,   lat: 7.4818, lon: 80.3609, elevation: 115,  zone: intermediate, region: North Western}
+  puttalam:     {name: Puttalam,     lat: 8.0362, lon: 79.8283, elevation: 5,    zone: dry,          region: North Western}
+  polonnaruwa:  {name: Polonnaruwa,  lat: 7.9403, lon: 81.0188, elevation: 60,   zone: dry,          region: North Central}
+  badulla:      {name: Badulla,      lat: 6.9934, lon: 81.0550, elevation: 680,  zone: intermediate, region: Uva}
+  monaragala:   {name: Monaragala,   lat: 6.8728, lon: 81.3507, elevation: 150,  zone: intermediate, region: Uva}
+  kegalle:      {name: Kegalle,      lat: 7.2513, lon: 80.3464, elevation: 150,  zone: wet,          region: Sabaragamuwa}
 
 timezone: Asia/Colombo
 
@@ -23,8 +39,9 @@ data:
   # ERA5 is published with a ~5 day delay; we never use days newer than this.
   archive_delay_days: 6
   # Budget of Open-Meteo "API call weight" a single fetch run may spend.
-  # The free tier allows ~5,000/hour and ~10,000/day; a bootstrap that runs out resumes next run.
-  max_weight_per_run: 4000
+  # This is our own conservative estimate; real runs at 4000 never hit Open-Meteo's limits. A run that
+  # does hit them stops cleanly and resumes next run.
+  max_weight_per_run: 8000
 
 target:
   rain_mm: 1.0      # "rain day" = daily precipitation >= 1.0 mm (WMO convention)

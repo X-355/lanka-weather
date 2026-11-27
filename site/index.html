@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sri Lanka Weather Lab</title>
-<meta name="description" content="An open machine-learning experiment predicting next-day rain for ten Sri Lankan towns, tested honestly against baselines and professional forecasts.">
+<meta name="description" content="An open machine-learning experiment predicting next-day rain for all 25 districts of Sri Lanka, tested honestly against baselines and professional forecasts.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M16 3C11 11 8 15 8 20a8 8 0 0 0 16 0c0-5-3-9-8-17z' fill='%23257de0'/></svg>">
 <link rel="stylesheet" href="assets/style.css">
 </head>
@@ -30,7 +30,15 @@
   <section id="forecast" class="active">
     <h1>Will it rain tomorrow?</h1>
     <p class="lede" id="fc-lede">Loading…</p>
-    <div class="grid towns" id="fc-cards"></div>
+    <div class="grid map-layout">
+      <div class="card">
+        <div class="controls" style="margin:0 0 6px"><div class="seg" id="map-mode">
+          <button data-m="rain" aria-pressed="true">Rain ≥ 1 mm</button><button data-m="heavy" aria-pressed="false">Heavy ≥ 50 mm</button></div></div>
+        <div id="fc-map"></div>
+        <p class="sub small" id="map-note" style="margin:6px 0 0"></p>
+      </div>
+      <div class="grid towns" id="fc-cards"></div>
+    </div>
     <p class="sub small" style="margin-top:10px">The bar shows the model's chance of ≥ 1 mm rain. The dark tick is what's normal for this date (climatology).</p>
 
     <h2>Live track record</h2>

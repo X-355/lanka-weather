@@ -69,6 +69,8 @@ h2 { font-size: 18px; margin: 36px 0 4px; font-weight: 620; letter-spacing: -0.0
 .grid { display: grid; gap: 12px; }
 .grid.towns { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
 .grid.two { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.grid.map-layout { grid-template-columns: minmax(280px, 380px) 1fr; align-items: start; }
+@media (max-width: 760px) { .grid.map-layout { grid-template-columns: 1fr; } }
 .grid.kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
 
 .town-card .name { font-weight: 580; }

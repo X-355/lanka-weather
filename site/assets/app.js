@@ -1,4 +1,4 @@
-import { bars, hbars, reliability, timeline } from "./charts.js";
+import { bars, dotmap, hbars, reliability, timeline } from "./charts.js";
 
 const C = {
   model: "var(--series-1)", nwp: "var(--series-2)", markov: "var(--series-3)",
@@ -57,21 +57,50 @@ function townOptions(select, selected) {
 const townName = k => state.meta.towns.find(t => t.key === k)?.name ?? k;
 
 // ------------------------------------------------------------------ forecast checker
+let mapMode = "rain";
+// Hand-placed labels where hill-country towns crowd together.
+const LABEL = { kurunegala: { side: "l" }, kegalle: { side: "l", dy: 4 }, matale: { side: "r", dy: -6 },
+  kandy: { side: "r", dy: 5 }, nuwara_eliya: { side: "l", dy: 14 }, badulla: { side: "r", dy: -6 },
+  monaragala: { side: "r", dy: 9 }, gampaha: { side: "r", dy: -2 }, colombo: { side: "r", dy: 2 } };
+function renderMap() {
+  const f = state.forecast, byTown = Object.fromEntries((f?.towns || []).map(t => [t.town, t]));
+  const missing = state.meta.towns.filter(t => !byTown[t.key]).length;
+  dotmap($("fc-map"), {
+    height: 460,
+    points: state.meta.towns.map(t => ({ ...LABEL[t.key], ...pointFor(t, byTown[t.key]) })),
+  });
+  function pointFor(t, r) {
+      if (!r) return { lat: t.lat, lon: t.lon, label: t.name, fill: "var(--surface-1)", stroke: "var(--neutral)", r: 6,
+        tip: `<b>${t.name}</b><div>${t.region} Province</div><div class="muted">Joins at the next retrain, once its history has downloaded.</div>` };
+      if (mapMode === "heavy") {
+        const st = heavyStatus(r.p_heavy, r.p_clim_heavy);
+        return { lat: t.lat, lon: t.lon, label: t.name, fill: st.color, r: 8,
+          tip: `<b>${t.name}</b><div class="row"><span>Chance ≥ ${state.meta.targets.heavy_mm} mm</span><b>${pct(r.p_heavy, 1)}</b></div><div class="row"><span>Normal</span><b>${pct(r.p_clim_heavy, 1)}</b></div><div>${st.icon ? st.icon + " " : ""}${st.label} (research only)</div>` };
+      }
+      return { lat: t.lat, lon: t.lon, label: t.name, r: 9,
+        fill: `color-mix(in oklab, var(--series-1) ${Math.round(12 + 88 * r.p_rain)}%, var(--surface-1))`,
+        tip: `<b>${t.name}</b><div class="row"><span>Chance of rain</span><b>${pct(r.p_rain)}</b></div><div class="row"><span>Normal for date</span><b>${pct(r.p_clim)}</b></div>` };
+  }
+  $("map-note").textContent = (mapMode === "rain" ? "Darker blue = higher chance of rain tomorrow." : "Heavy-rain status, research only.")
+    + (missing ? ` Hollow dots: ${missing} districts join at the next retrain.` : "");
+}
+
 function renderForecastCards() {
   const f = state.forecast;
+  renderMap();
   if (!f) {
     $("fc-lede").textContent = "No forecast has been issued yet. The daily job publishes one each evening.";
     return;
   }
   $("fc-lede").innerHTML = `Chance of at least ${state.meta.targets.rain_mm} mm of rain on <b>${fmtDate(f.target_date)}</b>, ${f.season}. Issued ${new Date(f.issued_at).toLocaleString("en-GB", { timeZone: "Asia/Colombo", dateStyle: "medium", timeStyle: "short" })} Sri Lanka time.`;
   const zones = Object.fromEntries(state.meta.towns.map(t => [t.key, t.zone]));
-  const order = state.meta.towns.map(t => t.key);
-  const rows = [...f.towns].sort((a, b) => order.indexOf(a.town) - order.indexOf(b.town));
+  const info = Object.fromEntries(state.meta.towns.map(t => [t.key, t]));
+  const rows = [...f.towns].sort((a, b) => (info[a.town].region + a.name).localeCompare(info[b.town].region + b.name));
   $("fc-cards").innerHTML = rows.map(t => {
     const diff = t.p_rain - t.p_clim;
     const vs = Math.abs(diff) < 0.08 ? "about normal for the date" : diff > 0 ? `wetter than normal (${pct(t.p_clim)})` : `drier than normal (${pct(t.p_clim)})`;
     return `<div class="card town-card">
-      <div class="name">${t.name}</div><div class="zone">${zones[t.town]} zone</div>
+      <div class="name">${t.name}</div><div class="zone">${info[t.town].region} · ${zones[t.town]} zone</div>
       <div class="big">${pct(t.p_rain)}</div>
       <div class="meter" role="img" aria-label="${pct(t.p_rain)} chance; normal ${pct(t.p_clim)}">
         <div class="fill" style="width:${100 * t.p_rain}%"></div><div class="tick" style="left:calc(${100 * t.p_clim}% - 1px)"></div></div>
@@ -355,7 +384,7 @@ renderers.about = () => {
   const imp = state.metrics?.importance?.slice(0, 8) ?? [];
   $("about-body").innerHTML = `
   <p><b>What it predicts.</b> For each town, the probability that tomorrow (local calendar day) gets at least ${m.targets.rain_mm} mm of rain. A second model estimates the chance of ≥ ${m.targets.heavy_mm} mm, for research only.</p>
-  <p><b>Model.</b> One LightGBM gradient-boosted tree model shared by all ${m.towns.length} towns. It uses today's and recent weather at the town: rain over the last 1–30 days, humidity, pressure and its change, cloud, temperature range, wind direction. It also uses today's rain across the whole island, the season and the town's geography. Every input is known by the evening of the forecast day. A unit test checks that changing the future never changes a feature.</p>
+  <p><b>Model.</b> One LightGBM gradient-boosted tree model shared by all ${m.towns.length} district capitals. It uses today's and recent weather at the town: rain over the last 1–30 days, humidity, pressure and its change, cloud, temperature range, wind direction. It also uses today's rain across the whole island, the season and the town's geography. Every input is known by the evening of the forecast day. A unit test checks that changing the future never changes a feature.</p>
   <p><b>Honest testing.</b> The data is split by date, never shuffled. Train: ${sp.train?.join(" → ") ?? "–"}. Validation, used only to decide when to stop training: ${sp.valid?.join(" → ") ?? "–"}. Test, never touched during development: ${sp.test?.join(" → ") ?? "–"}. Every forecast, including the baselines and professional models, is scored on the same rows. After testing, the model is refit on all data for live use, and the live ledger tracks that model from then on.</p>
   <p><b>Baselines.</b> <i>Climatology</i>: how often it rained at that town within ±15 days of the date in the training years. <i>Markov</i>: the same, split by whether it rained today. <i>Persistence</i>: tomorrow = today. A model that can't beat the Markov baseline isn't learning much weather.</p>
   <p><b>Professional forecasts.</b> Day-ahead runs of ECMWF IFS, NCEP GFS and DWD ICON from the Open-Meteo Previous Runs archive (forecasts made ~24 h earlier, from 2024), summed to local days.</p>
@@ -375,5 +404,11 @@ renderers.about = () => {
   if (meta.synthetic) $("banner").innerHTML = `<div class="banner"><b>Demo data.</b> This build uses synthetic weather to test the pipeline. Real numbers appear after the first training run on GitHub Actions.</div>`;
   $("foot-model").textContent = meta.model.version ? `Model ${meta.model.version} · data updated ${new Date(meta.generated_at).toLocaleDateString("en-GB")}` : "";
   setupChecker(); setupMonsoon(); setupSolar(); setupHeavy();
+  $("map-mode").addEventListener("click", e => {
+    const m = e.target.dataset.m; if (!m) return;
+    mapMode = m;
+    [...$("map-mode").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.m === m));
+    renderMap();
+  });
   setupTabs();
 })();

@@ -40,6 +40,9 @@ def load_models():
 def predict_frame(live: pd.DataFrame, issue_date: pd.Timestamp):
     cfg = load_config()
     meta, rain, heavy, clim, clim_h, markov = load_models()
+    # Only the towns this model was trained on, so island-wide features mean the same thing as in training.
+    # Newly added towns join at the next retrain.
+    live = live[live["town"].isin(meta["towns"])]
     feat = build(live)
     today = feat[feat["date"] == issue_date].copy()
     if len(today) == 0:

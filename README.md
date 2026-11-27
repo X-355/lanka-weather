@@ -1,7 +1,7 @@
 # 🌧️ Sri Lanka Weather Lab
 
-An open experiment that tests whether a gradient-boosted tree model can predict **tomorrow's rain** for ten
-Sri Lankan towns. It is scored on years it never saw, against simple baselines and against professional
+An open experiment that tests whether a gradient-boosted tree model can predict **tomorrow's rain** for
+all 25 districts of Sri Lanka (one point per district capital). It is scored on years it never saw, against simple baselines and against professional
 weather models.
 
 Everything runs free: **GitHub Actions** does the fetching, training and nightly forecasts. The model is
@@ -12,11 +12,11 @@ a static HF Space).
 |---|---|
 | Site | `https://x-355.github.io/lanka-weather/` |
 | Model | [`xi1514r/lanka-weather`](https://huggingface.co/xi1514r/lanka-weather) on Hugging Face |
-| Towns | Colombo, Kandy, Galle, Jaffna, Trincomalee, Batticaloa, Anuradhapura, Nuwara Eliya, Ratnapura, Hambantota |
+| Coverage | The 25 district capitals: Ampara, Anuradhapura, Badulla, Batticaloa, Colombo, Galle, Gampaha, Hambantota, Jaffna, Kalutara, Kandy, Kegalle, Kilinochchi, Kurunegala, Mannar, Matale, Matara, Monaragala, Mullaitivu, Nuwara Eliya, Polonnaruwa, Puttalam, Ratnapura, Trincomalee, Vavuniya |
 
 ## What's on the site
 
-1. **Forecast checker**: tomorrow's rain chance per town and a live, append-only track record. It also
+1. **Forecast checker**: an island map and tomorrow's rain chance per district and a live, append-only track record. It also
    shows the backtest scoreboard against baselines and ECMWF / GFS / ICON day-ahead forecasts, a
    reliability diagram, skill by town, and a tool to look up what every forecast said on any test day.
 2. **Monsoon & rainfall dashboard**: monthly rainfall vs the 1991–2020 normal (with P10–P90 range),
@@ -76,7 +76,7 @@ models/ reports/ predictions/
    - Optional variables: `HF_MODEL_REPO` (defaults to `xi1514r/lanka-weather`; set it if your HF username
      is different) and `HF_SPACE_REPO` (set it to also publish the site as a static Space).
 5. Run **Actions → Train model → Run workflow**.
-   - The first full download is about 47 years × 10 towns. If Open-Meteo's free-tier limit stops it, the
+   - The first full download is about 47 years × 25 districts. If Open-Meteo's free-tier limit stops it, the
      data so far is committed and the job ends without training. The nightly job keeps filling gaps, so
      run *Train model* again a day later. Each run stays within `max_weight_per_run` in the config.
 6. After the first training, **Daily forecast** runs every night at 23:05 Sri Lanka time and redeploys

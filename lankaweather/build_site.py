@@ -170,9 +170,9 @@ def build_heavy(hist: pd.DataFrame) -> None:
     cfg = load_config()
     thr = cfg["target"]["heavy_mm"]
     h = hist.assign(month=hist["date"].dt.month, year=hist["date"].dt.year)
-    n_years = h["year"].nunique()
     out = {"threshold_mm": thr, "towns": {}}
     for town, g in h.groupby("town"):
+        n_years = max(1.0, len(g) / 365.25)  # towns can have different record lengths
         heavy = g[g["precip"] >= thr]
         per_month = heavy.groupby("month").size().reindex(range(1, 13), fill_value=0) / n_years
         events = heavy.sort_values("date", ascending=False).head(15)
