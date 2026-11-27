@@ -124,7 +124,7 @@ function renderScoreboards() {
     $("fc-nwp-lede").textContent = "Archived day-ahead forecasts from operational weather models are not available yet.";
     $("fc-nwp").innerHTML = "";
   } else {
-    $("fc-nwp-lede").innerHTML = `Day-ahead runs of operational weather models (Open-Meteo archive of forecasts issued ~24 h ahead), ${c.period[0]} → ${c.period[1]}, on the same ${c.n.toLocaleString()} town-days. NWP gives rain amounts, not probabilities, so it is scored as yes/no (≥ 1 mm forecast). Brier punishes yes/no forecasts hard, so compare CSI, POD and FAR as well.`;
+    $("fc-nwp-lede").innerHTML = `Day-ahead runs of operational weather models (Open-Meteo archive of forecasts issued ~24 h ahead), ${c.period[0]} → ${c.period[1]}, on the same ${c.n.toLocaleString()} town-days. NWP gives rain amounts, not probabilities, so it is scored as yes/no (≥ 1 mm forecast). Brier punishes yes/no forecasts hard, so compare CSI, POD and FAR as well. <b>Caveat:</b> the "truth" here is ERA5, the same dataset our model learned from, so it has a home advantage the professional models don't. Treat this comparison as indicative until it's repeated against rain gauges.`;
     const rows2 = Object.entries(c.entries).map(([k, v]) => ({ ...v, hl: k === "model" }));
     $("fc-nwp").innerHTML = scoreTable(rows2, [
       { label: "Forecast", get: r => r.label }, { label: "Type", get: r => `<span class="muted">${r.kind}</span>` },

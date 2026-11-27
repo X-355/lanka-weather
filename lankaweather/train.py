@@ -299,7 +299,10 @@ def write_report_md(full: dict) -> None:
               "- The live model reads Open-Meteo's operational analysis for its inputs, not ERA5. The live ledger on the "
               "site measures how much that costs.",
               "- NWP forecasts are single deterministic runs scored yes/no, which penalises them under Brier score; "
-              "compare CSI/POD/FAR for a like-for-like view.", "",
+              "compare CSI/POD/FAR for a like-for-like view.",
+              "- Home advantage: the model learned from ERA5 and is graded against ERA5, so it has absorbed ERA5's quirks "
+              "(e.g. its drizzle days); ECMWF, GFS and ICON have not. Treat the head-to-head as indicative until it is "
+              "repeated against rain-gauge data.", "",
               "## Top features (share of gain)", ""]
     lines += [f"- `{k}` {100 * v:.1f}%" for k, v in full["importance"][:12]]
     (REPORTS / "REPORT.md").write_text("\n".join(lines) + "\n")

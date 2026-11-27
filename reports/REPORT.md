@@ -64,6 +64,7 @@ ERA5 and NASA POWER agree on rain/no-rain on 78.3% of test days. Scored against 
 - Truth is ERA5 reanalysis grid-cell rainfall (~25 km), not a rain gauge. It smooths showers, overcounts drizzle days and underestimates extremes.
 - The live model reads Open-Meteo's operational analysis for its inputs, not ERA5. The live ledger on the site measures how much that costs.
 - NWP forecasts are single deterministic runs scored yes/no, which penalises them under Brier score; compare CSI/POD/FAR for a like-for-like view.
+- Home advantage: the model learned from ERA5 and is graded against ERA5, so it has absorbed ERA5's quirks (e.g. its drizzle days); ECMWF, GFS and ICON have not. Treat the head-to-head as indicative until it is repeated against rain-gauge data.
 
 ## Top features (share of gain)
 
