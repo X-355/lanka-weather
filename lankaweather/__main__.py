@@ -39,9 +39,10 @@ def main(argv=None) -> int:
     if c == "fetch":
         from . import fetch
         cl = client()
-        res = {"history": fetch.fetch_history(cl)}
-        if not a.skip_nwp:
+        res = {}
+        if not a.skip_nwp:  # small, so first: problems with it surface early
             res["nwp"] = fetch.fetch_nwp(cl)
+        res["history"] = fetch.fetch_history(cl)
         if not a.skip_power:
             res["power"] = fetch.fetch_power(cl)
         res["weight_spent"] = cl.spent
