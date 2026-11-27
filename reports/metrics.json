@@ -1,0 +1,1305 @@
+{
+  "meta": {
+    "version": "0.1.0+20261127",
+    "trained_at": "2026-11-27T20:38:56Z",
+    "data_source": "Open-Meteo ERA5 reanalysis",
+    "features": [
+      "precip",
+      "precip_lag1",
+      "precip_lag2",
+      "precip_lag3",
+      "precip_lag4",
+      "precip_lag5",
+      "precip_lag6",
+      "precip_sum3",
+      "wetdays3",
+      "precip_sum7",
+      "wetdays7",
+      "precip_sum14",
+      "wetdays14",
+      "precip_sum30",
+      "wetdays30",
+      "run_len",
+      "run_wet",
+      "rain",
+      "precip_hours",
+      "tmax",
+      "tmin",
+      "tmean",
+      "rh",
+      "dew",
+      "pmsl",
+      "cloud",
+      "wind_max",
+      "gust_max",
+      "sw_rad",
+      "et0",
+      "trange",
+      "pmsl_d1",
+      "pmsl_d3",
+      "pmsl_anom30",
+      "rh_d1",
+      "rh_d3",
+      "rh_anom30",
+      "cloud_d1",
+      "cloud_d3",
+      "cloud_anom30",
+      "tmax_d1",
+      "tmax_d3",
+      "tmax_anom30",
+      "dew_d1",
+      "dew_d3",
+      "dew_anom30",
+      "wind_u",
+      "wind_v",
+      "dep_point",
+      "lat",
+      "lon",
+      "elevation",
+      "zone_code",
+      "isl_anuradhapura",
+      "isl_batticaloa",
+      "isl_colombo",
+      "isl_galle",
+      "isl_hambantota",
+      "isl_jaffna",
+      "isl_kandy",
+      "isl_nuwara_eliya",
+      "isl_ratnapura",
+      "isl_trincomalee",
+      "isl_mean",
+      "isl_wetfrac",
+      "isl_pmsl",
+      "doy_sin",
+      "doy_cos",
+      "season_code",
+      "town_code"
+    ],
+    "categorical": [
+      "town_code",
+      "season_code",
+      "zone_code"
+    ],
+    "targets": {
+      "rain_mm": 1.0,
+      "heavy_mm": 50.0
+    },
+    "data_range": [
+      "1980-01-01",
+      "2026-11-21"
+    ],
+    "split": {
+      "train": [
+        "1980-01-02",
+        "2018-12-31"
+      ],
+      "valid": [
+        "2019-01-01",
+        "2021-12-31"
+      ],
+      "test": [
+        "2022-01-01",
+        "2026-11-21"
+      ]
+    },
+    "rows": {
+      "train": 142440,
+      "valid": 10960,
+      "test": 17860
+    },
+    "best_iteration": {
+      "y_rain": 845,
+      "y_heavy": 142
+    },
+    "production_rounds": {
+      "y_rain": 1015,
+      "y_heavy": 170
+    },
+    "towns": [
+      "colombo",
+      "kandy",
+      "galle",
+      "jaffna",
+      "trincomalee",
+      "batticaloa",
+      "anuradhapura",
+      "nuwara_eliya",
+      "ratnapura",
+      "hambantota"
+    ]
+  },
+  "metrics": {
+    "rain": {
+      "model": {
+        "n": 17860,
+        "base_rate": 0.6197,
+        "brier": 0.1237,
+        "bss": 0.2987,
+        "log_loss": 0.3872,
+        "auc": 0.9001,
+        "avg_precision": 0.9368,
+        "accuracy": 0.8235,
+        "pod": 0.8751,
+        "far": 0.1546,
+        "csi": 0.7544,
+        "freq_bias": 1.0351
+      },
+      "climatology": {
+        "n": 17860,
+        "base_rate": 0.6197,
+        "brier": 0.1764,
+        "bss": 0.0,
+        "log_loss": 0.5242,
+        "auc": 0.8016,
+        "avg_precision": 0.8701,
+        "accuracy": 0.7335,
+        "pod": 0.751,
+        "far": 0.1943,
+        "csi": 0.6358,
+        "freq_bias": 0.9321
+      },
+      "markov": {
+        "n": 17860,
+        "base_rate": 0.6197,
+        "brier": 0.1436,
+        "bss": 0.1858,
+        "log_loss": 0.4474,
+        "auc": 0.8628,
+        "avg_precision": 0.9067,
+        "accuracy": 0.8021,
+        "pod": 0.8467,
+        "far": 0.1639,
+        "csi": 0.7261,
+        "freq_bias": 1.0127
+      },
+      "persistence": {
+        "n": 17860,
+        "base_rate": 0.6197,
+        "brier": 0.2015,
+        "bss": -0.1424,
+        "log_loss": 1.8561,
+        "auc": 0.7862,
+        "avg_precision": 0.802,
+        "accuracy": 0.7985,
+        "pod": 0.8374,
+        "far": 0.1626,
+        "csi": 0.7203,
+        "freq_bias": 1.0001
+      }
+    },
+    "heavy": {
+      "model": {
+        "n": 17860,
+        "base_rate": 0.0128,
+        "brier": 0.0111,
+        "bss": 0.0955,
+        "log_loss": 0.0482,
+        "auc": 0.9205,
+        "avg_precision": 0.2179,
+        "accuracy": 0.9842,
+        "pod": 0.2281,
+        "far": 0.6709,
+        "csi": 0.1557,
+        "freq_bias": 0.693
+      },
+      "climatology": {
+        "n": 17860,
+        "base_rate": 0.0128,
+        "brier": 0.0123,
+        "bss": 0.0,
+        "log_loss": 0.06,
+        "auc": 0.8399,
+        "avg_precision": 0.0745,
+        "accuracy": 0.9872,
+        "pod": 0.0,
+        "far": null,
+        "csi": 0.0,
+        "freq_bias": 0.0
+      },
+      "reliability": [
+        {
+          "bin_lo": 0.0,
+          "bin_hi": 0.2,
+          "n": 17702,
+          "mean_p": 0.0067,
+          "obs_freq": 0.0099
+        },
+        {
+          "bin_lo": 0.2,
+          "bin_hi": 0.4,
+          "n": 136,
+          "mean_p": 0.2776,
+          "obs_freq": 0.3088
+        },
+        {
+          "bin_lo": 0.4,
+          "bin_hi": 0.6,
+          "n": 21,
+          "mean_p": 0.4458,
+          "obs_freq": 0.4286
+        },
+        {
+          "bin_lo": 0.6,
+          "bin_hi": 0.8,
+          "n": 1,
+          "mean_p": 0.6374,
+          "obs_freq": 1.0
+        }
+      ]
+    },
+    "by_town": {
+      "anuradhapura": {
+        "model": {
+          "n": 1786,
+          "base_rate": 0.5134,
+          "brier": 0.1681,
+          "bss": 0.2527,
+          "log_loss": 0.509,
+          "auc": 0.8312,
+          "avg_precision": 0.8395,
+          "accuracy": 0.7531,
+          "pod": 0.7557,
+          "far": 0.2385,
+          "csi": 0.6111,
+          "freq_bias": 0.9924
+        },
+        "climatology": {
+          "n": 1786,
+          "base_rate": 0.5134,
+          "brier": 0.2249,
+          "bss": 0.0,
+          "log_loss": 0.6416,
+          "auc": 0.6875,
+          "avg_precision": 0.6906,
+          "accuracy": 0.6506,
+          "pod": 0.542,
+          "far": 0.291,
+          "csi": 0.4434,
+          "freq_bias": 0.7644
+        },
+        "markov": {
+          "n": 1786,
+          "base_rate": 0.5134,
+          "brier": 0.1922,
+          "bss": 0.1454,
+          "log_loss": 0.5695,
+          "auc": 0.7765,
+          "avg_precision": 0.7735,
+          "accuracy": 0.7195,
+          "pod": 0.7274,
+          "far": 0.2734,
+          "csi": 0.5711,
+          "freq_bias": 1.0011
+        }
+      },
+      "batticaloa": {
+        "model": {
+          "n": 1786,
+          "base_rate": 0.4972,
+          "brier": 0.1351,
+          "bss": 0.3632,
+          "log_loss": 0.4204,
+          "auc": 0.8891,
+          "avg_precision": 0.8921,
+          "accuracy": 0.8024,
+          "pod": 0.8164,
+          "far": 0.2077,
+          "csi": 0.6725,
+          "freq_bias": 1.0304
+        },
+        "climatology": {
+          "n": 1786,
+          "base_rate": 0.4972,
+          "brier": 0.2121,
+          "bss": 0.0,
+          "log_loss": 0.6137,
+          "auc": 0.7279,
+          "avg_precision": 0.707,
+          "accuracy": 0.6517,
+          "pod": 0.5023,
+          "far": 0.2875,
+          "csi": 0.4176,
+          "freq_bias": 0.705
+        },
+        "markov": {
+          "n": 1786,
+          "base_rate": 0.4972,
+          "brier": 0.1567,
+          "bss": 0.261,
+          "log_loss": 0.4884,
+          "auc": 0.8407,
+          "avg_precision": 0.8173,
+          "accuracy": 0.7928,
+          "pod": 0.7917,
+          "far": 0.2083,
+          "csi": 0.6552,
+          "freq_bias": 1.0
+        }
+      },
+      "colombo": {
+        "model": {
+          "n": 1786,
+          "base_rate": 0.7699,
+          "brier": 0.0918,
+          "bss": 0.2294,
+          "log_loss": 0.2953,
+          "auc": 0.9202,
+          "avg_precision": 0.9731,
+          "accuracy": 0.8757,
+          "pod": 0.9396,
+          "far": 0.0971,
+          "csi": 0.8534,
+          "freq_bias": 1.0407
+        },
+        "climatology": {
+          "n": 1786,
+          "base_rate": 0.7699,
+          "brier": 0.1191,
+          "bss": 0.0,
+          "log_loss": 0.3784,
+          "auc": 0.855,
+          "avg_precision": 0.9461,
+          "accuracy": 0.8365,
+          "pod": 0.8836,
+          "far": 0.098,
+          "csi": 0.8062,
+          "freq_bias": 0.9796
+        },
+        "markov": {
+          "n": 1786,
+          "base_rate": 0.7699,
+          "brier": 0.1049,
+          "bss": 0.119,
+          "log_loss": 0.3394,
+          "auc": 0.8879,
+          "avg_precision": 0.955,
+          "accuracy": 0.8583,
+          "pod": 0.9295,
+          "far": 0.1088,
+          "csi": 0.8347,
+          "freq_bias": 1.0429
+        }
+      },
+      "galle": {
+        "model": {
+          "n": 1786,
+          "base_rate": 0.8516,
+          "brier": 0.0816,
+          "bss": 0.2177,
+          "log_loss": 0.2639,
+          "auc": 0.8991,
+          "avg_precision": 0.9794,
+          "accuracy": 0.883,
+          "pod": 0.9658,
+          "far": 0.0966,
+          "csi": 0.8754,
+          "freq_bias": 1.069
+        },
+        "climatology": {
+          "n": 1786,
+          "base_rate": 0.8516,
+          "brier": 0.1043,
+          "bss": 0.0,
+          "log_loss": 0.339,
+          "auc": 0.8097,
+          "avg_precision": 0.9563,
+          "accuracy": 0.8382,
+          "pod": 0.9592,
+          "far": 0.1346,
+          "csi": 0.8347,
+          "freq_bias": 1.1085
+        },
+        "markov": {
+          "n": 1786,
+          "base_rate": 0.8516,
+          "brier": 0.0904,
+          "bss": 0.1328,
+          "log_loss": 0.2989,
+          "auc": 0.856,
+          "avg_precision": 0.9641,
+          "accuracy": 0.8774,
+          "pod": 0.9421,
+          "far": 0.0838,
+          "csi": 0.8674,
+          "freq_bias": 1.0283
+        }
+      },
+      "hambantota": {
+        "model": {
+          "n": 1786,
+          "base_rate": 0.4518,
+          "brier": 0.1482,
+          "bss": 0.3159,
+          "log_loss": 0.4602,
+          "auc": 0.8635,
+          "avg_precision": 0.848,
+          "accuracy": 0.7884,
+          "pod": 0.7559,
+          "far": 0.2288,
+          "csi": 0.6174,
+          "freq_bias": 0.9802
+        },
+        "climatology": {
+          "n": 1786,
+          "base_rate": 0.4518,
+          "brier": 0.2166,
+          "bss": 0.0,
+          "log_loss": 0.6241,
+          "auc": 0.7126,
+          "avg_precision": 0.6559,
+          "accuracy": 0.6674,
+          "pod": 0.4597,
+          "far": 0.2987,
+          "csi": 0.3845,
+          "freq_bias": 0.6555
+        },
+        "markov": {
+          "n": 1786,
+          "base_rate": 0.4518,
+          "brier": 0.1728,
+          "bss": 0.2022,
+          "log_loss": 0.5259,
+          "auc": 0.8099,
+          "avg_precision": 0.7561,
+          "accuracy": 0.7592,
+          "pod": 0.7125,
+          "far": 0.2561,
+          "csi": 0.5721,
+          "freq_bias": 0.9579
+        }
+      },
+      "jaffna": {
+        "model": {
+          "n": 1786,
+          "base_rate": 0.411,
+          "brier": 0.1358,
+          "bss": 0.3698,
+          "log_loss": 0.4271,
+          "auc": 0.8799,
+          "avg_precision": 0.8486,
+          "accuracy": 0.7984,
+          "pod": 0.688,
+          "far": 0.206,
+          "csi": 0.5838,
+          "freq_bias": 0.8665
+        },
+        "climatology": {
+          "n": 1786,
+          "base_rate": 0.411,
+          "brier": 0.2155,
+          "bss": 0.0,
+          "log_loss": 0.6246,
+          "auc": 0.7021,
+          "avg_precision": 0.6241,
+          "accuracy": 0.6831,
+          "pod": 0.3678,
+          "far": 0.2742,
+          "csi": 0.323,
+          "freq_bias": 0.5068
+        },
+        "markov": {
+          "n": 1786,
+          "base_rate": 0.411,
+          "brier": 0.166,
+          "bss": 0.2297,
+          "log_loss": 0.5114,
+          "auc": 0.8146,
+          "avg_precision": 0.7631,
+          "accuracy": 0.7643,
+          "pod": 0.6499,
+          "far": 0.2559,
+          "csi": 0.5312,
+          "freq_bias": 0.8733
+        }
+      },
+      "kandy": {
+        "model": {
+          "n": 1786,
+          "base_rate": 0.6109,
+          "brier": 0.1583,
+          "bss": 0.3048,
+          "log_loss": 0.478,
+          "auc": 0.8419,
+          "avg_precision": 0.895,
+          "accuracy": 0.7693,
+          "pod": 0.8579,
+          "far": 0.2154,
+          "csi": 0.6944,
+          "freq_bias": 1.0935
+        },
+        "climatology": {
+          "n": 1786,
+          "base_rate": 0.6109,
+          "brier": 0.2278,
+          "bss": 0.0,
+          "log_loss": 0.647,
+          "auc": 0.627,
+          "avg_precision": 0.7161,
+          "accuracy": 0.6305,
+          "pod": 0.8304,
+          "far": 0.344,
+          "csi": 0.5785,
+          "freq_bias": 1.2658
+        },
+        "markov": {
+          "n": 1786,
+          "base_rate": 0.6109,
+          "brier": 0.1858,
+          "bss": 0.184,
+          "log_loss": 0.5554,
+          "auc": 0.7679,
+          "avg_precision": 0.8125,
+          "accuracy": 0.7391,
+          "pod": 0.7864,
+          "far": 0.2136,
+          "csi": 0.648,
+          "freq_bias": 1.0
+        }
+      },
+      "nuwara_eliya": {
+        "model": {
+          "n": 1786,
+          "base_rate": 0.7559,
+          "brier": 0.1123,
+          "bss": 0.2778,
+          "log_loss": 0.3561,
+          "auc": 0.8803,
+          "avg_precision": 0.9558,
+          "accuracy": 0.8443,
+          "pod": 0.9393,
+          "far": 0.1339,
+          "csi": 0.8202,
+          "freq_bias": 1.0844
+        },
+        "climatology": {
+          "n": 1786,
+          "base_rate": 0.7559,
+          "brier": 0.1555,
+          "bss": 0.0,
+          "log_loss": 0.4799,
+          "auc": 0.7464,
+          "avg_precision": 0.8846,
+          "accuracy": 0.7732,
+          "pod": 0.88,
+          "far": 0.1698,
+          "csi": 0.7458,
+          "freq_bias": 1.06
+        },
+        "markov": {
+          "n": 1786,
+          "base_rate": 0.7559,
+          "brier": 0.1291,
+          "bss": 0.1698,
+          "log_loss": 0.4145,
+          "auc": 0.8192,
+          "avg_precision": 0.9113,
+          "accuracy": 0.8287,
+          "pod": 0.9252,
+          "far": 0.141,
+          "csi": 0.8032,
+          "freq_bias": 1.077
+        }
+      },
+      "ratnapura": {
+        "model": {
+          "n": 1786,
+          "base_rate": 0.9031,
+          "brier": 0.0672,
+          "bss": 0.2184,
+          "log_loss": 0.2319,
+          "auc": 0.8563,
+          "avg_precision": 0.981,
+          "accuracy": 0.9177,
+          "pod": 0.9957,
+          "far": 0.0802,
+          "csi": 0.9161,
+          "freq_bias": 1.0825
+        },
+        "climatology": {
+          "n": 1786,
+          "base_rate": 0.9031,
+          "brier": 0.0859,
+          "bss": 0.0,
+          "log_loss": 0.3052,
+          "auc": 0.6641,
+          "avg_precision": 0.9477,
+          "accuracy": 0.9031,
+          "pod": 1.0,
+          "far": 0.0969,
+          "csi": 0.9031,
+          "freq_bias": 1.1073
+        },
+        "markov": {
+          "n": 1786,
+          "base_rate": 0.9031,
+          "brier": 0.0779,
+          "bss": 0.0934,
+          "log_loss": 0.2754,
+          "auc": 0.7497,
+          "avg_precision": 0.9591,
+          "accuracy": 0.8975,
+          "pod": 0.9709,
+          "far": 0.0799,
+          "csi": 0.8954,
+          "freq_bias": 1.0552
+        }
+      },
+      "trincomalee": {
+        "model": {
+          "n": 1786,
+          "base_rate": 0.4317,
+          "brier": 0.1388,
+          "bss": 0.3139,
+          "log_loss": 0.4303,
+          "auc": 0.8773,
+          "avg_precision": 0.8556,
+          "accuracy": 0.8024,
+          "pod": 0.7536,
+          "far": 0.2191,
+          "csi": 0.6221,
+          "freq_bias": 0.965
+        },
+        "climatology": {
+          "n": 1786,
+          "base_rate": 0.4317,
+          "brier": 0.2023,
+          "bss": 0.0,
+          "log_loss": 0.5889,
+          "auc": 0.7498,
+          "avg_precision": 0.6779,
+          "accuracy": 0.7004,
+          "pod": 0.4488,
+          "far": 0.2412,
+          "csi": 0.3927,
+          "freq_bias": 0.5914
+        },
+        "markov": {
+          "n": 1786,
+          "base_rate": 0.4317,
+          "brier": 0.1602,
+          "bss": 0.2081,
+          "log_loss": 0.4948,
+          "auc": 0.8362,
+          "avg_precision": 0.7773,
+          "accuracy": 0.7844,
+          "pod": 0.7315,
+          "far": 0.2399,
+          "csi": 0.5943,
+          "freq_bias": 0.9624
+        }
+      }
+    },
+    "by_season": {
+      "FIM": {
+        "label": "First inter-monsoon (Mar\u2013Apr)",
+        "model": {
+          "n": 3050,
+          "base_rate": 0.5833,
+          "brier": 0.145,
+          "bss": 0.2645,
+          "log_loss": 0.4492,
+          "auc": 0.8692,
+          "avg_precision": 0.9032,
+          "accuracy": 0.7902,
+          "pod": 0.8409,
+          "far": 0.1927,
+          "csi": 0.7004,
+          "freq_bias": 1.0416
+        },
+        "climatology": {
+          "n": 3050,
+          "base_rate": 0.5833,
+          "brier": 0.1972,
+          "bss": 0.0,
+          "log_loss": 0.5713,
+          "auc": 0.7593,
+          "avg_precision": 0.8308,
+          "accuracy": 0.6849,
+          "pod": 0.629,
+          "far": 0.212,
+          "csi": 0.538,
+          "freq_bias": 0.7982
+        },
+        "markov": {
+          "n": 3050,
+          "base_rate": 0.5833,
+          "brier": 0.1645,
+          "bss": 0.1658,
+          "log_loss": 0.4998,
+          "auc": 0.8322,
+          "avg_precision": 0.8722,
+          "accuracy": 0.7721,
+          "pod": 0.8134,
+          "far": 0.2006,
+          "csi": 0.6755,
+          "freq_bias": 1.0174
+        }
+      },
+      "NEM": {
+        "label": "Northeast monsoon (Dec\u2013Feb)",
+        "model": {
+          "n": 4200,
+          "base_rate": 0.5495,
+          "brier": 0.151,
+          "bss": 0.3091,
+          "log_loss": 0.4626,
+          "auc": 0.8624,
+          "avg_precision": 0.8863,
+          "accuracy": 0.7836,
+          "pod": 0.8133,
+          "far": 0.203,
+          "csi": 0.6737,
+          "freq_bias": 1.0204
+        },
+        "climatology": {
+          "n": 4200,
+          "base_rate": 0.5495,
+          "brier": 0.2186,
+          "bss": 0.0,
+          "log_loss": 0.6275,
+          "auc": 0.7146,
+          "avg_precision": 0.7352,
+          "accuracy": 0.6514,
+          "pod": 0.5884,
+          "far": 0.2746,
+          "csi": 0.4812,
+          "freq_bias": 0.8111
+        },
+        "markov": {
+          "n": 4200,
+          "base_rate": 0.5495,
+          "brier": 0.1778,
+          "bss": 0.1868,
+          "log_loss": 0.5387,
+          "auc": 0.8068,
+          "avg_precision": 0.8134,
+          "accuracy": 0.7531,
+          "pod": 0.7764,
+          "far": 0.2252,
+          "csi": 0.6334,
+          "freq_bias": 1.0022
+        }
+      },
+      "SIM": {
+        "label": "Second inter-monsoon (Oct\u2013Nov)",
+        "model": {
+          "n": 2960,
+          "base_rate": 0.8139,
+          "brier": 0.0961,
+          "bss": 0.3622,
+          "log_loss": 0.3129,
+          "auc": 0.884,
+          "avg_precision": 0.9668,
+          "accuracy": 0.8649,
+          "pod": 0.9577,
+          "far": 0.1144,
+          "csi": 0.8522,
+          "freq_bias": 1.0814
+        },
+        "climatology": {
+          "n": 2960,
+          "base_rate": 0.8139,
+          "brier": 0.1507,
+          "bss": 0.0,
+          "log_loss": 0.4727,
+          "auc": 0.6269,
+          "avg_precision": 0.879,
+          "accuracy": 0.8128,
+          "pod": 0.9905,
+          "far": 0.182,
+          "csi": 0.8116,
+          "freq_bias": 1.2109
+        },
+        "markov": {
+          "n": 2960,
+          "base_rate": 0.8139,
+          "brier": 0.1166,
+          "bss": 0.2261,
+          "log_loss": 0.3824,
+          "auc": 0.7878,
+          "avg_precision": 0.9267,
+          "accuracy": 0.8419,
+          "pod": 0.912,
+          "far": 0.1044,
+          "csi": 0.8244,
+          "freq_bias": 1.0183
+        }
+      },
+      "SWM": {
+        "label": "Southwest monsoon (May\u2013Sep)",
+        "model": {
+          "n": 7650,
+          "base_rate": 0.5975,
+          "brier": 0.1109,
+          "bss": 0.284,
+          "log_loss": 0.3499,
+          "auc": 0.9213,
+          "avg_precision": 0.9482,
+          "accuracy": 0.8426,
+          "pod": 0.8762,
+          "far": 0.1374,
+          "csi": 0.7689,
+          "freq_bias": 1.0158
+        },
+        "climatology": {
+          "n": 7650,
+          "base_rate": 0.5975,
+          "brier": 0.1549,
+          "bss": 0.0,
+          "log_loss": 0.4687,
+          "auc": 0.8422,
+          "avg_precision": 0.8966,
+          "accuracy": 0.7672,
+          "pod": 0.7543,
+          "far": 0.1603,
+          "csi": 0.6594,
+          "freq_bias": 0.8983
+        },
+        "markov": {
+          "n": 7650,
+          "base_rate": 0.5975,
+          "brier": 0.127,
+          "bss": 0.1802,
+          "log_loss": 0.4014,
+          "auc": 0.8933,
+          "avg_precision": 0.9244,
+          "accuracy": 0.8256,
+          "pod": 0.8606,
+          "far": 0.1505,
+          "csi": 0.7468,
+          "freq_bias": 1.0131
+        }
+      }
+    },
+    "nwp_comparison": {
+      "period": [
+        "2024-02-05",
+        "2026-11-21"
+      ],
+      "n": 10170,
+      "entries": {
+        "model": {
+          "label": "Weather Lab (LightGBM)",
+          "kind": "probability",
+          "n": 10170,
+          "base_rate": 0.5928,
+          "brier": 0.1277,
+          "bss": 0.2735,
+          "log_loss": 0.3995,
+          "auc": 0.8975,
+          "avg_precision": 0.928,
+          "accuracy": 0.8175,
+          "pod": 0.8685,
+          "far": 0.1688,
+          "csi": 0.7383,
+          "freq_bias": 1.0448
+        },
+        "model_binary": {
+          "label": "Weather Lab, yes/no at 50%",
+          "kind": "yes/no",
+          "n": 10170,
+          "base_rate": 0.5928,
+          "brier": 0.1825,
+          "bss": -0.0385,
+          "log_loss": 1.6809,
+          "auc": 0.8059,
+          "avg_precision": 0.7999,
+          "accuracy": 0.8175,
+          "pod": 0.8685,
+          "far": 0.1688,
+          "csi": 0.7383,
+          "freq_bias": 1.0448
+        },
+        "ecmwf_ifs025": {
+          "label": "ECMWF IFS 0.25\u00b0",
+          "kind": "yes/no (\u22651 mm forecast)",
+          "n": 10170,
+          "base_rate": 0.5928,
+          "brier": 0.1851,
+          "bss": -0.0531,
+          "log_loss": 1.7045,
+          "auc": 0.792,
+          "avg_precision": 0.7833,
+          "accuracy": 0.8149,
+          "pod": 0.9156,
+          "far": 0.1992,
+          "csi": 0.7457,
+          "freq_bias": 1.1433
+        },
+        "gfs_seamless": {
+          "label": "NCEP GFS",
+          "kind": "yes/no (\u22651 mm forecast)",
+          "n": 10170,
+          "base_rate": 0.5928,
+          "brier": 0.1972,
+          "bss": -0.1224,
+          "log_loss": 1.8168,
+          "auc": 0.8051,
+          "avg_precision": 0.8074,
+          "accuracy": 0.8028,
+          "pod": 0.7923,
+          "far": 0.1363,
+          "csi": 0.7043,
+          "freq_bias": 0.9174
+        },
+        "icon_seamless": {
+          "label": "DWD ICON",
+          "kind": "yes/no (\u22651 mm forecast)",
+          "n": 10170,
+          "base_rate": 0.5928,
+          "brier": 0.249,
+          "bss": -0.4168,
+          "log_loss": 2.2932,
+          "auc": 0.7735,
+          "avg_precision": 0.7933,
+          "accuracy": 0.751,
+          "pod": 0.6523,
+          "far": 0.0998,
+          "csi": 0.6084,
+          "freq_bias": 0.7247
+        },
+        "markov": {
+          "label": "Markov",
+          "kind": "baseline",
+          "n": 10170,
+          "base_rate": 0.5928,
+          "brier": 0.1454,
+          "bss": 0.1726,
+          "log_loss": 0.4518,
+          "auc": 0.8636,
+          "avg_precision": 0.8991,
+          "accuracy": 0.7982,
+          "pod": 0.8404,
+          "far": 0.177,
+          "csi": 0.7118,
+          "freq_bias": 1.0212
+        },
+        "climatology": {
+          "label": "Climatology",
+          "kind": "baseline",
+          "n": 10170,
+          "base_rate": 0.5928,
+          "brier": 0.1757,
+          "bss": 0.0,
+          "log_loss": 0.5231,
+          "auc": 0.8057,
+          "avg_precision": 0.8626,
+          "accuracy": 0.7376,
+          "pod": 0.7676,
+          "far": 0.2151,
+          "csi": 0.6342,
+          "freq_bias": 0.9779
+        },
+        "persistence": {
+          "label": "Persistence",
+          "kind": "baseline",
+          "n": 10170,
+          "base_rate": 0.5928,
+          "brier": 0.207,
+          "bss": -0.1778,
+          "log_loss": 1.9064,
+          "auc": 0.7855,
+          "avg_precision": 0.7846,
+          "accuracy": 0.793,
+          "pod": 0.826,
+          "far": 0.175,
+          "csi": 0.7029,
+          "freq_bias": 1.0012
+        }
+      }
+    },
+    "reliability": {
+      "model": [
+        {
+          "bin_lo": 0.0,
+          "bin_hi": 0.1,
+          "n": 1734,
+          "mean_p": 0.0584,
+          "obs_freq": 0.0657
+        },
+        {
+          "bin_lo": 0.1,
+          "bin_hi": 0.2,
+          "n": 1495,
+          "mean_p": 0.147,
+          "obs_freq": 0.1485
+        },
+        {
+          "bin_lo": 0.2,
+          "bin_hi": 0.3,
+          "n": 1079,
+          "mean_p": 0.2481,
+          "obs_freq": 0.2317
+        },
+        {
+          "bin_lo": 0.3,
+          "bin_hi": 0.4,
+          "n": 1047,
+          "mean_p": 0.3491,
+          "obs_freq": 0.3324
+        },
+        {
+          "bin_lo": 0.4,
+          "bin_hi": 0.5,
+          "n": 1049,
+          "mean_p": 0.4511,
+          "obs_freq": 0.4271
+        },
+        {
+          "bin_lo": 0.5,
+          "bin_hi": 0.6,
+          "n": 1054,
+          "mean_p": 0.5494,
+          "obs_freq": 0.5398
+        },
+        {
+          "bin_lo": 0.6,
+          "bin_hi": 0.7,
+          "n": 1064,
+          "mean_p": 0.6513,
+          "obs_freq": 0.6269
+        },
+        {
+          "bin_lo": 0.7,
+          "bin_hi": 0.8,
+          "n": 1230,
+          "mean_p": 0.7519,
+          "obs_freq": 0.7317
+        },
+        {
+          "bin_lo": 0.8,
+          "bin_hi": 0.9,
+          "n": 1778,
+          "mean_p": 0.8562,
+          "obs_freq": 0.8217
+        },
+        {
+          "bin_lo": 0.9,
+          "bin_hi": 1.0,
+          "n": 6330,
+          "mean_p": 0.9682,
+          "obs_freq": 0.9618
+        }
+      ],
+      "markov": [
+        {
+          "bin_lo": 0.0,
+          "bin_hi": 0.1,
+          "n": 376,
+          "mean_p": 0.06,
+          "obs_freq": 0.1037
+        },
+        {
+          "bin_lo": 0.1,
+          "bin_hi": 0.2,
+          "n": 2984,
+          "mean_p": 0.149,
+          "obs_freq": 0.1796
+        },
+        {
+          "bin_lo": 0.2,
+          "bin_hi": 0.3,
+          "n": 1842,
+          "mean_p": 0.2446,
+          "obs_freq": 0.2747
+        },
+        {
+          "bin_lo": 0.3,
+          "bin_hi": 0.4,
+          "n": 870,
+          "mean_p": 0.3473,
+          "obs_freq": 0.408
+        },
+        {
+          "bin_lo": 0.4,
+          "bin_hi": 0.5,
+          "n": 581,
+          "mean_p": 0.44,
+          "obs_freq": 0.4492
+        },
+        {
+          "bin_lo": 0.5,
+          "bin_hi": 0.6,
+          "n": 760,
+          "mean_p": 0.5583,
+          "obs_freq": 0.5987
+        },
+        {
+          "bin_lo": 0.6,
+          "bin_hi": 0.7,
+          "n": 1315,
+          "mean_p": 0.662,
+          "obs_freq": 0.6616
+        },
+        {
+          "bin_lo": 0.7,
+          "bin_hi": 0.8,
+          "n": 2077,
+          "mean_p": 0.7403,
+          "obs_freq": 0.7564
+        },
+        {
+          "bin_lo": 0.8,
+          "bin_hi": 0.9,
+          "n": 2710,
+          "mean_p": 0.8491,
+          "obs_freq": 0.8664
+        },
+        {
+          "bin_lo": 0.9,
+          "bin_hi": 1.0,
+          "n": 4345,
+          "mean_p": 0.9424,
+          "obs_freq": 0.9496
+        }
+      ]
+    },
+    "alt_truth_power": {
+      "model": {
+        "n": 17850,
+        "base_rate": 0.652,
+        "brier": 0.1701,
+        "bss": 0.2279,
+        "log_loss": 0.529,
+        "auc": 0.8193,
+        "avg_precision": 0.8916,
+        "accuracy": 0.7595,
+        "pod": 0.8074,
+        "far": 0.1792,
+        "csi": 0.6864,
+        "freq_bias": 0.9836
+      },
+      "climatology": {
+        "n": 17850,
+        "base_rate": 0.652,
+        "brier": 0.2203,
+        "bss": 0.0,
+        "log_loss": 0.641,
+        "auc": 0.6912,
+        "avg_precision": 0.7881,
+        "accuracy": 0.6621,
+        "pod": 0.6836,
+        "far": 0.2279,
+        "csi": 0.5688,
+        "freq_bias": 0.8855
+      },
+      "markov": {
+        "n": 17850,
+        "base_rate": 0.652,
+        "brier": 0.1937,
+        "bss": 0.1208,
+        "log_loss": 0.5894,
+        "auc": 0.7592,
+        "avg_precision": 0.8299,
+        "accuracy": 0.7385,
+        "pod": 0.7807,
+        "far": 0.1888,
+        "csi": 0.6607,
+        "freq_bias": 0.9625
+      },
+      "agreement_era5_vs_power": 0.783
+    }
+  },
+  "importance": [
+    [
+      "precip",
+      0.4264
+    ],
+    [
+      "precip_hours",
+      0.1077
+    ],
+    [
+      "rain",
+      0.0879
+    ],
+    [
+      "wetdays30",
+      0.0187
+    ],
+    [
+      "et0",
+      0.017
+    ],
+    [
+      "isl_trincomalee",
+      0.0167
+    ],
+    [
+      "wind_max",
+      0.0162
+    ],
+    [
+      "doy_cos",
+      0.0157
+    ],
+    [
+      "doy_sin",
+      0.0134
+    ],
+    [
+      "town_code",
+      0.0131
+    ],
+    [
+      "rh",
+      0.0126
+    ],
+    [
+      "isl_pmsl",
+      0.0115
+    ],
+    [
+      "isl_batticaloa",
+      0.011
+    ],
+    [
+      "isl_jaffna",
+      0.011
+    ],
+    [
+      "precip_sum3",
+      0.0106
+    ],
+    [
+      "dew_d1",
+      0.0098
+    ],
+    [
+      "dep_point",
+      0.0088
+    ],
+    [
+      "isl_anuradhapura",
+      0.0082
+    ],
+    [
+      "isl_colombo",
+      0.0082
+    ],
+    [
+      "wind_u",
+      0.0076
+    ],
+    [
+      "isl_mean",
+      0.0075
+    ],
+    [
+      "zone_code",
+      0.0073
+    ],
+    [
+      "isl_ratnapura",
+      0.0071
+    ],
+    [
+      "gust_max",
+      0.007
+    ],
+    [
+      "isl_galle",
+      0.0069
+    ]
+  ]
+}

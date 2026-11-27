@@ -1,0 +1,129 @@
+{
+  "version": "0.1.0+20261127",
+  "trained_at": "2026-11-27T20:38:56Z",
+  "data_source": "Open-Meteo ERA5 reanalysis",
+  "features": [
+    "precip",
+    "precip_lag1",
+    "precip_lag2",
+    "precip_lag3",
+    "precip_lag4",
+    "precip_lag5",
+    "precip_lag6",
+    "precip_sum3",
+    "wetdays3",
+    "precip_sum7",
+    "wetdays7",
+    "precip_sum14",
+    "wetdays14",
+    "precip_sum30",
+    "wetdays30",
+    "run_len",
+    "run_wet",
+    "rain",
+    "precip_hours",
+    "tmax",
+    "tmin",
+    "tmean",
+    "rh",
+    "dew",
+    "pmsl",
+    "cloud",
+    "wind_max",
+    "gust_max",
+    "sw_rad",
+    "et0",
+    "trange",
+    "pmsl_d1",
+    "pmsl_d3",
+    "pmsl_anom30",
+    "rh_d1",
+    "rh_d3",
+    "rh_anom30",
+    "cloud_d1",
+    "cloud_d3",
+    "cloud_anom30",
+    "tmax_d1",
+    "tmax_d3",
+    "tmax_anom30",
+    "dew_d1",
+    "dew_d3",
+    "dew_anom30",
+    "wind_u",
+    "wind_v",
+    "dep_point",
+    "lat",
+    "lon",
+    "elevation",
+    "zone_code",
+    "isl_anuradhapura",
+    "isl_batticaloa",
+    "isl_colombo",
+    "isl_galle",
+    "isl_hambantota",
+    "isl_jaffna",
+    "isl_kandy",
+    "isl_nuwara_eliya",
+    "isl_ratnapura",
+    "isl_trincomalee",
+    "isl_mean",
+    "isl_wetfrac",
+    "isl_pmsl",
+    "doy_sin",
+    "doy_cos",
+    "season_code",
+    "town_code"
+  ],
+  "categorical": [
+    "town_code",
+    "season_code",
+    "zone_code"
+  ],
+  "targets": {
+    "rain_mm": 1.0,
+    "heavy_mm": 50.0
+  },
+  "data_range": [
+    "1980-01-01",
+    "2026-11-21"
+  ],
+  "split": {
+    "train": [
+      "1980-01-02",
+      "2018-12-31"
+    ],
+    "valid": [
+      "2019-01-01",
+      "2021-12-31"
+    ],
+    "test": [
+      "2022-01-01",
+      "2026-11-21"
+    ]
+  },
+  "rows": {
+    "train": 142440,
+    "valid": 10960,
+    "test": 17860
+  },
+  "best_iteration": {
+    "y_rain": 845,
+    "y_heavy": 142
+  },
+  "production_rounds": {
+    "y_rain": 1015,
+    "y_heavy": 170
+  },
+  "towns": [
+    "colombo",
+    "kandy",
+    "galle",
+    "jaffna",
+    "trincomalee",
+    "batticaloa",
+    "anuradhapura",
+    "nuwara_eliya",
+    "ratnapura",
+    "hambantota"
+  ]
+}
