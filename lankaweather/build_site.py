@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
-from .config import ERA5_DIR, MODELS, REPORTS, SITE_DATA, load_config, towns
+from .config import ERA5_DIR, LIVE_DIR, MODELS, REPORTS, SITE_DATA, load_config, towns
 from .features import SEASON_NAMES, SEASON_OF_MONTH
 from .fetch import load_history, load_power
 from .predict import ledger_summary, read_ledger
@@ -93,7 +93,10 @@ def build_climate(hist: pd.DataFrame) -> None:
     full_years = [y for y in sorted(h["year"].unique()) if (h[h["year"] == y]["date"].dt.dayofyear.max() >= 365)]
     # WMO standard climate normal 1991-2020 (falls back to whatever full years exist)
     base_years = [y for y in full_years if 1991 <= y <= 2020] or full_years
-    out = {"last_day": last_day.date().isoformat(), "baseline": [min(base_years), max(base_years)], "towns": {}}
+    live_path = LIVE_DIR / "latest.parquet"
+    live = pd.read_parquet(live_path) if live_path.exists() else None
+    out = {"last_day": last_day.date().isoformat(), "baseline": [min(base_years), max(base_years)], "towns": {},
+           "provisional_through": None if live is None else live["date"].max().date().isoformat()}
     for town, g in h.groupby("town"):
         monthly = g.groupby(["year", "month"]).agg(total=("precip", "sum"), wet=("precip", lambda x: int((x >= rain_mm).sum())),
                                                    days=("precip", "size")).reset_index()
@@ -121,12 +124,19 @@ def build_climate(hist: pd.DataFrame) -> None:
                 seasons[code]["partial"] = {"year": int(inprog["syear"].iloc[0]), "total": round(float(inprog["sum"].iloc[0]), 1),
                                             "days": int(inprog["size"].iloc[0]), "of": expected[code]}
         recent = g[g["date"] > last_day - pd.Timedelta(days=90)]
+        prov = []
+        if live is not None:
+            lv = live[(live["town"] == town) & (live["date"] > g["date"].max())].sort_values("date")
+            prov = [{"date": d.date().isoformat(), "precip": None if pd.isna(p) else round(float(p), 1)}
+                    for d, p in zip(lv["date"], lv["precip"])]
         out["towns"][town] = {
             "normal_total": _r(normal["total"]), "normal_wet": _r(normal["wet"]),
             "p10": _r(p10), "p90": _r(p90), "by_year": by_year,
             "annual_normal": round(float(normal["total"].sum()), 0),
             "seasons": seasons,
             "recent": {"dates": recent["date"].dt.strftime("%Y-%m-%d").tolist(), "precip": _r(recent["precip"])},
+            # Days newer than ERA5, from the operational analysis used for tonight's forecast. Replaced once ERA5 has them.
+            "provisional": prov,
         }
     _write("climate.json", out)
 

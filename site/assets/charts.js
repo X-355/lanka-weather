@@ -106,15 +106,18 @@ export function bars(container, opts) {
   if (opts.yTitle) { const t = el("text", { x: -m.l + 2, y: -4 }, g); t.textContent = opts.yTitle; }
   const band = iw / cats.length;
   const barSer = ser.filter(s => (s.kind || "bar") === "bar");
-  const gap = 2, inner = Math.min(band * 0.78, 18 * barSer.length + gap * (barSer.length - 1));
-  const bw = barSer.length ? (inner - gap * (barSer.length - 1)) / barSer.length : 0;
+  // overlay: series never share a category (e.g. final vs provisional days), so they share one slot
+  const slots = opts.overlay ? 1 : barSer.length;
+  const gap = 2, inner = Math.min(band * 0.78, 18 * slots + gap * (slots - 1));
+  const bw = slots ? (inner - gap * (slots - 1)) / slots : 0;
   const every = Math.ceil(cats.length / Math.max(1, Math.floor(iw / 44)));
   cats.forEach((c, i) => {
     const x0 = i * band + (band - inner) / 2;
     barSer.forEach((s, j) => {
       const v = s.values[i];
       if (v == null) return;
-      el("path", { d: barPath(x0 + j * (bw + gap), y(0), bw, y(v), Math.min(4, bw / 2)), fill: s.color }, g);
+      const k = opts.overlay ? 0 : j;
+      el("path", { d: barPath(x0 + k * (bw + gap), y(0), bw, y(v), Math.min(4, bw / 2)), fill: s.color }, g);
     });
     if (i % every === 0) {
       const t = el("text", { x: i * band + band / 2, y: ih + 18, "text-anchor": "middle" }, g);

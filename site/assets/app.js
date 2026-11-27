@@ -232,7 +232,7 @@ renderers.monsoon = () => {
     <div class="card kpi"><div class="label">${year} so far</div><div class="value">${Math.round(ytd).toLocaleString()} mm</div><div class="note">${normYtd ? Math.round(100 * ytd / normYtd) + "% of normal for " + MONTHS[0] + "–" + MONTHS[lastMonth] : ""}</div></div>
     <div class="card kpi"><div class="label">Normal year</div><div class="value">${t.annual_normal.toLocaleString()} mm</div><div class="note">${b0}–${b1} average</div></div>
     <div class="card kpi"><div class="label">${moSeason} ${sp ? sp.year + " (in progress)" : "normal"}</div><div class="value">${sp ? Math.round(sp.total) : Math.round(seasonNormal ?? 0)} mm</div><div class="note">${sp ? `${sp.days} of ${sp.of} days; full-season normal ${Math.round(seasonNormal)} mm` : state.meta.seasons[moSeason]}</div></div>
-    <div class="card kpi"><div class="label">Data through</div><div class="value" style="font-size:20px">${fmtDate(CL.last_day)}</div><div class="note">ERA5 is published ~5 days late</div></div>`;
+    <div class="card kpi"><div class="label">Final data through</div><div class="value" style="font-size:20px">${fmtDate(CL.last_day)}</div><div class="note">${CL.provisional_through ? `final; provisional through ${fmtDate(CL.provisional_through)}` : "ERA5 is published ~5 days late"}</div></div>`;
   $("mo-monthly-sub").textContent = `Grey bars are the ${b0}–${b1} average. Whiskers span the 10th–90th percentile of past years.${lastIsPartial ? ` ${MONTHS[lastMonth]} ${year} is incomplete.` : ""}`;
   $("mo-monthly").innerHTML = "";
   bars($("mo-monthly"), {
@@ -254,11 +254,16 @@ renderers.monsoon = () => {
     fmt: v => `${Math.round(v)}`, yTitle: "mm", height: 230,
   });
   $("mo-recent").innerHTML = "";
+  const prov = t.provisional || [];
+  const rDates = [...t.recent.dates, ...prov.map(p => p.date)];
+  const pad = a => a.concat(new Array(prov.length).fill(null));
   bars($("mo-recent"), {
-    categories: t.recent.dates.map(d => d.slice(5)),
-    series: [{ name: "Daily rainfall", color: C.model, values: t.recent.precip }],
-    fmt: v => v.toFixed(0), yTitle: "mm", height: 230,
-    tipTitle: i => fmtDate(t.recent.dates[i]),
+    categories: rDates.map(d => d.slice(5)),
+    series: [{ name: "ERA5 (final)", color: C.model, values: pad(t.recent.precip) },
+             ...(prov.length ? [{ name: "Provisional (live analysis)", color: C.nwp,
+               values: new Array(t.recent.dates.length).fill(null).concat(prov.map(p => p.precip)) }] : [])],
+    fmt: v => v.toFixed(0), yTitle: "mm", height: 230, overlay: true,
+    tipTitle: i => fmtDate(rDates[i]),
   });
 };
 
