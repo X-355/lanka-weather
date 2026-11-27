@@ -91,7 +91,8 @@ def build_climate(hist: pd.DataFrame) -> None:
     h["year"], h["month"] = h["date"].dt.year, h["date"].dt.month
     last_day = h["date"].max()
     full_years = [y for y in sorted(h["year"].unique()) if (h[h["year"] == y]["date"].dt.dayofyear.max() >= 365)]
-    base_years = [y for y in full_years if y <= 2020] or full_years
+    # WMO standard climate normal 1991-2020 (falls back to whatever full years exist)
+    base_years = [y for y in full_years if 1991 <= y <= 2020] or full_years
     out = {"last_day": last_day.date().isoformat(), "baseline": [min(base_years), max(base_years)], "towns": {}}
     for town, g in h.groupby("town"):
         monthly = g.groupby(["year", "month"]).agg(total=("precip", "sum"), wet=("precip", lambda x: int((x >= rain_mm).sum())),

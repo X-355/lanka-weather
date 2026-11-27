@@ -17,7 +17,7 @@ towns:
 timezone: Asia/Colombo
 
 data:
-  start_date: "2000-01-01"
+  start_date: "1980-01-01"   # ERA5 runs back to 1940, but is far more reliable from the 1979 satellite era
   # ERA5 (not "best_match") so the whole record comes from one consistent reanalysis.
   archive_model: era5
   # ERA5 is published with a ~5 day delay; we never use days newer than this.

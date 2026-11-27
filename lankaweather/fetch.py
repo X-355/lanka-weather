@@ -185,7 +185,8 @@ def fetch_nwp(client: Client) -> dict:
 def fetch_power(client: Client) -> dict:
     """Daily all-sky irradiance (kWh/m²/day) and bias-corrected precipitation (mm) from NASA POWER."""
     cfg = load_config()
-    start = date.fromisoformat(cfg["data"]["start_date"])
+    # POWER's all-sky irradiance record starts in 1984.
+    start = max(date.fromisoformat(cfg["data"]["start_date"]), date(1984, 1, 1))
     end = date.today() - timedelta(days=7)
     POWER_DIR.mkdir(parents=True, exist_ok=True)
     stats = {"towns": 0, "stopped": None}
