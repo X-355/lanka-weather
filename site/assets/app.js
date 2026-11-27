@@ -1,4 +1,4 @@
-import { bars, dotmap, hbars, reliability, timeline } from "./charts.js";
+import { bars, districtMap, hbars, reliability, timeline } from "./charts.js";
 
 const C = {
   model: "var(--series-1)", nwp: "var(--series-2)", markov: "var(--series-3)",
@@ -58,31 +58,32 @@ const townName = k => state.meta.towns.find(t => t.key === k)?.name ?? k;
 
 // ------------------------------------------------------------------ forecast checker
 let mapMode = "rain";
-// Hand-placed labels where hill-country towns crowd together.
-const LABEL = { kurunegala: { side: "l" }, kegalle: { side: "l", dy: 4 }, matale: { side: "r", dy: -6 },
-  kandy: { side: "r", dy: 5 }, nuwara_eliya: { side: "l", dy: 14 }, badulla: { side: "r", dy: -6 },
-  monaragala: { side: "r", dy: 9 }, gampaha: { side: "r", dy: -2 }, colombo: { side: "r", dy: 2 } };
+// Label nudges (SVG units) where a district's box centre isn't a good spot.
+const NUDGE = { colombo: [-14, 0], gampaha: [-6, 0], kalutara: [-4, 2], puttalam: [4, 10], jaffna: [8, 6],
+  trincomalee: [-6, 18], hambantota: [6, 4], galle: [-4, 0], kurunegala: [0, -10], mannar: [0, 10], batticaloa: [-6, 0] };
+
 function renderMap() {
   const f = state.forecast, byTown = Object.fromEntries((f?.towns || []).map(t => [t.town, t]));
   const missing = state.meta.towns.filter(t => !byTown[t.key]).length;
-  dotmap($("fc-map"), {
-    height: 460,
-    points: state.meta.towns.map(t => ({ ...LABEL[t.key], ...pointFor(t, byTown[t.key]) })),
-  });
-  function pointFor(t, r) {
-      if (!r) return { lat: t.lat, lon: t.lon, label: t.name, fill: "var(--surface-1)", stroke: "var(--neutral)", r: 6,
+  const areas = {};
+  for (const t of state.meta.towns) {
+    const r = byTown[t.key];
+    if (!r) {
+      areas[t.key] = { label: t.name, muted: true, fill: "var(--surface-2)",
         tip: `<b>${t.name}</b><div>${t.region} Province</div><div class="muted">Joins at the next retrain, once its history has downloaded.</div>` };
-      if (mapMode === "heavy") {
-        const st = heavyStatus(r.p_heavy, r.p_clim_heavy);
-        return { lat: t.lat, lon: t.lon, label: t.name, fill: st.color, r: 8,
-          tip: `<b>${t.name}</b><div class="row"><span>Chance ≥ ${state.meta.targets.heavy_mm} mm</span><b>${pct(r.p_heavy, 1)}</b></div><div class="row"><span>Normal</span><b>${pct(r.p_clim_heavy, 1)}</b></div><div>${st.icon ? st.icon + " " : ""}${st.label} (research only)</div>` };
-      }
-      return { lat: t.lat, lon: t.lon, label: t.name, r: 9,
-        fill: `color-mix(in oklab, var(--series-1) ${Math.round(12 + 88 * r.p_rain)}%, var(--surface-1))`,
+    } else if (mapMode === "heavy") {
+      const st = heavyStatus(r.p_heavy, r.p_clim_heavy);
+      areas[t.key] = { label: t.name, fill: `color-mix(in oklab, ${st.color} 70%, var(--surface-1))`,
+        tip: `<b>${t.name}</b><div class="row"><span>Chance ≥ ${state.meta.targets.heavy_mm} mm</span><b>${pct(r.p_heavy, 1)}</b></div><div class="row"><span>Normal</span><b>${pct(r.p_clim_heavy, 1)}</b></div><div>${st.icon ? st.icon + " " : ""}${st.label} (research only)</div>` };
+    } else {
+      areas[t.key] = { label: t.name, fill: `color-mix(in oklab, var(--series-1) ${Math.round(10 + 80 * r.p_rain)}%, var(--surface-1))`,
         tip: `<b>${t.name}</b><div class="row"><span>Chance of rain</span><b>${pct(r.p_rain)}</b></div><div class="row"><span>Normal for date</span><b>${pct(r.p_clim)}</b></div>` };
+    }
   }
-  $("map-note").textContent = (mapMode === "rain" ? "Darker blue = higher chance of rain tomorrow." : "Heavy-rain status, research only.")
-    + (missing ? ` Hollow dots: ${missing} districts join at the next retrain.` : "");
+  districtMap($("fc-map"), { areas, labelNudge: NUDGE });
+  $("map-note").innerHTML = (mapMode === "rain" ? "Darker blue = higher chance of rain tomorrow. " : "Heavy-rain status, research only. ")
+    + (missing ? `Dashed: ${missing} districts join at the next retrain. ` : "")
+    + `<br><span class="muted">District map: <a href="https://mapsvg.com/maps/sri-lanka">MapSVG</a> via <a href="https://github.com/VictorCazanave/svg-maps">svg-maps</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</span>`;
 }
 
 function renderForecastCards() {

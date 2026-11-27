@@ -274,41 +274,31 @@ export function timeline(container, opts) {
   hit.addEventListener("mouseleave", () => { hideTip(); cross.setAttribute("visibility", "hidden"); });
 }
 
-// Simplified Sri Lanka coastline (lat, lon), for orientation only.
-const COAST = [[9.83,80.23],[9.62,80.45],[9.45,80.60],[9.20,80.82],[8.95,80.95],[8.75,81.10],[8.55,81.23],[8.20,81.40],
-  [7.95,81.55],[7.75,81.70],[7.30,81.86],[6.85,81.85],[6.45,81.65],[6.20,81.30],[6.10,81.10],[5.97,80.80],[5.92,80.59],
-  [6.03,80.20],[6.40,79.98],[6.85,79.86],[7.25,79.83],[7.70,79.80],[8.05,79.75],[8.40,79.88],[8.75,79.92],[8.98,79.90],
-  [9.10,80.05],[9.35,80.05],[9.55,80.00],[9.73,79.88],[9.80,80.05],[9.83,80.23]];
+import { DISTRICTS, VIEWBOX } from "./sri-lanka-districts.js";
 
 /**
- * Dot map of the island. opts: {points:[{lat,lon,label,fill,stroke,r,tip}], height}
+ * District choropleth. opts: {areas: {key: {fill, label, tip, muted}}, labelNudge: {key: [dx, dy]}}
  */
-export function dotmap(container, opts) {
+export function districtMap(container, opts) {
   container.innerHTML = "";
-  const H = opts.height || 460;
-  const lat0 = 5.8, lat1 = 9.95, lon0 = 79.6, lon1 = 82.0;
-  const k = Math.cos((7.8 * Math.PI) / 180);
-  const W = Math.round(H * ((lon1 - lon0) * k) / (lat1 - lat0));
   const wrap = document.createElement("div");
   wrap.className = "chart";
-  wrap.style.maxWidth = W + "px";
+  wrap.style.maxWidth = "380px";
   wrap.style.margin = "0 auto";
   container.appendChild(wrap);
-  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Map of Sri Lanka" }, wrap);
-  const px = lon => ((lon - lon0) / (lon1 - lon0)) * W;
-  const py = lat => H - ((lat - lat0) / (lat1 - lat0)) * H;
-  el("path", { d: COAST.map((c, i) => `${i ? "L" : "M"}${px(c[1]).toFixed(1)},${py(c[0]).toFixed(1)}`).join("") + "Z",
-    fill: "var(--surface-2)", stroke: "var(--axis)", "stroke-width": 1.5, "stroke-linejoin": "round" }, svg);
-  const g = el("g", {}, svg);
-  opts.points.forEach(p => {
-    const x = px(p.lon), y = py(p.lat), r = p.r || 9;
-    el("circle", { cx: x, cy: y, r, fill: p.fill, stroke: p.stroke || "var(--surface-1)", "stroke-width": 2 }, g);
-    const right = p.side ? p.side === "r" : p.lon < 81.3;
-    const t = el("text", { x: right ? x + r + 4 : x - r - 4, y: y + 4 + (p.dy || 0), "text-anchor": right ? "start" : "end",
-      style: "font-size:11px;paint-order:stroke;stroke:var(--surface-1);stroke-width:3px" }, g);
-    t.textContent = p.label;
-    const hit = el("circle", { cx: x, cy: y, r: r + 8, fill: "transparent" }, g);
-    hit.addEventListener("mousemove", e => showTip(e, p.tip));
-    hit.addEventListener("mouseleave", hideTip);
-  });
+  const svg = el("svg", { viewBox: VIEWBOX, role: "img", "aria-label": "Map of Sri Lanka's 25 districts" }, wrap);
+  const shapes = el("g", {}, svg), labels = el("g", { "pointer-events": "none" }, svg);
+  for (const [key, d] of Object.entries(DISTRICTS)) {
+    const a = opts.areas[key] || {};
+    const path = el("path", { d, fill: a.fill || "var(--surface-2)", stroke: "var(--surface-1)", "stroke-width": 1.6,
+      "stroke-linejoin": "round" }, shapes);
+    if (a.muted) path.setAttribute("stroke-dasharray", "3 2"), path.setAttribute("stroke", "var(--axis)");
+    path.style.cursor = "default";
+    path.addEventListener("mousemove", e => { path.setAttribute("stroke", "var(--text-primary)"); showTip(e, a.tip || key); });
+    path.addEventListener("mouseleave", () => { path.setAttribute("stroke", a.muted ? "var(--axis)" : "var(--surface-1)"); hideTip(); });
+    const b = path.getBBox(), n = (opts.labelNudge || {})[key] || [0, 0];
+    const t = el("text", { x: b.x + b.width / 2 + n[0], y: b.y + b.height / 2 + 4 + n[1], "text-anchor": "middle",
+      style: "font-size:13px;font-weight:500;fill:var(--text-primary);paint-order:stroke;stroke:var(--surface-1);stroke-width:3px;stroke-linejoin:round" }, labels);
+    t.textContent = a.label || key;
+  }
 }
