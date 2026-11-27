@@ -358,7 +358,7 @@ renderers.about = () => {
   <p><b>Live inputs differ from training.</b> For the nightly forecast, the last 45 days come from Open-Meteo's forecast API (operational analyses), because ERA5 is published ~5 days late. Small statistical differences between the two are a known risk, and the live ledger measures what they cost.</p>
   ${imp.length ? `<p><b>Most influential inputs:</b> ${imp.map(([k, v]) => `<code>${k}</code> ${(100 * v).toFixed(0)}%`).join(", ")}.</p>` : ""}
   <p><b>Not an official forecast.</b> For decisions that matter, use the <a href="https://www.meteo.gov.lk">Department of Meteorology</a>.</p>
-  <p class="muted small">Full evaluation report: <a href="data/REPORT.md">REPORT.md</a> · model on Hugging Face: <a href="https://huggingface.co/X-355/lanka-weather">X-355/lanka-weather</a></p>`;
+  <p class="muted small">Full evaluation report: <a href="data/REPORT.md">REPORT.md</a> · model on Hugging Face: <a href="https://huggingface.co/xi1514r/lanka-weather">xi1514r/lanka-weather</a></p>`;
 };
 
 // ------------------------------------------------------------------ boot

@@ -12,8 +12,8 @@ from .config import ERA5_DIR, MODELS, REPORTS, ROOT, SITE
 
 log = logging.getLogger(__name__)
 
-DEFAULT_MODEL_REPO = "X-355/lanka-weather"
-DEFAULT_SPACE_REPO = "X-355/lanka-weather"
+DEFAULT_MODEL_REPO = "xi1514r/lanka-weather"
+DEFAULT_SPACE_REPO = "xi1514r/lanka-weather"
 
 
 def _api():

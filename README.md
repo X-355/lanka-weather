@@ -11,7 +11,7 @@ a static HF Space).
 | | |
 |---|---|
 | Site | `https://x-355.github.io/lanka-weather/` |
-| Model | [`X-355/lanka-weather`](https://huggingface.co/X-355/lanka-weather) on Hugging Face |
+| Model | [`xi1514r/lanka-weather`](https://huggingface.co/xi1514r/lanka-weather) on Hugging Face |
 | Towns | Colombo, Kandy, Galle, Jaffna, Trincomalee, Batticaloa, Anuradhapura, Nuwara Eliya, Ratnapura, Hambantota |
 
 ## What's on the site
@@ -73,7 +73,7 @@ models/ reports/ predictions/
 2. **Settings → Pages → Source: GitHub Actions.**
 3. **Settings → Actions → General → Workflow permissions: Read and write.**
 4. Hugging Face: create a **write** token, then add it as the repository secret `HF_TOKEN`.
-   - Optional variables: `HF_MODEL_REPO` (defaults to `X-355/lanka-weather`; set it if your HF username
+   - Optional variables: `HF_MODEL_REPO` (defaults to `xi1514r/lanka-weather`; set it if your HF username
      is different) and `HF_SPACE_REPO` (set it to also publish the site as a static Space).
 5. Run **Actions → Train model → Run workflow**.
    - The first full download is about 27 years × 10 towns. If Open-Meteo's free-tier limit stops it, the
