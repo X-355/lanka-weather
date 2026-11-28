@@ -64,6 +64,15 @@ def build_backtest() -> None:
     if not p.exists():
         return
     t = pd.read_parquet(p)
+    # Hybrid and calibrated ECMWF for the day checker: out-of-fold, so each day is predicted by a fit that
+    # never saw it (see hybrid.evaluate). Only from 2024, when the professional-forecast archive starts.
+    try:
+        from .hybrid import evaluate as hy_eval
+        _, d = hy_eval(t)
+        if d is not None:
+            t = t.merge(d[["town", "target_date", "p_hybrid_oof", "p_ecmwf_cal_oof"]], on=["town", "target_date"], how="left")
+    except Exception as e:
+        log.warning("hybrid for day checker failed: %s", e)
     nwp_cols = [c for c in t if c.startswith("nwp_")]
     out = {}
     for town, g in t.groupby("town"):
@@ -77,6 +86,7 @@ def build_backtest() -> None:
             "clim": _r(g["p_clim"], 3),
             "markov": _r(g["p_markov"], 3),
             **{c: _r(g[c]) for c in nwp_cols},
+            **({"hybrid": _r(g["p_hybrid_oof"], 3), "ecmwf_cal": _r(g["p_ecmwf_cal_oof"], 3)} if "p_hybrid_oof" in g else {}),
         }
     _write("backtest.json", out)
 

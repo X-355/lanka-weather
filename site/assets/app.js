@@ -251,9 +251,11 @@ function renderTruths(M) {
   // Show the all-days table only when it covers more than the table with the professional forecasts.
   const both = (t, src) => {
     if (!t) return "";
-    const ne = t.nwp_era, al = t.all_years;
+    const st = t.strict, ne = t.nwp_era, al = t.all_years;
     const dup = ne && al && ne.n === al.n && ne.period[0] === al.period[0] && ne.period[1] === al.period[1];
-    return block(ne, src) + (dup ? "" : block(al, src));
+    const oofNote = ne ? `<p class="sub small" style="margin:14px 0 0">${st ? "The next table uses more days." : ""} It starts in February 2024 but is still out of sample: each day's hybrid and ECMWF calibration come from a fit that didn't include it. Days before July 2025 are predicted by a fit on the later months, and later days by a fit on the earlier months.</p>` : "";
+    return (st ? `<p class="sub small" style="margin:0"><b>Strict test first.</b> Only days from ${st.period[0]}, with the hybrid and ECMWF calibration fitted on earlier months alone. These are the same rows as the fair comparison above.</p>` + block(st, src) : "") +
+      oofNote + block(ne, src) + (dup ? "" : block(al, src));
   };
   const g = M.gauges, im = M.imerg;
   if (!g && !im) {
@@ -330,7 +332,10 @@ function renderScoreboards() {
   $("fc-towns").innerHTML = "";
   if (BT) {
     const keys = state.meta.towns.map(t => t.key).filter(k => BT[k]);
-    $("fc-towns-sub").textContent = `Brier skill vs climatology by district on the fair comparison's later days (${per}); higher is better, 0 = no better than the calendar.`;
+    const worst = keys.reduce((a, k) => (BT[k].hybrid.bss < BT[a].hybrid.bss ? k : a), keys[0]);
+    const w = BT[worst].hybrid;
+    $("fc-towns-sub").textContent = `Brier skill vs climatology by district on the fair comparison's later days (${per}); higher is better, 0 = no better than the calendar.` +
+      (w.base_rate > 0.85 ? ` ${townName(worst)} is lowest because ERA5 has rain there on ${pct(w.base_rate)} of these days. The calendar odds are already hard to beat; NASA's satellite sees rain there on far fewer days.` : "");
     hbars($("fc-towns"), {
       categories: keys.map(townName),
       series: [
@@ -373,8 +378,10 @@ function renderChecker() {
   let i = b.dates.indexOf($("ck-date").value);
   if (i < 0) { i = b.dates.length - 1; $("ck-date").value = b.dates[i]; }
   const thr = state.meta.targets.rain_mm, obs = b.obs[i], rained = obs != null && obs >= thr;
-  const entries = [["Weather Lab model", b.p[i], "prob"], ["Markov baseline", b.markov[i], "prob"], ["Climatology", b.clim[i], "prob"]];
-  for (const [k, label] of Object.entries(state.meta.nwp_models)) if (b[`nwp_${k}`]) entries.push([label, b[`nwp_${k}`][i], "mm"]);
+  const hasHy = b.hybrid && b.hybrid[i] != null;
+  const entries = [...(hasHy ? [["Hybrid (published method)", b.hybrid[i], "prob", true], ["ECMWF, calibrated probability", b.ecmwf_cal[i], "prob"]] : []),
+    ["Weather Lab alone", b.p[i], "prob"], ["Markov baseline", b.markov[i], "prob"], ["Climatology", b.clim[i], "prob"]];
+  for (const [k, label] of Object.entries(state.meta.nwp_models)) if (b[`nwp_${k}`]) entries.push([`${label} (rain amount)`, b[`nwp_${k}`][i], "mm"]);
   const verdict = (v, kind) => {
     if (v == null) return "<span class='muted'>no data</span>";
     const yes = kind === "prob" ? v >= 0.5 : v >= thr;
@@ -383,14 +390,16 @@ function renderChecker() {
   };
   $("ck-result").innerHTML = `<p style="margin:0 0 10px"><b>${townName(town)}, ${fmtDate(b.dates[i])}</b>. Observed: <b>${obs == null ? "–" : obs.toFixed(1) + " mm"}</b> (${rained ? "a rain day" : "dry"}).</p>
     <table class="data"><thead><tr><th>Forecast</th><th class="num">Said</th><th>Call at 50% / 1 mm</th></tr></thead><tbody>
-    ${entries.map(([n, v, kind]) => `<tr><td>${n}</td><td class="num">${v == null ? "–" : kind === "prob" ? pct(v) + " chance" : v.toFixed(1) + " mm"}</td><td>${verdict(v, kind)}</td></tr>`).join("")}
+    ${entries.map(([n, v, kind, hl]) => `<tr class="${hl ? "hl" : ""}"><td>${n}</td><td class="num">${v == null ? "–" : kind === "prob" ? pct(v) + " chance" : v.toFixed(1) + " mm"}</td><td>${verdict(v, kind)}</td></tr>`).join("")}
     </tbody></table>
+    ${hasHy ? `<p class="sub small" style="margin:10px 0 0">The hybrid and calibrated ECMWF shown here come from a fit that didn't include this day: months before July 2025 use a fit on later months, and later months use a fit on earlier ones.</p>` : b.hybrid ? `<p class="sub small" style="margin:10px 0 0">The hybrid starts in February 2024, when the archive of professional forecasts begins.</p>` : ""}
     <p class="sub small" style="margin:10px 0 0">A single day can't show skill. A 30% forecast is supposed to see rain on about 3 days in 10. The tables above are the real test.</p>`;
   const lo = Math.max(0, i - 45), hi = Math.min(b.dates.length, i + 15);
   $("ck-timeline").innerHTML = "";
   timeline($("ck-timeline"), {
     dates: b.dates.slice(lo, hi), obs: b.obs.slice(lo, hi), rainMm: thr,
-    series: [{ name: "Weather Lab model", color: C.model, values: b.p.slice(lo, hi) },
+    series: [...(hasHy ? [{ name: "Hybrid", color: C.hybrid, values: b.hybrid.slice(lo, hi) }] : []),
+             { name: "Weather Lab alone", color: C.model, values: b.p.slice(lo, hi) },
              { name: "Climatology", color: C.clim, values: b.clim.slice(lo, hi) }],
   });
 }

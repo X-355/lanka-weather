@@ -221,6 +221,9 @@ def evaluate_extended(test: pd.DataFrame, hist: pd.DataFrame, cfg: dict) -> dict
         test["yn_ecmwf"] = np.where(test["nwp_ecmwf_ifs025"].notna(), (test["nwp_ecmwf_ifs025"] >= rain_mm).astype(float), np.nan)
     # 4. Independent truths: rain gauges and NASA IMERG.
     nwp_fc = {"hybrid": "p_hybrid_oof", "model": "p_rain", "ecmwf_cal": "p_ecmwf_cal_oof", "markov": "p_markov"}
+    # Strict: only the later days, predicted by fits on the earlier months alone (same rows as the fair comparison).
+    strict_rows = fwd if summ is not None else None
+    strict_fc = {"hybrid": "p_hybrid", "model": "p_rain", "ecmwf_cal": "p_ecmwf_cal", "markov": "p_markov"}
     pairs = [("hybrid", "ecmwf_cal"), ("hybrid", "model"), ("model", "ecmwf_cal"), ("model", "markov")]
     try:
         g, ginfo = gauges.truth(hist)
@@ -231,15 +234,19 @@ def evaluate_extended(test: pd.DataFrame, hist: pd.DataFrame, cfg: dict) -> dict
         out["gauges"] = {"info": ginfo,
                          "all_years": verify.score_against(test, g, rain_mm, heavy_mm, {"model": "p_rain", "markov": "p_markov"},
                                                            pairs=[("model", "markov")], label="Rain gauges: Weather Lab vs Markov, all days with gauge data"),
+                         "strict": verify.score_against(strict_rows, g, rain_mm, heavy_mm, strict_fc, pairs=pairs,
+                                                        label="Rain gauges: strict test, later days only") if summ else None,
                          "nwp_era": verify.score_against(test, g, rain_mm, heavy_mm, nwp_fc, pairs=pairs,
-                                                         label="Rain gauges: with the hybrid and ECMWF") if summ else None}
+                                                         label="Rain gauges: with the hybrid and ECMWF, out-of-fold") if summ else None}
     im = imerg.truth()
     if im is not None and len(im):
         out["imerg"] = {"products": im["product"].value_counts().to_dict(),
                         "all_years": verify.score_against(test, im, rain_mm, heavy_mm, {"model": "p_rain", "markov": "p_markov"},
                                                           pairs=[("model", "markov")], label="NASA IMERG: Weather Lab vs Markov, all days with satellite data"),
+                        "strict": verify.score_against(strict_rows, im, rain_mm, heavy_mm, strict_fc, pairs=pairs,
+                                                       label="NASA IMERG: strict test, later days only") if summ else None,
                         "nwp_era": verify.score_against(test, im, rain_mm, heavy_mm, nwp_fc, pairs=pairs,
-                                                        label="NASA IMERG: with the hybrid and ECMWF") if summ else None}
+                                                        label="NASA IMERG: with the hybrid and ECMWF, out-of-fold") if summ else None}
     return _rnd(out)
 
 
@@ -453,7 +460,7 @@ def write_report_md(full: dict) -> None:
         if tr.get("info"):
             lines.append(f"{tr['info'].get('stations')} gauges in {tr['info'].get('districts')} districts; day shift {tr['info'].get('shift_days')} "
                          f"(agreement with ERA5 by shift on pre-test years: {tr['info'].get('agreement_by_shift')}).")
-        for part in ("nwp_era", "all_years"):
+        for part in ("strict", "nwp_era", "all_years"):
             r = tr.get(part)
             if not r:
                 continue
