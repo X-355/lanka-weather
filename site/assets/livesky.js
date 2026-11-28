@@ -266,6 +266,17 @@ async function rebuild(keepPlaying = true) {
     } catch (e) { /* forecast frames are optional */ }
   }
   if (!frames.length) return;
+  // Wait until every frame's pictures have downloaded, so the first loop doesn't flash empty frames.
+  const tiled = frames.flatMap(f => f.layers).filter(l => l.isLoading);
+  let done = 0;
+  const progress = () => { ui.time.textContent = `Loading pictures… ${done} of ${tiled.length}`; };
+  progress();
+  await Promise.all(tiled.map(l => new Promise(res => {
+    const fin = () => { done++; progress(); res(); };
+    if (!l.isLoading()) return fin();
+    const t = setTimeout(fin, 15000);
+    l.once("load", () => { clearTimeout(t); fin(); });
+  })));
   ui.slider.max = frames.length - 1;
   ui.legend.innerHTML = legendHTML();
   ui.note.innerHTML = rain === "imerg"
