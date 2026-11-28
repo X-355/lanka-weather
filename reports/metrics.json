@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "0.1.0+20261128",
-    "trained_at": "2026-11-28T15:49:14Z",
+    "trained_at": "2026-11-28T17:23:12Z",
     "data_source": "Open-Meteo ERA5 reanalysis",
     "features": [
       "precip",
@@ -2609,8 +2609,8 @@
           "brier": 0.1479,
           "bss": 0.3206,
           "log_loss": 0.4614,
-          "auc": 0.8794,
-          "avg_precision": 0.8525,
+          "auc": 0.8793,
+          "avg_precision": 0.8524,
           "accuracy": 0.771,
           "pod": 0.8267,
           "far": 0.2955,
@@ -2668,7 +2668,7 @@
           "bss": 0.1172,
           "log_loss": 0.5747,
           "auc": 0.8641,
-          "avg_precision": 0.8776,
+          "avg_precision": 0.8777,
           "accuracy": 0.7358,
           "pod": 0.9023,
           "far": 0.3226,
@@ -2726,7 +2726,7 @@
           "bss": 0.0856,
           "log_loss": 0.5427,
           "auc": 0.8732,
-          "avg_precision": 0.8393,
+          "avg_precision": 0.8392,
           "accuracy": 0.7339,
           "pod": 0.8826,
           "far": 0.3712,
@@ -2783,7 +2783,7 @@
           "brier": 0.076,
           "bss": 0.3676,
           "log_loss": 0.2745,
-          "auc": 0.9197,
+          "auc": 0.9198,
           "avg_precision": 0.967,
           "accuracy": 0.9119,
           "pod": 0.9747,
@@ -2957,8 +2957,8 @@
           "brier": 0.214,
           "bss": -0.0586,
           "log_loss": 0.6577,
-          "auc": 0.8613,
-          "avg_precision": 0.7962,
+          "auc": 0.8616,
+          "avg_precision": 0.7965,
           "accuracy": 0.6791,
           "pod": 0.9391,
           "far": 0.451,
@@ -3016,7 +3016,7 @@
           "bss": 0.3108,
           "log_loss": 0.4481,
           "auc": 0.8778,
-          "avg_precision": 0.833,
+          "avg_precision": 0.8331,
           "accuracy": 0.8043,
           "pod": 0.8205,
           "far": 0.2889,
@@ -3131,7 +3131,7 @@
           "brier": 0.1458,
           "bss": 0.3789,
           "log_loss": 0.4536,
-          "auc": 0.8739,
+          "auc": 0.8738,
           "avg_precision": 0.8902,
           "accuracy": 0.7847,
           "pod": 0.8706,
@@ -3190,7 +3190,7 @@
           "bss": 0.3531,
           "log_loss": 0.2744,
           "auc": 0.9357,
-          "avg_precision": 0.9732,
+          "avg_precision": 0.9731,
           "accuracy": 0.8885,
           "pod": 0.9629,
           "far": 0.1059,
@@ -3306,7 +3306,7 @@
           "bss": 0.3803,
           "log_loss": 0.3292,
           "auc": 0.9194,
-          "avg_precision": 0.9588,
+          "avg_precision": 0.9587,
           "accuracy": 0.863,
           "pod": 0.9288,
           "far": 0.1213,
@@ -3364,7 +3364,7 @@
           "bss": 0.3359,
           "log_loss": 0.3975,
           "auc": 0.9025,
-          "avg_precision": 0.8511,
+          "avg_precision": 0.851,
           "accuracy": 0.8239,
           "pod": 0.8033,
           "far": 0.2687,
@@ -3596,7 +3596,7 @@
           "bss": 0.2685,
           "log_loss": 0.4273,
           "auc": 0.8974,
-          "avg_precision": 0.8514,
+          "avg_precision": 0.8516,
           "accuracy": 0.8023,
           "pod": 0.8441,
           "far": 0.3144,
@@ -3653,7 +3653,7 @@
           "brier": 0.0963,
           "bss": 0.4008,
           "log_loss": 0.3111,
-          "auc": 0.9155,
+          "auc": 0.9154,
           "avg_precision": 0.967,
           "accuracy": 0.8611,
           "pod": 0.9243,
@@ -3769,7 +3769,7 @@
           "brier": 0.1426,
           "bss": 0.3641,
           "log_loss": 0.4441,
-          "auc": 0.8859,
+          "auc": 0.8858,
           "avg_precision": 0.8947,
           "accuracy": 0.7984,
           "pod": 0.9004,
@@ -3827,7 +3827,7 @@
           "brier": 0.1297,
           "bss": -0.2802,
           "log_loss": 0.3882,
-          "auc": 0.8208,
+          "auc": 0.8207,
           "avg_precision": 0.9731,
           "accuracy": 0.8121,
           "pod": 0.8739,
@@ -3885,7 +3885,7 @@
           "brier": 0.1515,
           "bss": 0.1986,
           "log_loss": 0.491,
-          "auc": 0.8809,
+          "auc": 0.8808,
           "avg_precision": 0.8326,
           "accuracy": 0.7828,
           "pod": 0.8543,
@@ -4088,42 +4088,47 @@
         "agreement_by_shift": {
           "0": 0.673,
           "1": 0.687
+        },
+        "qc": {
+          "rule": "keep a station's half-year only if its daily rain has log-correlation \u2265 0.3 with NASA IMERG over \u2265 30 shared days",
+          "dropped_station_halfyears": 43,
+          "dropped_rows": 731
         }
       },
       "all_years": {
         "label": "Rain gauges: Weather Lab vs Markov, all days with gauge data",
         "period": [
           "2022-01-01",
-          "2026-11-09"
+          "2026-11-04"
         ],
-        "n": 15898,
-        "n_days": 1253,
+        "n": 15167,
+        "n_days": 1159,
         "towns": 17,
-        "wet_freq_truth": 0.37,
-        "wet_freq_era5": 0.667,
+        "wet_freq_truth": 0.372,
+        "wet_freq_era5": 0.663,
         "mean_forecast": {
-          "model": 0.663,
-          "markov": 0.617
+          "model": 0.66,
+          "markov": 0.614
         },
-        "agreement_with_era5": 0.65,
+        "agreement_with_era5": 0.656,
         "ranking": {
           "auc": {
             "model": {
-              "auc": 0.7598,
-              "lo": 0.7455,
-              "hi": 0.7729
+              "auc": 0.7699,
+              "lo": 0.7547,
+              "hi": 0.7848
             },
             "markov": {
-              "auc": 0.7101,
-              "lo": 0.696,
-              "hi": 0.7228
+              "auc": 0.7213,
+              "lo": 0.7081,
+              "hi": 0.734
             }
           },
           "diff": {
             "model - markov": {
-              "est": 0.0497,
-              "lo": 0.0418,
-              "hi": 0.0573,
+              "est": 0.0486,
+              "lo": 0.0398,
+              "hi": 0.0567,
               "share_positive": 1.0
             }
           }
@@ -4131,293 +4136,170 @@
         "adjusted": {
           "fit_period": [
             "2022-01-01",
-            "2023-09-28"
+            "2023-08-12"
           ],
           "test_period": [
-            "2023-09-29",
-            "2026-11-09"
+            "2023-08-13",
+            "2026-11-04"
           ],
-          "n_days": 627,
-          "n": 4442,
+          "n_days": 580,
+          "n": 4648,
           "B": 1000,
           "skill": {
             "model": {
-              "bss": 0.0394,
-              "lo": 0.0004,
-              "hi": 0.0774
+              "bss": 0.0713,
+              "lo": 0.0335,
+              "hi": 0.1047
             },
             "markov": {
-              "bss": -0.0393,
-              "lo": -0.0664,
-              "hi": -0.014
+              "bss": -0.0359,
+              "lo": -0.0624,
+              "hi": -0.0101
             }
           },
           "diff": {
             "model - markov": {
-              "est": 0.0787,
-              "lo": 0.0459,
-              "hi": 0.1107,
+              "est": 0.1072,
+              "lo": 0.0749,
+              "hi": 0.1362,
               "share_positive": 1.0
             }
           }
         }
       },
-      "strict": {
-        "label": "Rain gauges: strict test, later days only",
-        "period": [
-          "2025-07-02",
-          "2026-11-09"
-        ],
-        "n": 466,
-        "n_days": 184,
-        "towns": 12,
-        "wet_freq_truth": 0.24,
-        "wet_freq_era5": 0.73,
-        "mean_forecast": {
-          "hybrid": 0.741,
-          "model": 0.742,
-          "ecmwf_cal": 0.759,
-          "markov": 0.742
-        },
-        "agreement_with_era5": 0.455,
-        "ranking": {
-          "auc": {
-            "hybrid": {
-              "auc": 0.5885,
-              "lo": 0.5153,
-              "hi": 0.656
-            },
-            "model": {
-              "auc": 0.5459,
-              "lo": 0.4715,
-              "hi": 0.6091
-            },
-            "ecmwf_cal": {
-              "auc": 0.6151,
-              "lo": 0.5417,
-              "hi": 0.6876
-            },
-            "markov": {
-              "auc": 0.5345,
-              "lo": 0.4683,
-              "hi": 0.5915
-            }
-          },
-          "diff": {
-            "hybrid - ecmwf_cal": {
-              "est": -0.0266,
-              "lo": -0.054,
-              "hi": -0.002,
-              "share_positive": 0.024
-            },
-            "hybrid - model": {
-              "est": 0.0426,
-              "lo": 0.0181,
-              "hi": 0.0697,
-              "share_positive": 1.0
-            },
-            "model - ecmwf_cal": {
-              "est": -0.0692,
-              "lo": -0.1152,
-              "hi": -0.0263,
-              "share_positive": 0.0
-            },
-            "model - markov": {
-              "est": 0.0114,
-              "lo": -0.0387,
-              "hi": 0.0561,
-              "share_positive": 0.656
-            }
-          }
-        },
-        "adjusted": {
-          "fit_period": [
-            "2025-07-02",
-            "2026-08-08"
-          ],
-          "test_period": [
-            "2026-08-09",
-            "2026-11-09"
-          ],
-          "n_days": 92,
-          "n": 168,
-          "B": 1000,
-          "skill": {
-            "hybrid": {
-              "bss": 0.2399,
-              "lo": 0.1489,
-              "hi": 0.3361
-            },
-            "model": {
-              "bss": 0.2508,
-              "lo": 0.1446,
-              "hi": 0.3572
-            },
-            "ecmwf_cal": {
-              "bss": 0.2336,
-              "lo": 0.149,
-              "hi": 0.3233
-            },
-            "markov": {
-              "bss": 0.2642,
-              "lo": 0.1489,
-              "hi": 0.3786
-            }
-          },
-          "diff": {
-            "hybrid - ecmwf_cal": {
-              "est": 0.0063,
-              "lo": -0.0205,
-              "hi": 0.0325,
-              "share_positive": 0.66
-            },
-            "hybrid - model": {
-              "est": -0.0109,
-              "lo": -0.0365,
-              "hi": 0.0165,
-              "share_positive": 0.21
-            },
-            "model - ecmwf_cal": {
-              "est": 0.0172,
-              "lo": -0.0291,
-              "hi": 0.0604,
-              "share_positive": 0.759
-            },
-            "model - markov": {
-              "est": -0.0134,
-              "lo": -0.0322,
-              "hi": 0.0058,
-              "share_positive": 0.086
-            }
-          }
-        }
+      "strict": null,
+      "strict_available": {
+        "n": 147,
+        "n_days": 97,
+        "stations": 3,
+        "from": "2025-06-30"
       },
       "nwp_era": {
         "label": "Rain gauges: with the hybrid and ECMWF, out-of-fold",
         "period": [
           "2024-02-14",
-          "2026-11-09"
+          "2026-11-04"
         ],
-        "n": 2138,
-        "n_days": 501,
-        "towns": 17,
-        "wet_freq_truth": 0.426,
-        "wet_freq_era5": 0.756,
+        "n": 1462,
+        "n_days": 407,
+        "towns": 13,
+        "wet_freq_truth": 0.464,
+        "wet_freq_era5": 0.752,
         "mean_forecast": {
-          "hybrid": 0.726,
-          "model": 0.739,
-          "ecmwf_cal": 0.689,
-          "markov": 0.69
+          "hybrid": 0.721,
+          "model": 0.742,
+          "ecmwf_cal": 0.675,
+          "markov": 0.689
         },
-        "agreement_with_era5": 0.581,
+        "agreement_with_era5": 0.618,
         "ranking": {
           "auc": {
             "hybrid": {
-              "auc": 0.6518,
-              "lo": 0.6215,
-              "hi": 0.6777
+              "auc": 0.6975,
+              "lo": 0.6624,
+              "hi": 0.7313
             },
             "model": {
-              "auc": 0.613,
-              "lo": 0.5816,
-              "hi": 0.6407
+              "auc": 0.652,
+              "lo": 0.6169,
+              "hi": 0.6861
             },
             "ecmwf_cal": {
-              "auc": 0.6477,
-              "lo": 0.6183,
-              "hi": 0.6776
+              "auc": 0.692,
+              "lo": 0.6581,
+              "hi": 0.7226
             },
             "markov": {
-              "auc": 0.5892,
-              "lo": 0.5597,
-              "hi": 0.6172
+              "auc": 0.6325,
+              "lo": 0.597,
+              "hi": 0.6624
             }
           },
           "diff": {
             "hybrid - ecmwf_cal": {
-              "est": 0.0041,
-              "lo": -0.0089,
-              "hi": 0.0166,
-              "share_positive": 0.714
+              "est": 0.0055,
+              "lo": -0.0087,
+              "hi": 0.019,
+              "share_positive": 0.746
             },
             "hybrid - model": {
-              "est": 0.0388,
-              "lo": 0.0213,
-              "hi": 0.0603,
+              "est": 0.0455,
+              "lo": 0.0283,
+              "hi": 0.0669,
               "share_positive": 1.0
             },
             "model - ecmwf_cal": {
-              "est": -0.0347,
-              "lo": -0.0676,
-              "hi": -0.0059,
-              "share_positive": 0.006
+              "est": -0.04,
+              "lo": -0.0719,
+              "hi": -0.0114,
+              "share_positive": 0.004
             },
             "model - markov": {
-              "est": 0.0238,
-              "lo": 0.0055,
-              "hi": 0.0419,
-              "share_positive": 0.998
+              "est": 0.0195,
+              "lo": 0.0018,
+              "hi": 0.0362,
+              "share_positive": 0.992
             }
           }
         },
         "adjusted": {
           "fit_period": [
             "2024-02-14",
-            "2025-04-23"
+            "2025-03-12"
           ],
           "test_period": [
-            "2025-04-24",
-            "2026-11-09"
+            "2025-03-13",
+            "2026-11-04"
           ],
-          "n_days": 251,
-          "n": 849,
+          "n_days": 204,
+          "n": 660,
           "B": 1000,
           "skill": {
             "hybrid": {
-              "bss": -0.2011,
-              "lo": -0.3092,
-              "hi": -0.108
+              "bss": 0.0957,
+              "lo": 0.0262,
+              "hi": 0.1647
             },
             "model": {
-              "bss": -0.1678,
-              "lo": -0.2566,
-              "hi": -0.0888
+              "bss": 0.0531,
+              "lo": -0.0165,
+              "hi": 0.1238
             },
             "ecmwf_cal": {
-              "bss": -0.2291,
-              "lo": -0.3502,
-              "hi": -0.129
+              "bss": 0.0762,
+              "lo": -0.0043,
+              "hi": 0.1522
             },
             "markov": {
-              "bss": -0.1975,
-              "lo": -0.2906,
-              "hi": -0.1143
+              "bss": 0.0249,
+              "lo": -0.0501,
+              "hi": 0.1021
             }
           },
           "diff": {
             "hybrid - ecmwf_cal": {
-              "est": 0.028,
-              "lo": 0.0039,
-              "hi": 0.0526,
-              "share_positive": 0.987
+              "est": 0.0195,
+              "lo": -0.004,
+              "hi": 0.0452,
+              "share_positive": 0.937
             },
             "hybrid - model": {
-              "est": -0.0333,
-              "lo": -0.0694,
-              "hi": 0.0016,
-              "share_positive": 0.03
+              "est": 0.0427,
+              "lo": 0.018,
+              "hi": 0.0682,
+              "share_positive": 1.0
             },
             "model - ecmwf_cal": {
-              "est": 0.0613,
-              "lo": 0.0135,
-              "hi": 0.117,
-              "share_positive": 0.993
+              "est": -0.0231,
+              "lo": -0.0624,
+              "hi": 0.0174,
+              "share_positive": 0.123
             },
             "model - markov": {
-              "est": 0.0297,
-              "lo": 0.0065,
-              "hi": 0.0537,
-              "share_positive": 0.991
+              "est": 0.0281,
+              "lo": 0.0078,
+              "hi": 0.0506,
+              "share_positive": 0.992
             }
           }
         }
