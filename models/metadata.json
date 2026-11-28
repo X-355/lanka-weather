@@ -1,6 +1,6 @@
 {
   "version": "0.1.0+20261128",
-  "trained_at": "2026-11-28T17:23:12Z",
+  "trained_at": "2026-11-28T20:09:55Z",
   "data_source": "Open-Meteo ERA5 reanalysis",
   "features": [
     "precip",
