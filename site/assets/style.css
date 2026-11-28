@@ -268,3 +268,7 @@ input.timeline { accent-color: var(--series-1);
 .fill-bottom { margin-top: auto; }
 .stack > .card, .card:has(> .fill-bottom), .card:has(.fill-bottom) { display: flex; flex-direction: column; }
 .card > div:has(> .fill-bottom) { display: flex; flex-direction: column; flex: 1 1 auto; }
+/* A table box beside a taller column: its rows share the extra height instead of leaving a gap */
+.card.fill-table { display: flex; flex-direction: column; }
+.card.fill-table > div { flex: 1 1 auto; display: flex; flex-direction: column; }
+.card.fill-table table { flex: 1 1 auto; height: 100%; }
