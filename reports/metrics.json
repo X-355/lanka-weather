@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "0.1.0+20261128",
-    "trained_at": "2026-11-28T08:45:11Z",
+    "trained_at": "2026-11-28T09:00:36Z",
     "data_source": "Open-Meteo ERA5 reanalysis",
     "features": [
       "precip",
@@ -2501,52 +2501,67 @@
           "2026-11-09"
         ],
         "n": 15898,
+        "n_days": 1253,
         "towns": 17,
-        "agreement_with_era5": 0.65,
-        "entries": {
-          "model": {
-            "n": 15898,
-            "base_rate": 0.3704,
-            "brier": 0.295,
-            "bss": -0.4289,
-            "auc": 0.7598,
-            "pod": 0.8886,
-            "far": 0.5142,
-            "csi": 0.4579
-          },
-          "markov": {
-            "n": 15898,
-            "base_rate": 0.3704,
-            "brier": 0.2812,
-            "bss": -0.3622,
-            "auc": 0.7101,
-            "pod": 0.868,
-            "far": 0.5209,
-            "csi": 0.4466
-          }
+        "wet_freq_truth": 0.37,
+        "wet_freq_era5": 0.667,
+        "mean_forecast": {
+          "model": 0.663,
+          "markov": 0.617
         },
-        "bootstrap": {
-          "n_days": 1253,
-          "n": 15898,
-          "B": 1000,
-          "skill": {
+        "agreement_with_era5": 0.65,
+        "ranking": {
+          "auc": {
             "model": {
-              "bss": -0.4289,
-              "lo": -0.4983,
-              "hi": -0.3579
+              "auc": 0.7598,
+              "lo": 0.7455,
+              "hi": 0.7729
             },
             "markov": {
-              "bss": -0.3622,
-              "lo": -0.4223,
-              "hi": -0.301
+              "auc": 0.7101,
+              "lo": 0.696,
+              "hi": 0.7228
             }
           },
           "diff": {
             "model - markov": {
-              "est": -0.0668,
-              "lo": -0.0898,
-              "hi": -0.0413,
-              "share_positive": 0.0
+              "est": 0.0497,
+              "lo": 0.0418,
+              "hi": 0.0573,
+              "share_positive": 1.0
+            }
+          }
+        },
+        "adjusted": {
+          "fit_period": [
+            "2022-01-01",
+            "2023-09-28"
+          ],
+          "test_period": [
+            "2023-09-29",
+            "2026-11-09"
+          ],
+          "n_days": 627,
+          "n": 4442,
+          "B": 1000,
+          "skill": {
+            "model": {
+              "bss": 0.0394,
+              "lo": 0.0004,
+              "hi": 0.0774
+            },
+            "markov": {
+              "bss": -0.0393,
+              "lo": -0.0664,
+              "hi": -0.014
+            }
+          },
+          "diff": {
+            "model - markov": {
+              "est": 0.0787,
+              "lo": 0.0459,
+              "hi": 0.1107,
+              "share_positive": 1.0
             }
           }
         }
@@ -2554,98 +2569,313 @@
       "nwp_era": {
         "label": "Rain gauges, 2024+ (with professional forecasts)",
         "period": [
-          "2022-01-01",
+          "2024-02-14",
           "2026-11-09"
         ],
-        "n": 15898,
+        "n": 2138,
+        "n_days": 501,
         "towns": 17,
-        "agreement_with_era5": 0.65,
-        "entries": {
-          "hybrid": {
-            "n": 2138,
-            "base_rate": 0.4256,
-            "brier": 0.35,
-            "bss": -0.3672,
-            "auc": 0.6518,
-            "pod": 0.8802,
-            "far": 0.4984,
-            "csi": 0.4695
-          },
-          "model": {
-            "n": 15898,
-            "base_rate": 0.3704,
-            "brier": 0.295,
-            "bss": -0.4289,
-            "auc": 0.7598,
-            "pod": 0.8886,
-            "far": 0.5142,
-            "csi": 0.4579
-          },
-          "ecmwf_cal": {
-            "n": 2138,
-            "base_rate": 0.4256,
-            "brier": 0.3282,
-            "bss": -0.2823,
-            "auc": 0.6477,
-            "pod": 0.8429,
-            "far": 0.5013,
-            "csi": 0.4563
-          },
-          "markov": {
-            "n": 15898,
-            "base_rate": 0.3704,
-            "brier": 0.2812,
-            "bss": -0.3622,
-            "auc": 0.7101,
-            "pod": 0.868,
-            "far": 0.5209,
-            "csi": 0.4466
-          }
+        "wet_freq_truth": 0.426,
+        "wet_freq_era5": 0.756,
+        "mean_forecast": {
+          "hybrid": 0.726,
+          "model": 0.739,
+          "ecmwf_cal": 0.689,
+          "markov": 0.69
         },
-        "bootstrap": {
-          "n_days": 501,
-          "n": 2138,
-          "B": 1000,
-          "skill": {
+        "agreement_with_era5": 0.581,
+        "ranking": {
+          "auc": {
             "hybrid": {
-              "bss": -0.3672,
-              "lo": -0.4952,
-              "hi": -0.2474
+              "auc": 0.6518,
+              "lo": 0.6215,
+              "hi": 0.6777
             },
             "model": {
-              "bss": -0.4355,
-              "lo": -0.573,
-              "hi": -0.3103
+              "auc": 0.613,
+              "lo": 0.5816,
+              "hi": 0.6407
             },
             "ecmwf_cal": {
-              "bss": -0.2823,
-              "lo": -0.3994,
-              "hi": -0.173
+              "auc": 0.6477,
+              "lo": 0.6183,
+              "hi": 0.6776
             },
             "markov": {
-              "bss": -0.3769,
-              "lo": -0.4987,
-              "hi": -0.2585
+              "auc": 0.5892,
+              "lo": 0.5597,
+              "hi": 0.6172
             }
           },
           "diff": {
             "hybrid - ecmwf_cal": {
-              "est": -0.0849,
-              "lo": -0.1231,
-              "hi": -0.0528,
-              "share_positive": 0.0
+              "est": 0.0041,
+              "lo": -0.0089,
+              "hi": 0.0166,
+              "share_positive": 0.714
             },
             "model - ecmwf_cal": {
-              "est": -0.1532,
-              "lo": -0.2236,
-              "hi": -0.0892,
+              "est": -0.0347,
+              "lo": -0.0676,
+              "hi": -0.0059,
+              "share_positive": 0.006
+            },
+            "model - markov": {
+              "est": 0.0238,
+              "lo": 0.0055,
+              "hi": 0.0419,
+              "share_positive": 0.998
+            }
+          }
+        },
+        "adjusted": {
+          "fit_period": [
+            "2024-02-14",
+            "2025-04-23"
+          ],
+          "test_period": [
+            "2025-04-24",
+            "2026-11-09"
+          ],
+          "n_days": 251,
+          "n": 849,
+          "B": 1000,
+          "skill": {
+            "hybrid": {
+              "bss": -0.2011,
+              "lo": -0.3092,
+              "hi": -0.108
+            },
+            "model": {
+              "bss": -0.1678,
+              "lo": -0.2566,
+              "hi": -0.0888
+            },
+            "ecmwf_cal": {
+              "bss": -0.2291,
+              "lo": -0.3502,
+              "hi": -0.129
+            },
+            "markov": {
+              "bss": -0.1975,
+              "lo": -0.2906,
+              "hi": -0.1143
+            }
+          },
+          "diff": {
+            "hybrid - ecmwf_cal": {
+              "est": 0.028,
+              "lo": 0.0039,
+              "hi": 0.0526,
+              "share_positive": 0.987
+            },
+            "model - ecmwf_cal": {
+              "est": 0.0613,
+              "lo": 0.0135,
+              "hi": 0.117,
+              "share_positive": 0.993
+            },
+            "model - markov": {
+              "est": 0.0297,
+              "lo": 0.0065,
+              "hi": 0.0537,
+              "share_positive": 0.991
+            }
+          }
+        }
+      }
+    },
+    "imerg": {
+      "products": {
+        "late": 10100,
+        "early": 25
+      },
+      "all_years": {
+        "label": "NASA IMERG, all test years",
+        "period": [
+          "2025-10-19",
+          "2026-11-22"
+        ],
+        "n": 10000,
+        "n_days": 400,
+        "towns": 25,
+        "wet_freq_truth": 0.481,
+        "wet_freq_era5": 0.567,
+        "mean_forecast": {
+          "model": 0.589,
+          "markov": 0.578
+        },
+        "agreement_with_era5": 0.599,
+        "ranking": {
+          "auc": {
+            "model": {
+              "auc": 0.5928,
+              "lo": 0.5633,
+              "hi": 0.6197
+            },
+            "markov": {
+              "auc": 0.52,
+              "lo": 0.4963,
+              "hi": 0.5453
+            }
+          },
+          "diff": {
+            "model - markov": {
+              "est": 0.0728,
+              "lo": 0.0613,
+              "hi": 0.0843,
+              "share_positive": 1.0
+            }
+          }
+        },
+        "adjusted": {
+          "fit_period": [
+            "2025-10-19",
+            "2026-05-06"
+          ],
+          "test_period": [
+            "2026-05-07",
+            "2026-11-22"
+          ],
+          "n_days": 200,
+          "n": 5000,
+          "B": 1000,
+          "skill": {
+            "model": {
+              "bss": 0.2947,
+              "lo": 0.2726,
+              "hi": 0.3146
+            },
+            "markov": {
+              "bss": 0.2824,
+              "lo": 0.2588,
+              "hi": 0.3023
+            }
+          },
+          "diff": {
+            "model - markov": {
+              "est": 0.0124,
+              "lo": -0.001,
+              "hi": 0.0262,
+              "share_positive": 0.965
+            }
+          }
+        }
+      },
+      "nwp_era": {
+        "label": "NASA IMERG, 2024+ (with professional forecasts)",
+        "period": [
+          "2025-10-19",
+          "2026-11-22"
+        ],
+        "n": 10000,
+        "n_days": 400,
+        "towns": 25,
+        "wet_freq_truth": 0.481,
+        "wet_freq_era5": 0.567,
+        "mean_forecast": {
+          "hybrid": 0.601,
+          "model": 0.589,
+          "ecmwf_cal": 0.626,
+          "markov": 0.578
+        },
+        "agreement_with_era5": 0.599,
+        "ranking": {
+          "auc": {
+            "hybrid": {
+              "auc": 0.6347,
+              "lo": 0.6058,
+              "hi": 0.6617
+            },
+            "model": {
+              "auc": 0.5928,
+              "lo": 0.5633,
+              "hi": 0.6197
+            },
+            "ecmwf_cal": {
+              "auc": 0.6382,
+              "lo": 0.6131,
+              "hi": 0.6656
+            },
+            "markov": {
+              "auc": 0.52,
+              "lo": 0.4963,
+              "hi": 0.5453
+            }
+          },
+          "diff": {
+            "hybrid - ecmwf_cal": {
+              "est": -0.0035,
+              "lo": -0.0116,
+              "hi": 0.0045,
+              "share_positive": 0.216
+            },
+            "model - ecmwf_cal": {
+              "est": -0.0454,
+              "lo": -0.0631,
+              "hi": -0.0283,
               "share_positive": 0.0
             },
             "model - markov": {
-              "est": -0.0586,
-              "lo": -0.0992,
-              "hi": -0.0235,
-              "share_positive": 0.0
+              "est": 0.0728,
+              "lo": 0.0613,
+              "hi": 0.0843,
+              "share_positive": 1.0
+            }
+          }
+        },
+        "adjusted": {
+          "fit_period": [
+            "2025-10-19",
+            "2026-05-06"
+          ],
+          "test_period": [
+            "2026-05-07",
+            "2026-11-22"
+          ],
+          "n_days": 200,
+          "n": 5000,
+          "B": 1000,
+          "skill": {
+            "hybrid": {
+              "bss": 0.2804,
+              "lo": 0.2542,
+              "hi": 0.3027
+            },
+            "model": {
+              "bss": 0.2947,
+              "lo": 0.2726,
+              "hi": 0.3146
+            },
+            "ecmwf_cal": {
+              "bss": 0.288,
+              "lo": 0.2614,
+              "hi": 0.3113
+            },
+            "markov": {
+              "bss": 0.2824,
+              "lo": 0.2588,
+              "hi": 0.3023
+            }
+          },
+          "diff": {
+            "hybrid - ecmwf_cal": {
+              "est": -0.0076,
+              "lo": -0.016,
+              "hi": 0.0013,
+              "share_positive": 0.054
+            },
+            "model - ecmwf_cal": {
+              "est": 0.0068,
+              "lo": -0.0105,
+              "hi": 0.0242,
+              "share_positive": 0.764
+            },
+            "model - markov": {
+              "est": 0.0124,
+              "lo": -0.001,
+              "hi": 0.0262,
+              "share_positive": 0.965
             }
           }
         }
