@@ -29,9 +29,26 @@ LEDGER_COLS = ["issued_at", "issue_date", "target_date", "town", "p_rain", "p_he
                # added Nov 2026: the hybrid is what's published as p_rain when the professional forecasts were
                # available; p_base is the Weather Lab model alone. ECMWF ensemble = ECMWF's own probability.
                "method", "p_base", "p_base_heavy", "nwp_ecmwf_ifs025", "nwp_gfs_seamless", "nwp_icon_seamless",
-               "p_ecmwf_ens", "p_ecmwf_ens_heavy", "obs_imerg", "imerg_product"]
+               "p_ecmwf_ens", "p_ecmwf_ens_heavy", "obs_imerg", "imerg_product",
+               # added 29 Nov 2026: every issue is kept and scored separately; the headline uses the evening slot
+               "issue_slot", "lead_hours"]
 TEXT_COLS = ["issued_at", "issue_date", "target_date", "town", "model_version", "input_source", "scored_at", "method",
-             "imerg_product"]
+             "imerg_product", "issue_slot"]
+
+
+def issue_slot(issued_at: str, target_date: str) -> tuple[str, float]:
+    """("evening" | "off-schedule", hours from issue to the start of the target day, Sri Lanka time).
+
+    Evening = issued 22:00–24:00 on the day before the target day. Anything else (a manual run, a job GitHub
+    started hours late) is kept and scored, but reported separately and left out of the headline scores.
+    """
+    tz = load_config()["timezone"]
+    t = pd.Timestamp(issued_at)
+    t = (t.tz_localize("UTC") if t.tzinfo is None else t).tz_convert(tz)
+    start = pd.Timestamp(target_date).tz_localize(tz)
+    lead = round((start - t).total_seconds() / 3600, 1)
+    evening = (start - pd.Timedelta(days=1)).date() == t.date() and t.hour >= EARLIEST_HOUR
+    return ("evening" if evening else "off-schedule"), lead
 
 
 def add_hybrid(df: pd.DataFrame, nwp: pd.DataFrame | None) -> pd.DataFrame:
@@ -82,7 +99,9 @@ def predict_frame(live: pd.DataFrame, issue_date: pd.Timestamp):
     return meta, today
 
 
-EARLIEST_HOUR = 18  # local time
+EARLIEST_HOUR = 22  # local time: the nightly forecast is issued between 22:00 and midnight, so every
+                    # forecast has the same lead time (0–2 h before the day starts). Runs outside the
+                    # window need --force and are recorded as "off-schedule".
 
 
 def run(offline: bool = False, force: bool = False) -> dict:
@@ -193,11 +212,19 @@ def read_ledger() -> pd.DataFrame:
 
 
 def append_ledger(new: pd.DataFrame) -> None:
+    """Add forecasts; never change or replace a saved one.
+
+    Each issue is kept and scored on its own. Within one slot only the first is kept, so backup runs in the
+    same evening (GitHub schedule delays) don't add duplicates; a forecast from a different slot is a new row.
+    """
     led = read_ledger()
-    key = set(zip(led["target_date"], led["town"]))
-    fresh = new[[(d, t) not in key for d, t in zip(new["target_date"], new["town"])]]
+    new = new.copy()
+    sl = [issue_slot(a, d) for a, d in zip(new["issued_at"], new["target_date"])]
+    new["issue_slot"], new["lead_hours"] = [x[0] for x in sl], [x[1] for x in sl]
+    key = set(zip(led["target_date"], led["town"], led["issue_slot"].fillna("evening")))
+    fresh = new[[(d, t, s) not in key for d, t, s in zip(new["target_date"], new["town"], new["issue_slot"])]]
     if len(fresh) < len(new):
-        log.info("%d forecasts already locked in ledger; not overwriting", len(new) - len(fresh))
+        log.info("%d forecasts already saved for this slot; not adding duplicates", len(new) - len(fresh))
     led = pd.concat([led, fresh.reindex(columns=LEDGER_COLS)], ignore_index=True)
     LEDGER.parent.mkdir(parents=True, exist_ok=True)
     led.to_csv(LEDGER, index=False)
@@ -246,9 +273,24 @@ def score_ledger() -> dict:
 
 
 def ledger_summary() -> dict:
-    led = read_ledger()
+    """Headline scores use the evening issue only (same lead time every day). Off-schedule issues are kept
+    and scored separately, so nothing disappears from the record."""
+    every = read_ledger()
+    slot = every["issue_slot"].fillna("evening")
+    led = every[slot == "evening"]
+    off = every[slot != "evening"]
     done = led.dropna(subset=["obs_rain"])
-    summary = {"issued": int(len(led)), "scored": int(len(done)), "pending": int(len(led) - len(done))}
+    summary = {"issued": int(len(led)), "scored": int(len(done)), "pending": int(len(led) - len(done)),
+               "window": f"{EARLIEST_HOUR:02d}:00–24:00 Sri Lanka time, the evening before"}
+    if len(off):
+        od = off.dropna(subset=["obs_rain"])
+        summary["off_schedule"] = {
+            "issued": int(len(off)), "scored": int(len(od)),
+            "issues": [{"issued_at": a, "target_date": d, "n": int(len(g)), "lead_hours": float(g["lead_hours"].iloc[0]),
+                        "method": str(g["method"].fillna("model (before hybrid)").iloc[0])}
+                       for (a, d), g in off.groupby(["issued_at", "target_date"])],
+            "scores": {n: scores(od["obs_rain"].astype(float), od[c].astype(float), od["p_clim"].astype(float))
+                       for n, c in [("published", "p_rain"), ("markov", "p_markov")]} if len(od) else None}
     if len(done):
         y = done["obs_rain"].astype(float)
         summary["all"] = {n: scores(y, done[c].astype(float), done["p_clim"].astype(float))

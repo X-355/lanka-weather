@@ -62,15 +62,23 @@ def test_brier_and_skill():
     assert s["bss"] == pytest.approx(0)
 
 
-def test_ledger_locks_first_forecast(tmp_path, monkeypatch):
+def test_ledger_never_replaces_and_keeps_each_slot(tmp_path, monkeypatch):
+    """Saved forecasts are never changed. A second run in the same evening adds nothing; an issue at another
+    time (off-schedule) is kept as its own row and scored separately."""
     from lankaweather import predict
     monkeypatch.setattr(predict, "LEDGER", tmp_path / "ledger.csv")
-    row = dict(issued_at="t1", issue_date="2026-01-01", target_date="2026-01-02", town="colombo",
+    row = dict(issued_at="2026-01-01T17:35:00Z", issue_date="2026-01-01", target_date="2026-01-02", town="colombo",
                p_rain=0.3, p_heavy=0.01, p_clim=0.4, p_markov=0.4, model_version="v", input_source="x")
-    predict.append_ledger(pd.DataFrame([row]))
-    predict.append_ledger(pd.DataFrame([dict(row, issued_at="t2", p_rain=0.9)]))
-    led = predict.read_ledger()
-    assert len(led) == 1 and led["p_rain"].iloc[0] == 0.3
+    predict.append_ledger(pd.DataFrame([row]))                                                  # 23:05 SLT: evening
+    predict.append_ledger(pd.DataFrame([dict(row, issued_at="2026-01-01T18:10:00Z", p_rain=0.9)]))  # 23:40: same slot
+    predict.append_ledger(pd.DataFrame([dict(row, issued_at="2026-01-01T01:12:00Z", p_rain=0.7)]))  # 06:42: off-schedule
+    led = predict.read_ledger().sort_values("issued_at")
+    assert len(led) == 2
+    ev = led[led["issue_slot"] == "evening"].iloc[0]
+    off = led[led["issue_slot"] == "off-schedule"].iloc[0]
+    assert ev["p_rain"] == 0.3 and abs(ev["lead_hours"] - 0.9) < 0.05
+    assert off["p_rain"] == 0.7 and abs(off["lead_hours"] - 17.3) < 0.05
+    assert predict.ledger_summary()["issued"] == 1  # headline counts the evening issue only
 
 
 def test_town_features_do_not_see_the_future():

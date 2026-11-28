@@ -189,13 +189,17 @@ function renderLedger() {
   const L = state.ledger;
   const s = L?.summary;
   const pv = s?.provisional_imerg;
+  const os_ = s?.off_schedule;
+  const fmtIss = a => new Date(a).toLocaleString("en-GB", { timeZone: "Asia/Colombo", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const rule = `<p class="sub small" style="margin:10px 0 0"><b>Which forecast is scored.</b> One forecast per district per day, issued in a fixed window (${s?.window ?? "22:00–24:00, the evening before"}). That's about 0–2 hours before the day starts, so every forecast has the same lead time. Saved forecasts are never changed or replaced.${os_ ? ` Forecasts issued at any other time are also kept and scored, but separately, and they're left out of the scores above.` : ""}</p>` +
+    (os_ ? `<div class="card" style="margin-top:10px"><b>Off-schedule forecasts (${os_.issued})</b><ul class="sub small" style="margin:6px 0 0;padding-left:20px">${os_.issues.map(x => `<li>${x.n} districts for ${fmtDate(x.target_date)}, issued ${fmtIss(x.issued_at)}: <b>${x.lead_hours} h</b> before the day began (${(x.lead_hours + 24).toFixed(1)} h before it ended), ${/before hybrid/.test(x.method) ? "Weather Lab alone, before the hybrid existed" : x.method}. The evening forecast for the same day is scored in the headline.</li>`).join("")}</ul>${os_.scores ? `<p class="sub small" style="margin:6px 0 0">Scored separately: skill ${pct(os_.scores.published.bss, 1)} over ${os_.scored} forecasts (Markov ${pct(os_.scores.markov.bss, 1)}).</p>` : ""}</div>` : "");
   const bm_ = s?.by_method, meth = bm_ ? `<p class="sub small" style="margin:10px 0 0">Made by: ${Object.entries(bm_).map(([k, v]) => `${k === "hybrid" ? "hybrid" : k === "model" ? "Weather Lab alone (professional forecasts missing)" : "Weather Lab alone (before the hybrid)"} ${v.toLocaleString()}`).join(" · ")}.</p>` : "";
   const prov = pv ? `<div class="card" style="margin-top:12px"><b>Next-day check against NASA satellite rain (provisional).</b>
     ${pv.n.toLocaleString()} forecasts, ${pv.first_target} → ${pv.last_target}. Skill vs climatology: published forecast <b>${pct(pv.scores.published?.bss, 1)}</b>,
     Markov baseline ${pct(pv.scores.markov?.bss, 1)}${pv.scores.ecmwf_ens ? `, ECMWF ensemble ${pct(pv.scores.ecmwf_ens.bss, 1)}` : ""}.
     <span class="muted">NASA IMERG is available the day after; the final score uses the reanalysis about six days later.</span></div>` : "";
   if (!s || !s.scored) {
-    $("fc-ledger").innerHTML = `<div class="card"><b>${s?.issued ?? 0}</b> town-forecasts issued so far, <b>${s?.pending ?? 0}</b> waiting for observations. Final scores appear about six days after each forecast${pv ? "; a provisional next-day check is below" : ""}. Until then, the backtest below is the evidence.</div>${meth}${prov}`;
+    $("fc-ledger").innerHTML = `<div class="card"><b>${s?.issued ?? 0}</b> town-forecasts issued so far, <b>${s?.pending ?? 0}</b> waiting for observations. Final scores appear about six days after each forecast${pv ? "; a provisional next-day check is below" : ""}. Until then, the backtest below is the evidence.</div>${meth}${rule}${prov}`;
     return;
   }
   const a = s.all;
@@ -204,7 +208,7 @@ function renderLedger() {
     <div class="card kpi"><div class="label">Live skill vs climatology</div><div class="value">${pct(a.model.bss, 1)}</div><div class="note">Markov baseline ${pct(a.markov.bss, 1)}</div></div>
     <div class="card kpi"><div class="label">Live Brier score</div><div class="value">${num(a.model.brier)}</div><div class="note">Climatology ${num(a.climatology.brier)}</div></div>
     <div class="card kpi"><div class="label">Last 30 days skill</div><div class="value">${pct(s.last30.model.bss, 1)}</div><div class="note">${s.last30.model.n} town-days</div></div>
-  </div>${s.vs_ecmwf_ens ? `<p class="sub small" style="margin:10px 0 0">Same days, probability against probability: published forecast ${pct(s.vs_ecmwf_ens.published.bss, 1)}, model alone ${pct(s.vs_ecmwf_ens.model.bss, 1)}, ECMWF's 51-member ensemble ${pct(s.vs_ecmwf_ens.ecmwf_ens.bss, 1)} (${s.vs_ecmwf_ens.published.n} district-days).</p>` : ""}${meth}${prov}`;
+  </div>${s.vs_ecmwf_ens ? `<p class="sub small" style="margin:10px 0 0">Same days, probability against probability: published forecast ${pct(s.vs_ecmwf_ens.published.bss, 1)}, model alone ${pct(s.vs_ecmwf_ens.model.bss, 1)}, ECMWF's 51-member ensemble ${pct(s.vs_ecmwf_ens.ecmwf_ens.bss, 1)} (${s.vs_ecmwf_ens.published.n} district-days).</p>` : ""}${meth}${rule}${prov}`;
 }
 
 const range = c => c ? `${pct(c.lo, 1)} to ${pct(c.hi, 1)}` : "–";
