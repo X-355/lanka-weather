@@ -113,7 +113,7 @@ async function rebuild() {
   if (rain === "imerg") layers.rain = frames.map(t => imergLayer(t).addTo(map));
   ui.slider.max = frames.length - 1;
   ui.note.innerHTML = rain === "imerg"
-    ? "Rain: NASA IMERG Early, a multi-satellite estimate calibrated with microwave sensors. More reliable than the 15-minute estimate, but published about 5 hours late, so these frames show this morning, not now."
+    ? "Rain: NASA IMERG Early, a multi-satellite estimate calibrated with microwave sensors. More reliable than the 15-minute estimate, but published about 5 hours late, so these frames show the sky roughly 5–9 hours ago, not now."
     : rain === "eum"
     ? "Rain: EUMETSAT H SAF satellite estimate (infrared, adjusted with microwave passes), every 15 minutes. It's an estimate from space, not radar. Light drizzle and small showers are often missed."
     : "";
@@ -158,7 +158,8 @@ export async function renderLiveSky(appState) {
   L = await loadLeaflet();
   ui = { time: document.getElementById("ls-time"), slider: document.getElementById("ls-slider"), play: document.getElementById("ls-play"),
          note: document.getElementById("ls-note") };
-  map = L.map("ls-map", { zoomControl: true, minZoom: 5, maxZoom: 10 }).setView([7.85, 80.7], 7);
+  // Scroll wheel scrolls the page, not the map; zoom with the +/− buttons or a pinch.
+  map = L.map("ls-map", { zoomControl: true, minZoom: 5, maxZoom: 10, scrollWheelZoom: false }).setView([7.85, 80.7], 7);
   // Keyless, public-domain basemap from NASA GIBS: Blue Marble relief + coastlines on top of everything.
   L.tileLayer(`${GIBS}/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg`, {
     maxNativeZoom: 8, maxZoom: 10, attribution: 'Basemap: NASA Blue Marble via <a href="https://earthdata.nasa.gov/gibs">GIBS</a>',
