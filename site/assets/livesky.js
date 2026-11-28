@@ -7,8 +7,9 @@ import { DISTRICTS, VIEWBOX } from "./sri-lanka-districts.js?v=dev";
 const EUM = "https://view.eumetsat.int/geoserver";
 const GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best";
 const BASES = {
-  ir: { layer: "msg_iodc:ir108", label: "Clouds (infrared, day & night)", opacity: 0.75 },
-  natural: { layer: "msg_iodc:rgb_naturalenhncd", label: "True colour (daytime only)", opacity: 1 },
+  // Infrared is an opaque greyscale image; "screen" blending drops the dark clear sky and keeps bright cloud tops.
+  ir: { layer: "msg_iodc:ir108", label: "Clouds (infrared, day & night)", opacity: 1, pane: "clouds" },
+  natural: { layer: "msg_iodc:rgb_naturalenhncd", label: "True colour (daytime only)", opacity: 1, pane: "imagery" },
   none: null,
 };
 const RAIN_EUM = "msg_iodc:h63";
@@ -61,10 +62,10 @@ async function imergTimes() {
 
 const iso = d => d.toISOString().slice(0, 19) + "Z";
 
-function eumLayer(layer, time, opacity) {
+function eumLayer(layer, time, opacity, pane = "rain") {
   const l = L.tileLayer.wms(`${EUM}/wms`, {
     layers: layer, styles: "", format: "image/png", transparent: true, version: "1.3.0", time: iso(time),
-    opacity: 0, attribution: "Meteosat imagery © EUMETSAT",
+    opacity: 0, pane, attribution: "Meteosat imagery © EUMETSAT",
   });
   l.maxOpacity = opacity;
   return l;
@@ -72,7 +73,7 @@ function eumLayer(layer, time, opacity) {
 
 function imergLayer(time) {
   const l = L.tileLayer(`${GIBS}/${IMERG}/default/${iso(time)}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`, {
-    maxNativeZoom: 6, opacity: 0, attribution: 'Rain: NASA GPM IMERG via <a href="https://earthdata.nasa.gov/gibs">GIBS</a>',
+    maxNativeZoom: 6, opacity: 0, pane: "rain", attribution: 'Rain: NASA GPM IMERG via <a href="https://earthdata.nasa.gov/gibs">GIBS</a>',
   });
   l.maxOpacity = 0.85;
   return l;
@@ -107,7 +108,7 @@ async function rebuild() {
     ui.time.textContent = "Couldn't reach the imagery service. Try again in a few minutes.";
     return;
   }
-  if (BASES[base]) layers.base = frames.map(t => eumLayer(BASES[base].layer, t, BASES[base].opacity).addTo(map));
+  if (BASES[base]) layers.base = frames.map(t => eumLayer(BASES[base].layer, t, BASES[base].opacity, BASES[base].pane).addTo(map));
   if (rain === "eum") layers.rain = frames.map(t => eumLayer(RAIN_EUM, t, 0.9).addTo(map));
   if (rain === "imerg") layers.rain = frames.map(t => imergLayer(t).addTo(map));
   ui.slider.max = frames.length - 1;
@@ -162,6 +163,11 @@ export async function renderLiveSky(appState) {
   L.tileLayer(`${GIBS}/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg`, {
     maxNativeZoom: 8, maxZoom: 10, attribution: 'Basemap: NASA Blue Marble via <a href="https://earthdata.nasa.gov/gibs">GIBS</a>',
   }).addTo(map);
+  map.createPane("imagery").style.zIndex = 250;
+  const clouds = map.createPane("clouds");
+  clouds.style.zIndex = 300;
+  clouds.style.mixBlendMode = "screen";
+  map.createPane("rain").style.zIndex = 350;
   map.createPane("coast").style.zIndex = 450;
   L.tileLayer(`${GIBS}/Coastlines_15m/default/GoogleMapsCompatible_Level13/{z}/{y}/{x}.png`, { pane: "coast", maxZoom: 10 }).addTo(map);
   refreshDistricts();
