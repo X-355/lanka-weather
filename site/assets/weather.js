@@ -72,11 +72,16 @@ const q = (base, params) => fetch(`${base}?${new URLSearchParams(params)}`, { si
 
 let state, places = [], built = false, cyclones = null, current = null;
 
-function placeList() {
+function placeList(townList) {
   const towns = state.meta.towns.map(t => ({ id: `d:${t.key}`, name: t.name, lat: t.lat, lon: t.lon, district: t.key, label: `${t.name} (district capital)` }));
-  const ps = (state.forecast?.places || []).map(p => ({ id: `p:${p.name}`, name: p.name, lat: p.lat, lon: p.lon, district: p.district, label: p.name }));
+  const src = townList?.length ? townList : (state.forecast?.places || []);
+  const ps = src.map(p => ({ id: `p:${p.name}`, name: p.name, lat: p.lat, lon: p.lon, district: p.district, label: p.name }));
   return [...towns, ...ps];
 }
+
+const LAST = "lw-weather-place";
+const remember = id => { try { localStorage.setItem(LAST, id); } catch {} };
+const recall = () => { try { return localStorage.getItem(LAST); } catch { return null; } };
 
 function populateSelect() {
   const sel = $("wx-place");
@@ -333,10 +338,18 @@ export async function renderWeather(appState) {
   state = appState;
   if (built) return;
   built = true;
-  places = placeList();
+  let townList = null;
+  try { townList = await fetch("data/places.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null); } catch {}
+  places = placeList(townList);
   populateSelect();
   try { cyclones = await fetch("data/cyclones.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null); } catch { cyclones = null; }
-  $("wx-place").addEventListener("change", e => load(places.find(p => p.id === e.target.value)));
-  $("wx-locate").addEventListener("click", locate);
-  load(places.find(p => p.id === "d:colombo"));
+  $("wx-place").addEventListener("change", e => { remember(e.target.value); load(places.find(p => p.id === e.target.value)); });
+  $("wx-locate").addEventListener("click", () => { remember("here"); locate(); });
+  // Open where the visitor was last time: their own location if they chose it (and already allowed it), else their last place.
+  const last = recall();
+  const geo = await navigator.permissions?.query({ name: "geolocation" }).then(p => p.state).catch(() => null);
+  if (last === "here" && geo === "granted") return locate();
+  const start = places.find(p => p.id === last) || places.find(p => p.id === "d:colombo");
+  $("wx-place").value = start.id;
+  load(start);
 }

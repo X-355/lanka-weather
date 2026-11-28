@@ -11,7 +11,7 @@ import pandas as pd
 
 from .config import ERA5_DIR, LIVE_DIR, MODELS, REPORTS, SITE_DATA, load_config, towns
 from .features import SEASON_NAMES, SEASON_OF_MONTH
-from .fetch import load_history, load_power
+from .fetch import load_history, load_places, load_power
 from .predict import ledger_summary, read_ledger
 
 log = logging.getLogger(__name__)
@@ -192,6 +192,7 @@ def build_heavy(hist: pd.DataFrame) -> None:
 def run() -> None:
     SITE_DATA.mkdir(parents=True, exist_ok=True)
     build_meta()
+    build_places()
     build_metrics()
     build_backtest()
     build_ledger()
@@ -236,3 +237,12 @@ def build_cyclones() -> None:
         log.warning("GDACS cyclone fetch failed: %s", e)
         out["error"] = str(e)[:200]
     _write("cyclones.json", out)
+
+
+def build_places() -> None:
+    """Town list for the site's pickers, independent of whether a forecast exists yet."""
+    pl = load_places()
+    if pl is None:
+        return
+    _write("places.json", [{"name": r.name, "district": r.district, "lat": float(r.lat), "lon": float(r.lon)}
+                           for r in pl.itertuples()])
