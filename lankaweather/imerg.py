@@ -79,22 +79,17 @@ def _fetch_day(s: requests.Session, product: str, d: date) -> np.ndarray | None:
 
 
 def _parse_ascii(text: str, nlon: int, nlat: int) -> np.ndarray | None:
-    """OPeNDAP ASCII: after the header, rows like '[0][12], 0.1, 0, ...' (sometimes prefixed with the variable
-    name). Falls back to reading every number after the separator line in order."""
-    body = text.split("---------------------------------------------")[-1]
+    """GES DISC OPeNDAP ASCII for precipitation[time][lon][lat] looks like:
+        precipitation.lat, 5.55, 5.65, ...
+        precipitation.precipitation[precipitation.time=17120][precipitation.lon=79.55], 0.11, 0, ...
+    One row per longitude, one value per latitude. Anything else is rejected (no guessing)."""
     rows = []
-    for ln in body.splitlines():
-        m = re.match(r"^\s*[\w.]*((?:\[\d+\])+)\s*,\s*(.*)$", ln)
-        if m:
-            rows.append([float(v) for v in m.group(2).split(",") if v.strip()])
-    if rows and all(len(r) == nlat for r in rows) and len(rows) == nlon:
-        a = np.array(rows, dtype=float)
-    else:
-        nums = re.findall(r"(?<![\w\[])-?\d+(?:\.\d+)?(?:[eE]-?\d+)?(?![\w\]])", body)
-        vals = [float(v) for v in nums]
-        if len(vals) < nlon * nlat:
-            return None
-        a = np.array(vals[-nlon * nlat:], dtype=float).reshape(nlon, nlat)
+    for ln in text.splitlines():
+        if ln.startswith("precipitation.precipitation[") or re.match(r"^\[\d+\]\[\d+\],", ln):
+            rows.append([float(v) for v in ln.rsplit("],", 1)[1].split(",") if v.strip()])
+    if len(rows) != nlon or any(len(r) != nlat for r in rows):
+        return None
+    a = np.array(rows, dtype=float)
     a[a < 0] = np.nan  # fill values
     return a
 
