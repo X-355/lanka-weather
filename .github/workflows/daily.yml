@@ -8,6 +8,7 @@ on:
   schedule:
     - cron: "35 17 * * *"   # 23:05 Sri Lanka time
     - cron: "52 17 * * *"   # backup 23:22, in case GitHub skips or delays the first; the ledger keeps the first forecast
+    - cron: "15 18 * * *"   # second backup 23:45; runs after midnight are refused by the issuing-time guard
   workflow_dispatch:
 
 permissions:
