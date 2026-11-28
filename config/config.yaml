@@ -14,7 +14,8 @@ towns:
   ratnapura:    {name: Ratnapura,    lat: 6.6828, lon: 80.3992, elevation: 35,   zone: wet,          region: Sabaragamuwa}
   hambantota:   {name: Hambantota,   lat: 6.1241, lon: 81.1185, elevation: 15,   zone: dry,          region: Southern}
   # --- remaining district capitals (appended, so the original ten keep their town codes) ---
-  gampaha:      {name: Gampaha,      lat: 7.0917, lon: 79.9999, elevation: 15,   zone: wet,          region: Western}
+  # Gampaha town shares an ERA5 cell with Colombo, so we use a point in the district interior.
+  gampaha:      {name: Gampaha,      lat: 7.2000, lon: 80.0500, elevation: 20,   zone: wet,          region: Western}
   kalutara:     {name: Kalutara,     lat: 6.5854, lon: 79.9607, elevation: 5,    zone: wet,          region: Western}
   matale:       {name: Matale,       lat: 7.4675, lon: 80.6234, elevation: 360,  zone: intermediate, region: Central}
   matara:       {name: Matara,       lat: 5.9549, lon: 80.5550, elevation: 5,    zone: wet,          region: Southern}

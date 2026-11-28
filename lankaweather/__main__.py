@@ -27,6 +27,7 @@ def main(argv=None) -> int:
     ap.add_argument("--budget", type=float, default=None, help="Open-Meteo call-weight budget for this run")
     ap.add_argument("--skip-power", action="store_true")
     ap.add_argument("--skip-nwp", action="store_true")
+    ap.add_argument("--force", action="store_true", help="issue a forecast even outside the evening window")
     a = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     cfg = load_config()
@@ -56,7 +57,7 @@ def main(argv=None) -> int:
         print(json.dumps(full["metrics"]["rain"], indent=1))
     elif c == "predict":
         from .predict import run
-        run(offline=a.offline)
+        run(offline=a.offline, force=a.force)
     elif c == "score":
         from .predict import score_ledger
         print(score_ledger())
@@ -90,7 +91,7 @@ def main(argv=None) -> int:
             print("no trained model yet — run the 'Train model' workflow once history is complete")
             return 0
         print(predict.score_ledger())
-        predict.run(offline=a.offline)
+        predict.run(offline=a.offline, force=a.force)
         build_site.run()
     else:
         print(__doc__)

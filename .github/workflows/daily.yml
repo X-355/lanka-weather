@@ -1,12 +1,13 @@
 name: Daily forecast
 
 # 17:35 UTC = 23:05 Sri Lanka time, so "today" is almost complete when the forecast for tomorrow is issued.
-# GitHub may start scheduled jobs late at busy times. Forecasts are locked by target date, so a late run
-# still issues tomorrow's forecast before tomorrow starts (unless it is delayed past midnight local time).
+# GitHub may start scheduled jobs late at busy times, so there is a backup schedule. A run that starts outside
+# 18:00–23:59 local time still updates data and the site but does not issue a forecast.
 
 on:
   schedule:
-    - cron: "35 17 * * *"
+    - cron: "35 17 * * *"   # 23:05 Sri Lanka time
+    - cron: "52 17 * * *"   # backup 23:22, in case GitHub skips or delays the first; the ledger keeps the first forecast
   workflow_dispatch:
 
 permissions:

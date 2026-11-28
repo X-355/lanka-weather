@@ -59,7 +59,10 @@ def predict_frame(live: pd.DataFrame, issue_date: pd.Timestamp):
     return meta, today
 
 
-def run(offline: bool = False) -> dict:
+EARLIEST_HOUR = 18  # local time
+
+
+def run(offline: bool = False, force: bool = False) -> dict:
     cfg = load_config()
     tz = ZoneInfo(cfg["timezone"])
     synthetic = (ERA5_DIR / "SYNTHETIC").exists()
@@ -69,8 +72,15 @@ def run(offline: bool = False) -> dict:
         live = hist[hist["date"] > issue_date - pd.Timedelta(days=45)].copy()
         source = "synthetic" if synthetic else "era5-replay"
     else:
+        now = datetime.now(tz)
+        # A forecast for tomorrow should use an (almost) complete "today". GitHub sometimes starts scheduled
+        # jobs hours late; a run that slips past midnight would then be forecasting a day already under way.
+        if not (EARLIEST_HOUR <= now.hour) and not force:
+            log.warning("local time %s is outside the issuing window (from %02d:00); not issuing a forecast",
+                        now.strftime("%H:%M"), EARLIEST_HOUR)
+            return {}
         live = fetch_live(Client(budget=1000))
-        issue_date = pd.Timestamp(datetime.now(tz).date())
+        issue_date = pd.Timestamp(now.date())
         source = "open-meteo-forecast-api"
     meta, today = predict_frame(live, issue_date)
 
