@@ -69,7 +69,7 @@ function renderMap() {
   for (const t of state.meta.towns) {
     const r = byTown[t.key];
     if (!r) {
-      areas[t.key] = { label: t.name, muted: true, fill: "var(--surface-2)",
+      areas[t.key] = { label: t.name, muted: true, fill: "url(#nodata-hatch)",
         tip: `<b>${t.name}</b><div>${t.region} Province</div><div class="muted">Joins at the next retrain, once its history has downloaded.</div>` };
     } else if (mapMode === "heavy") {
       const st = heavyStatus(r.p_heavy, r.p_clim_heavy);
@@ -82,7 +82,7 @@ function renderMap() {
   }
   districtMap($("fc-map"), { areas, labelNudge: NUDGE });
   $("map-note").innerHTML = (mapMode === "rain" ? "Darker blue = higher chance of rain tomorrow. " : "Heavy-rain status, research only. ")
-    + (missing ? `Dashed: ${missing} districts join at the next retrain. ` : "")
+    + (missing ? `Hatched: no forecast yet for ${missing} districts. ` : "")
     + `<br><span class="muted">District map: <a href="https://mapsvg.com/maps/sri-lanka">MapSVG</a> via <a href="https://github.com/VictorCazanave/svg-maps">svg-maps</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</span>`;
 }
 

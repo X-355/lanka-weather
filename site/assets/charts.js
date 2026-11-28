@@ -287,6 +287,11 @@ export function districtMap(container, opts) {
   wrap.style.margin = "0 auto";
   container.appendChild(wrap);
   const svg = el("svg", { viewBox: VIEWBOX, role: "img", "aria-label": "Map of Sri Lanka's 25 districts" }, wrap);
+  // Diagonal hatch for "no forecast yet", so it can't be mistaken for a low chance of rain.
+  const defs = el("defs", {}, svg);
+  const pat = el("pattern", { id: "nodata-hatch", width: 7, height: 7, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
+  el("rect", { width: 7, height: 7, fill: "var(--surface-1)" }, pat);
+  el("line", { x1: 0, y1: 0, x2: 0, y2: 7, stroke: "var(--neutral)", "stroke-width": 2.2 }, pat);
   const shapes = el("g", {}, svg), labels = el("g", { "pointer-events": "none" }, svg);
   for (const [key, d] of Object.entries(DISTRICTS)) {
     const a = opts.areas[key] || {};
