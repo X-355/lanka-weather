@@ -72,11 +72,20 @@ const q = (base, params) => fetch(`${base}?${new URLSearchParams(params)}`, { si
 
 let state, places = [], built = false, cyclones = null, current = null;
 
-function placeList(townList) {
-  const towns = state.meta.towns.map(t => ({ id: `d:${t.key}`, name: t.name, lat: t.lat, lon: t.lon, district: t.key, label: `${t.name} (district capital)` }));
-  const src = townList?.length ? townList : (state.forecast?.places || []);
-  const ps = src.map(p => ({ id: `p:${p.name}`, name: p.name, lat: p.lat, lon: p.lon, district: p.district, label: p.name }));
-  return [...towns, ...ps];
+const title = k => k.split("_").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
+
+function placeList(gaz, townList) {
+  const caps = state.meta.towns.map(t => ({ id: `d:${t.key}`, name: t.name, lat: t.lat, lon: t.lon, district: t.key,
+    label: `${t.name} — ${t.name} District (capital)`, alt: "" }));
+  let rows = gaz?.rows || (townList || []).map(p => [p.name, "", "", p.district, "", p.lat, p.lon]);
+  const seen = {};
+  for (const r of rows) seen[`${r[0]}|${r[3]}`] = (seen[`${r[0]}|${r[3]}`] || 0) + 1;
+  const ps = rows.map(([name, si, ta, district, postcode, lat, lon]) => {
+    const dup = seen[`${name}|${district}`] > 1 && postcode;
+    return { id: `g:${name}|${district}|${postcode}`, name, lat, lon, district,
+             label: `${name}${dup ? ` (${postcode})` : ""} — ${title(district)} District`, alt: [si, ta].filter(Boolean).join(" · ") };
+  });
+  return [...caps, ...ps];
 }
 
 const LAST = "lw-weather-place";
@@ -84,28 +93,25 @@ const remember = id => { try { localStorage.setItem(LAST, id); } catch {} };
 const recall = () => { try { return localStorage.getItem(LAST); } catch { return null; } };
 
 function populateSelect() {
-  const sel = $("wx-place");
-  const byDistrict = {};
-  for (const p of places) (byDistrict[p.district] ||= []).push(p);
-  sel.innerHTML = state.meta.towns.slice().sort((a, b) => a.name.localeCompare(b.name)).map(t =>
-    `<optgroup label="${t.name} District">${byDistrict[t.key].sort((a, b) => (a.id[0] === "d" ? -1 : b.id[0] === "d" ? 1 : a.name.localeCompare(b.name)))
-      .map(p => `<option value="${p.id}">${p.label}</option>`).join("")}</optgroup>`).join("");
-  sel.value = "d:colombo";
+  $("wx-list").innerHTML = places.map(p => `<option value="${p.label}"${p.alt ? ` label="${p.alt}"` : ""}></option>`).join("");
 }
+
+const byLabel = label => places.find(p => p.label === label);
 
 function nearestDistrict(lat, lon) {
   let best = null, bd = 1e9;
-  for (const p of places) { const d = (p.lat - lat) ** 2 + ((p.lon - lon) * Math.cos(lat * Math.PI / 180)) ** 2; if (d < bd) { bd = d; best = p; } }
+  for (const p of places.filter(p => p.id.startsWith("d:") || p.id.startsWith("g:"))) { const d = (p.lat - lat) ** 2 + ((p.lon - lon) * Math.cos(lat * Math.PI / 180)) ** 2; if (d < bd) { bd = d; best = p; } }
   return best;
 }
 
 function ourForecast(place) {
   const f = state.forecast;
   if (!f) return null;
-  if (place.id.startsWith("p:")) {
-    const p = (f.places || []).find(x => x.name === place.name);
-    if (p) return { p: p.p_rain, ph: p.p_heavy, target: f.target_date, label: place.name };
-  }
+  const km = (a, b) => Math.hypot((a.lat - b.lat) * 111, (a.lon - b.lon) * 111 * Math.cos(a.lat * Math.PI / 180));
+  let best = null, bd = 8;
+  for (const p of f.places || []) { const d = km(place, p); if (d < bd) { bd = d; best = p; } }
+  if (best) return { p: best.p_rain, ph: best.p_heavy, target: f.target_date,
+    label: best.name === place.name ? best.name : `${best.name}, the nearest forecast town (${bd < 1 ? "<1" : Math.round(bd)} km away)` };
   const d = f.towns.find(t => t.town === place.district);
   return d ? { p: d.p_rain, ph: d.p_heavy, clim: d.p_clim, target: f.target_date, label: `${d.name} district` } : null;
 }
@@ -322,7 +328,7 @@ function locate() {
     const near = nearestDistrict(lat, lon);
     const inLanka = lat > 5.7 && lat < 10.1 && lon > 79.4 && lon < 82.1;
     if (!inLanka) locateMsg("You seem to be outside Sri Lanka. Showing your location anyway; the rain-model comparison uses the nearest district.");
-    $("wx-place").value = near.id;
+    $("wx-place").value = "📍 Your location";
     load({ id: near.id, name: inLanka ? `Your location (near ${near.name})` : "Your location", lat, lon, district: near.district });
   };
   // A quick, low-accuracy fix is plenty for weather; retry once more patiently if it times out.
@@ -338,18 +344,28 @@ export async function renderWeather(appState) {
   state = appState;
   if (built) return;
   built = true;
-  let townList = null;
-  try { townList = await fetch("data/places.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null); } catch {}
-  places = placeList(townList);
+  let gaz = null, townList = null;
+  try { gaz = await fetch("data/gazetteer.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null); } catch {}
+  if (!gaz) { try { townList = await fetch("data/places.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null); } catch {} }
+  places = placeList(gaz, townList);
   populateSelect();
   try { cyclones = await fetch("data/cyclones.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null); } catch { cyclones = null; }
-  $("wx-place").addEventListener("change", e => { remember(e.target.value); load(places.find(p => p.id === e.target.value)); });
+  const pick = () => {
+    const p = byLabel($("wx-place").value.trim());
+    if (!p) return;
+    remember(p.label);
+    $("wx-place").blur();
+    load(p);
+  };
+  $("wx-place").addEventListener("change", pick);
+  $("wx-place").addEventListener("input", e => { if (byLabel(e.target.value)) pick(); });
+  $("wx-place").addEventListener("focus", e => e.target.select());
   $("wx-locate").addEventListener("click", () => { remember("here"); locate(); });
   // Open where the visitor was last time: their own location if they chose it (and already allowed it), else their last place.
   const last = recall();
   const geo = await navigator.permissions?.query({ name: "geolocation" }).then(p => p.state).catch(() => null);
   if (last === "here" && geo === "granted") return locate();
-  const start = places.find(p => p.id === last) || places.find(p => p.id === "d:colombo");
-  $("wx-place").value = start.id;
+  const start = byLabel(last) || places.find(p => p.id === "d:colombo");
+  $("wx-place").value = start.label;
   load(start);
 }

@@ -240,9 +240,19 @@ def build_cyclones() -> None:
 
 
 def build_places() -> None:
-    """Town list for the site's pickers, independent of whether a forecast exists yet."""
+    """Town lists for the site: forecast towns (places.json) and the full place finder (gazetteer.json)."""
+    from .config import ROOT
     pl = load_places()
-    if pl is None:
-        return
-    _write("places.json", [{"name": r.name, "district": r.district, "lat": float(r.lat), "lon": float(r.lon)}
-                           for r in pl.itertuples()])
+    if pl is not None:
+        _write("places.json", [{"name": r.name, "district": r.district, "lat": float(r.lat), "lon": float(r.lon)}
+                               for r in pl.itertuples()])
+    gpath = ROOT / "config" / "gazetteer.csv"
+    if gpath.exists():
+        g = pd.read_csv(gpath, dtype=str, keep_default_na=False)
+        items = [[r.name, r.name_si, r.name_ta, r.district, r.postcode, round(float(r.lat), 4), round(float(r.lon), 4)]
+                 for r in g.itertuples()]
+        have = {(i[0].lower().replace("-", " "), i[3]) for i in items}
+        if pl is not None:  # forecast towns that the gazetteer lacks
+            items += [[r.name, "", "", r.district, "", round(float(r.lat), 4), round(float(r.lon), 4)]
+                      for r in pl.itertuples() if (r.name.lower().replace("-", " "), r.district) not in have]
+        _write("gazetteer.json", {"fields": ["name", "si", "ta", "district", "postcode", "lat", "lon"], "rows": items})
