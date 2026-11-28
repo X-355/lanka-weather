@@ -203,19 +203,26 @@ function renderTruths(M) {
   if (!el) return;
   const NAMES = { hybrid: "Hybrid (published)", model: "Weather Lab alone", ecmwf_cal: "ECMWF, calibrated probability", markov: "Markov baseline" };
   const block = (r, src) => {
-    if (!r) return "";
-    const rows = Object.entries(r.entries).map(([k, v]) => ({ ...v, name: NAMES[k] || k, ci: r.bootstrap?.skill?.[k], hl: k === "hybrid" }));
-    return `<h3 style="margin:14px 0 4px;font-size:15px">${r.label}</h3><p class="sub small" style="margin:0 0 6px">${r.period[0]} → ${r.period[1]}, ${r.n.toLocaleString()} ${src}-days in ${r.towns} districts. ${src === "gauge" ? "Each gauge is compared with the forecast for its district." : "Average of NASA's 0.1° cells around each district point."} Rain/no-rain agrees with ERA5 on ${pct(r.agreement_with_era5)} of days.</p>` +
+    if (!r || !r.ranking) return "";
+    const a = r.adjusted, R = r.ranking;
+    const rows = Object.entries(R.auc).map(([k, v]) => ({ name: NAMES[k] || k, auc: v, adj: a.skill?.[k], hl: k === "hybrid" }));
+    const dHE = R.diff["hybrid - ecmwf_cal"], dME = R.diff["model - ecmwf_cal"], dMM = R.diff["model - markov"];
+    const say = (d, a_, b_) => !d ? "" : d.lo > 0 ? `${a_} ranks rain days better than ${b_}` : d.hi < 0 ? `${b_} ranks rain days better than ${a_}` : `${a_} and ${b_} are level`;
+    const lines = [say(dHE, "the hybrid", "ECMWF"), say(dME, "Weather Lab alone", "ECMWF"), say(dMM, "Weather Lab", "the Markov baseline")].filter(Boolean);
+    return `<h3 style="margin:14px 0 4px;font-size:15px">${r.label}</h3><p class="sub small" style="margin:0 0 6px">${r.period[0]} → ${r.period[1]}: ${r.n.toLocaleString()} ${src}-days on ${r.n_days.toLocaleString()} days in ${r.towns} districts, identical for every forecast. ${src === "gauge" ? "Rain fell at the gauge" : "NASA saw rain"} on ${pct(r.wet_freq_truth)} of them, against ${pct(r.wet_freq_era5)} in ERA5's ~25 km squares.</p>` +
       scoreTable(rows, [{ label: "Forecast", get: r => r.name },
-        { label: "Skill vs climatology ↑", num: true, get: r => r.ci ? `<b>${pct(r.ci.bss, 1)}</b>` : pct(r.bss, 1) },
-        { label: "95% range", num: true, get: r => range(r.ci) }, { label: "AUC ↑", num: true, get: r => num(r.auc) }]);
+        { label: "Ranking (AUC) ↑", num: true, get: r => `<b>${num(r.auc.auc)}</b>`, title: "Chance that a rain day got a higher forecast than a dry day; 0.5 = no better than a coin" },
+        { label: "95% range", num: true, get: r => `${num(r.auc.lo)}–${num(r.auc.hi)}` },
+        { label: "Adjusted skill ↑", num: true, get: r => r.adj ? pct(r.adj.bss, 1) : "–", title: `After the same recalibration for every forecast, fitted on ${a.fit_period[0]} → ${a.fit_period[1]}; scored ${a.test_period[0]} → ${a.test_period[1]} against each ${src === "gauge" ? "gauge" : "district"}'s own calendar odds` },
+        { label: "95% range", num: true, get: r => r.adj ? range(r.adj) : "–" }]) +
+      (lines.length ? `<p class="sub small" style="margin:8px 0 0"><b>Reading it:</b> ${lines.join("; ")}.</p>` : "");
   };
   const g = M.gauges, im = M.imerg;
   if (!g && !im) {
     el.innerHTML = `<p class="muted small" style="margin:0">Rain-gauge and NASA satellite checks appear here after the next retrain.</p>`;
     return;
   }
-  el.innerHTML = (g ? `<p class="sub small" style="margin:0"><b>Rain gauges</b> from NOAA's global station archive: ${g.info.stations} Sri Lankan weather stations, each scored against its own long-term wet-day frequency. Gauges catch the showers a 25 km grid smooths away, so every forecast scores lower here; what matters is the order.</p>` + block(g.nwp_era, "gauge") + block(g.all_years, "gauge") : "") +
+  el.innerHTML = (g ? `<p class="sub small" style="margin:0"><b>Rain gauges</b> from NOAA's global station archive: ${g.info.stations} Sri Lankan weather stations. A gauge measures one spot, so it sees rain on far fewer days than a 25 km square does, and every forecast here is over-confident about rain at a single gauge. So two fair measures are shown, on identical rows: <b>ranking</b> (does the forecast give higher chances on the days the gauge got rain?) and <b>adjusted skill</b> (every forecast gets the same one-step correction from square to gauge, fitted on earlier days and scored on later ones, against each gauge's own calendar odds). NOAA's Sri Lankan records thin out after early 2024, so the professional-forecast period has far fewer gauge days than the older years.</p>` + block(g.nwp_era, "gauge") + block(g.all_years, "gauge") : "") +
     (im ? `<p class="sub small" style="margin:${g ? 18 : 0}px 0 0"><b>NASA GPM IMERG</b>: satellite rainfall, calibrated with gauges in its final version. Its days run 05:30–05:30 Sri Lanka time (UTC days), which lowers every score a little but treats all forecasts alike.</p>` + block(im.nwp_era, "satellite") + block(im.all_years, "satellite") : "");
 }
 

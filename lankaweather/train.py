@@ -449,16 +449,22 @@ def write_report_md(full: dict) -> None:
         if tr.get("info"):
             lines.append(f"{tr['info'].get('stations')} gauges in {tr['info'].get('districts')} districts; day shift {tr['info'].get('shift_days')} "
                          f"(agreement with ERA5 by shift on pre-test years: {tr['info'].get('agreement_by_shift')}).")
-        for part in ("all_years", "nwp_era"):
+        for part in ("nwp_era", "all_years"):
             r = tr.get(part)
             if not r:
                 continue
-            lines += ["", f"**{r['label']}** ({r['period'][0]} → {r['period'][1]}, {r['n']:,} rows; agrees with ERA5 rain/no-rain on "
-                          f"{_f(r.get('agreement_with_era5'), True)}).", "", "| Forecast | Skill vs clim (95% range) ↑ | AUC ↑ |", "|---|---|---|"]
-            for k, e in r["entries"].items():
-                lines.append(f"| {k} | {ci(r['bootstrap'], k)} | {_f(e.get('auc'))} |")
-            for k, v in r["bootstrap"].get("diff", {}).items():
-                lines.append(f"\n- {k}: {_f(v['est'], True)} ({_f(v['lo'], True)} to {_f(v['hi'], True)})")
+            a = r["adjusted"]
+            lines += ["", f"**{r['label']}**: {r['period'][0]} → {r['period'][1]}, {r['n']:,} rows on {r['n_days']:,} days, identical for every "
+                          f"forecast. Rain (≥ 1 mm) on {_f(r['wet_freq_truth'], True)} of rows here vs {_f(r['wet_freq_era5'], True)} in ERA5.", "",
+                      f"| Forecast | Ranking AUC (95% range) ↑ | Adjusted skill, {a['test_period'][0][:7]} → {a['test_period'][1][:7]} (95% range) ↑ |",
+                      "|---|---|---|"]
+            for k, e in r["ranking"]["auc"].items():
+                sk = a["skill"].get(k, {})
+                lines.append(f"| {k} | {e['auc']:.3f} ({e['lo']:.3f}–{e['hi']:.3f}) | {_f(sk.get('bss'), True)} ({_f(sk.get('lo'), True)} to {_f(sk.get('hi'), True)}) |")
+            for k, v in r["ranking"]["diff"].items():
+                av = a.get("diff", {}).get(k, {})
+                lines.append(f"\n- {k}: AUC {v['est']:+.3f} ({v['lo']:+.3f} to {v['hi']:+.3f}); adjusted skill "
+                             f"{_f(av.get('est'), True)} ({_f(av.get('lo'), True)} to {_f(av.get('hi'), True)})")
     h = m["heavy"]
     lines += ["", f"## Heavy rain (≥ {meta['targets']['heavy_mm']} mm) — research only", "",
               f"Base rate {_f(h['model']['base_rate'], True)}. Model Brier skill {_f(h['model'].get('bss'), True)}, "

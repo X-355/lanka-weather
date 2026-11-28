@@ -72,10 +72,30 @@ def _fetch_day(s: requests.Session, product: str, d: date) -> np.ndarray | None:
                               "the 'NASA GESDISC DATA ARCHIVE' application is approved")
     if not r.ok:
         return None
-    rows = [ln for ln in r.text.splitlines() if ln.startswith("[")]
-    vals = [[float(v) for v in ln.split(",")[1:]] for ln in rows]
-    a = np.array(vals, dtype=float)              # shape (lon, lat)
-    a[a < 0] = np.nan                            # fill values
+    a = _parse_ascii(r.text, LON1 - LON0 + 1, LAT1 - LAT0 + 1)
+    if a is None:
+        log.warning("IMERG %s %s: unexpected response: %r", product, d, r.text[:400])
+    return a
+
+
+def _parse_ascii(text: str, nlon: int, nlat: int) -> np.ndarray | None:
+    """OPeNDAP ASCII: after the header, rows like '[0][12], 0.1, 0, ...' (sometimes prefixed with the variable
+    name). Falls back to reading every number after the separator line in order."""
+    body = text.split("---------------------------------------------")[-1]
+    rows = []
+    for ln in body.splitlines():
+        m = re.match(r"^\s*[\w.]*((?:\[\d+\])+)\s*,\s*(.*)$", ln)
+        if m:
+            rows.append([float(v) for v in m.group(2).split(",") if v.strip()])
+    if rows and all(len(r) == nlat for r in rows) and len(rows) == nlon:
+        a = np.array(rows, dtype=float)
+    else:
+        nums = re.findall(r"(?<![\w\[])-?\d+(?:\.\d+)?(?:[eE]-?\d+)?(?![\w\]])", body)
+        vals = [float(v) for v in nums]
+        if len(vals) < nlon * nlat:
+            return None
+        a = np.array(vals[-nlon * nlat:], dtype=float).reshape(nlon, nlat)
+    a[a < 0] = np.nan  # fill values
     return a
 
 
