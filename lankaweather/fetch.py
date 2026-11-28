@@ -16,7 +16,7 @@ from datetime import date, datetime, timedelta
 import numpy as np
 import pandas as pd
 
-from .config import ERA5_DIR, LIVE_DIR, NWP_DIR, POWER_DIR, Town, load_config, towns
+from .config import ERA5_DIR, LIVE_DIR, NWP_DIR, PLACES, POWER_DIR, Town, load_config, towns
 from .http import BudgetExhausted, Client, RateLimited, openmeteo_weight
 
 log = logging.getLogger(__name__)
@@ -246,4 +246,42 @@ def fetch_live(client: Client, past_days: int = 45) -> pd.DataFrame:
     live = pd.concat(frames, ignore_index=True)
     live["fetched_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
     live.to_parquet(LIVE_DIR / "latest.parquet", index=False)
+    return live
+
+
+def load_places() -> pd.DataFrame | None:
+    """Towns inside each district (config/places.csv), or None if the file is absent."""
+    return pd.read_csv(PLACES) if PLACES.exists() else None
+
+
+def fetch_live_places(client: Client, places: pd.DataFrame, past_days: int = 45, chunk: int = 50) -> pd.DataFrame:
+    """Recent days for every town, several locations per request (Open-Meteo accepts coordinate lists)."""
+    cfg = load_config()
+    frames = []
+    used = list(DAILY_VARS)
+    for i in range(0, len(places), chunk):
+        part = places.iloc[i:i + chunk]
+        while True:
+            params = {
+                "latitude": ",".join(f"{x:.4f}" for x in part["lat"]),
+                "longitude": ",".join(f"{x:.4f}" for x in part["lon"]),
+                "timezone": cfg["timezone"], "past_days": past_days, "forecast_days": 1, "daily": ",".join(used),
+            }
+            try:
+                payload = client.get_json(FORECAST_URL, params,
+                                          weight=openmeteo_weight(len(used), past_days + 1) * len(part))
+                break
+            except ValueError as e:
+                m = INVALID_VAR.search(str(e))
+                if not m or m.group(1) not in used:
+                    raise
+                used.remove(m.group(1))
+        payload = payload if isinstance(payload, list) else [payload]
+        for (_, row), loc in zip(part.iterrows(), payload):
+            df = _daily_frame(loc, used)
+            df["town"] = row["name"]
+            df["elevation"] = loc.get("elevation")
+            frames.append(df)
+    live = pd.concat(frames, ignore_index=True)
+    live.to_parquet(LIVE_DIR / "places.parquet", index=False)
     return live

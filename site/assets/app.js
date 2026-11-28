@@ -58,6 +58,34 @@ const townName = k => state.meta.towns.find(t => t.key === k)?.name ?? k;
 
 // ------------------------------------------------------------------ forecast checker
 let mapMode = "rain";
+let selectedDistrict = null;
+
+function renderDistrictPanel() {
+  const panel = $("district-panel"), f = state.forecast;
+  if (!selectedDistrict) {
+    panel.innerHTML = `<p class="sub" style="margin:0"><b>Click a district on the map</b> to see the forecast for the towns inside it.</p>`;
+    return;
+  }
+  const t = state.meta.towns.find(x => x.key === selectedDistrict);
+  const d = f?.towns.find(x => x.town === selectedDistrict);
+  const places = (f?.places || []).filter(p => p.district === selectedDistrict);
+  const thr = state.meta.targets;
+  if (!d) {
+    panel.innerHTML = `<h2 style="margin:0 0 4px">${t.name} District</h2><p class="sub" style="margin:0">No forecast yet for this district. It starts with the first forecast after the 25-district retrain.</p>`;
+    return;
+  }
+  const rows = [{ name: `${t.name} (district point)`, p_rain: d.p_rain, p_heavy: d.p_heavy, today_precip: d.today_precip, elevation: t.elevation, hl: true }, ...places];
+  panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <h2 style="margin:0">${t.name} District</h2><span class="muted small">${t.region} Province · ${t.zone} zone · normal for the date ${pct(d.p_clim)}</span></div>
+    <div class="table-scroll" style="margin-top:8px">${scoreTable(rows, [
+      { label: "Town", get: r => r.name },
+      { label: `Rain ≥ ${thr.rain_mm} mm`, num: true, get: r => `<span class="swatch" style="background:color-mix(in oklab, var(--series-1) ${Math.round(10 + 80 * r.p_rain)}%, var(--surface-1))"></span>${pct(r.p_rain)}` },
+      { label: `Heavy ≥ ${thr.heavy_mm} mm`, num: true, get: r => pct(r.p_heavy, 1) },
+      { label: "Rain today", num: true, get: r => r.today_precip == null ? "–" : `${r.today_precip} mm` },
+      { label: "Elevation", num: true, get: r => r.elevation == null ? "–" : `${r.elevation} m` },
+    ])}</div>
+    <p class="sub small" style="margin:8px 0 0">${places.length ? "Town forecasts use the same model with each town's own weather. They have not been backtested separately yet; the published scores are for the district points. Towns close together often share weather data, so similar numbers are expected." : "No town list for this district yet."}</p>`;
+}
 // Label nudges (SVG units) where a district's box centre isn't a good spot.
 const NUDGE = { colombo: [-14, 0], gampaha: [-6, 0], kalutara: [-4, 2], puttalam: [4, 10], jaffna: [8, 6],
   trincomalee: [-6, 18], hambantota: [6, 4], galle: [-4, 0], kurunegala: [0, -10], mannar: [0, 10], batticaloa: [-6, 0] };
@@ -80,7 +108,8 @@ function renderMap() {
         tip: `<b>${t.name}</b><div class="row"><span>Chance of rain</span><b>${pct(r.p_rain)}</b></div><div class="row"><span>Normal for date</span><b>${pct(r.p_clim)}</b></div>` };
     }
   }
-  districtMap($("fc-map"), { areas, labelNudge: NUDGE });
+  districtMap($("fc-map"), { areas, labelNudge: NUDGE, selected: selectedDistrict,
+    onClick: key => { selectedDistrict = key; renderMap(); renderDistrictPanel(); $("district-panel").scrollIntoView({ behavior: "smooth", block: "nearest" }); } });
   $("map-note").innerHTML = (mapMode === "rain" ? "Darker blue = higher chance of rain tomorrow. " : "Heavy-rain status, research only. ")
     + (missing ? `Hatched: no forecast yet for ${missing} districts. ` : "")
     + `<br><span class="muted">District map: <a href="https://mapsvg.com/maps/sri-lanka">MapSVG</a> via <a href="https://github.com/VictorCazanave/svg-maps">svg-maps</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</span>`;
@@ -89,6 +118,7 @@ function renderMap() {
 function renderForecastCards() {
   const f = state.forecast;
   renderMap();
+  renderDistrictPanel();
   if (!f) {
     $("fc-lede").textContent = "No forecast has been issued yet. The daily job publishes one each evening.";
     return;

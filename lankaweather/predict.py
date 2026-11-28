@@ -16,8 +16,8 @@ import numpy as np
 import pandas as pd
 
 from .config import ERA5_DIR, LEDGER, MODELS, SITE_DATA, load_config, towns
-from .features import SEASON_NAMES, SEASON_OF_MONTH, build
-from .fetch import fetch_live, load_history
+from .features import SEASON_NAMES, SEASON_OF_MONTH, build, build_points
+from .fetch import fetch_live, fetch_live_places, load_history, load_places
 from .http import Client
 from .metrics import scores
 
@@ -117,6 +117,11 @@ def run(offline: bool = False, force: bool = False) -> dict:
             for r in today.itertuples()
         ],
     }
+    try:
+        out["places"] = predict_places(live, issue_date, meta, offline=offline or synthetic)
+    except Exception as e:  # towns are an extra; never let them block the district forecast
+        log.warning("town-level forecasts failed: %s", e)
+        out["places"] = []
     SITE_DATA.mkdir(parents=True, exist_ok=True)
     (SITE_DATA / "forecast.json").write_text(json.dumps(out, indent=1))
     log.info("forecast for %s issued (%d towns)", out["target_date"], len(out["towns"]))
@@ -187,3 +192,37 @@ def ledger_summary() -> dict:
         summary["first_target"] = str(done["target_date"].min())
         summary["last_target"] = str(done["target_date"].max())
     return summary
+
+
+def predict_places(live: pd.DataFrame, issue_date: pd.Timestamp, meta: dict, offline: bool = False) -> list[dict]:
+    """Forecasts for the towns inside each district (config/places.csv).
+
+    Same model as the districts, fed with each town's own recent weather. Not separately backtested:
+    the published scores are for the 25 district points.
+    """
+    places = load_places()
+    if places is None:
+        return []
+    rain = lgb.Booster(model_file=str(MODELS / "rain.txt"))
+    heavy = lgb.Booster(model_file=str(MODELS / "heavy.txt"))
+    districts = live[live["town"].isin(meta["towns"])]
+    places = places[places["district"].isin(meta["towns"])]
+    if offline:  # no network: stand in each town's parent district series (keeps the pipeline testable)
+        parts = []
+        for r in places.itertuples():
+            d = districts[districts["town"] == r.district].copy()
+            d["town"], d["elevation"] = r.name, np.nan
+            parts.append(d)
+        place_live = pd.concat(parts, ignore_index=True)
+    else:
+        place_live = fetch_live_places(Client(budget=4000), places)
+    feat = build_points(districts, place_live, places)
+    today = feat[feat["date"] == issue_date].copy()
+    X = today.reindex(columns=meta["features"])
+    today["p_rain"] = rain.predict(X)
+    today["p_heavy"] = heavy.predict(X)
+    return [{"name": r.town, "district": r.district, "lat": round(float(r.lat), 4), "lon": round(float(r.lon), 4),
+             "elevation": None if pd.isna(r.elevation) else round(float(r.elevation)),
+             "p_rain": round(float(r.p_rain), 3), "p_heavy": round(float(r.p_heavy), 4),
+             "today_precip": None if pd.isna(r.precip) else round(float(r.precip), 1)}
+            for r in today.sort_values(["district", "town"]).itertuples()]

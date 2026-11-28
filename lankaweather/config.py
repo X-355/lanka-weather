@@ -9,6 +9,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "config" / "config.yaml"
+PLACES = ROOT / "config" / "places.csv"
 
 DATA = ROOT / "data"
 RAW = DATA / "raw"

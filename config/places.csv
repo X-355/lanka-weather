@@ -1,0 +1,166 @@
+name,district,lat,lon,population,source
+Akkaraipattu,ampara,7.22,81.85,,added; approximate centre
+Ampara,ampara,7.2975,81.682,43720,GeoNames 1251459
+Dehiattakandiya,ampara,7.68,81.06,,added; approximate centre
+Kalmunai,ampara,7.409,81.8347,100171,GeoNames 1242110
+Pottuvil,ampara,6.8762,81.8267,45727,GeoNames 1229724
+Sammanthurai,ampara,7.37,81.81,,added; approximate centre
+Uhana,ampara,7.36,81.64,,added; approximate centre
+Anuradhapura,anuradhapura,8.3122,80.4131,60943,GeoNames 1251081
+Eppawala,anuradhapura,8.15,80.41,,added; approximate centre
+Kekirawa,anuradhapura,8.04,80.6,,added; approximate centre
+Medawachchiya,anuradhapura,8.54,80.49,,added; approximate centre
+Mihintale,anuradhapura,8.3593,80.5103,5000,GeoNames 1235107
+Padaviya,anuradhapura,8.845,80.7625,0,GeoNames 8714432
+Tambuttegama,anuradhapura,8.14,80.3,,added; approximate centre
+Badulla,badulla,6.9802,81.0577,47587,GeoNames 1250615
+Bandarawela,badulla,6.83,80.99,,added; approximate centre
+Bogahakumbura,badulla,7.0869,81.022,1500,GeoNames 1249808
+Ella,badulla,6.8756,81.0463,5000,GeoNames 1247148
+Haputale,badulla,6.7657,80.951,4721,GeoNames 1244713
+Mahiyanganaya,badulla,7.32,81.0,,added; approximate centre
+Passara,badulla,6.935,81.15,,added; approximate centre
+Welimada,badulla,6.9,80.91,,added; approximate centre
+Batticaloa,batticaloa,7.7102,81.6924,86742,GeoNames 1250161
+Chenkalady,batticaloa,7.78,81.59,,added; approximate centre
+Eravur,batticaloa,7.7782,81.6038,22982,GeoNames 1246924
+Kattankudy,batticaloa,7.68,81.73,,added; approximate centre
+Vakarai,batticaloa,8.1333,81.4333,21000,GeoNames 1225187
+Valaichchenai,batticaloa,7.92,81.53,,added; approximate centre
+Avissawella,colombo,6.95,80.21,,added; approximate centre
+Battaramulla,colombo,6.8964,79.9181,75633,GeoNames 1250164
+Colombo,colombo,6.9355,79.8487,648034,GeoNames 1248991
+Dehiwala-Mount Lavinia,colombo,6.8402,79.8712,219827,GeoNames 1234569
+Homagama,colombo,6.844,80.0024,34664,GeoNames 1243936
+Kolonnawa,colombo,6.9329,79.8848,64887,GeoNames 1239593
+Kotikawatta,colombo,6.9269,79.9095,64565,GeoNames 1239047
+Maharagama,colombo,6.848,79.9265,195355,GeoNames 1236854
+Moratuwa,colombo,6.773,79.8816,168280,GeoNames 1234633
+Mulleriyawa,colombo,6.933,79.9297,33540,GeoNames 1234378
+Padukka,colombo,6.84,80.09,,added; approximate centre
+Pita Kotte,colombo,6.8905,79.9015,118179,GeoNames 1230089
+Sri Jayawardenepura Kotte,colombo,6.883,79.9071,115826,GeoNames 1238992
+Ambalangoda,galle,6.2355,80.0538,56783,GeoNames 1251574
+Baddegama,galle,6.17,80.18,,added; approximate centre
+Elpitiya,galle,6.29,80.16,,added; approximate centre
+Galle,galle,6.0461,80.2103,93118,GeoNames 1246294
+Hikkaduwa,galle,6.1407,80.1012,1300,GeoNames 1244178
+Karapitiya,galle,6.06,80.23,,added; approximate centre
+Koggala,galle,5.9886,80.3286,3000,GeoNames 1239829
+Talpe,galle,5.9999,80.2787,3000,GeoNames 1227217
+Unawatuna,galle,6.0212,80.2503,2000,GeoNames 1225514
+Divulapitiya,gampaha,7.22,80.01,,added; approximate centre
+Gampaha,gampaha,7.0897,79.9925,9350,GeoNames 1246007
+Hendala,gampaha,6.9909,79.883,56978,GeoNames 1244397
+Ja Ela,gampaha,7.0744,79.8919,32175,GeoNames 1242835
+Kandana,gampaha,7.048,79.8937,33424,GeoNames 1241750
+Katunayaka,gampaha,7.1699,79.8884,84643,GeoNames 1240935
+Kelaniya,gampaha,6.9553,79.922,28846,GeoNames 1240622
+Minuwangoda,gampaha,7.1663,79.9533,7772,GeoNames 1235000
+Negombo,gampaha,7.2083,79.8358,137223,GeoNames 1233369
+Nittambuwa,gampaha,7.14,80.1,,added; approximate centre
+Peliyagoda,gampaha,6.9685,79.8836,28784,GeoNames 1230613
+Veyangoda,gampaha,7.15,80.05,,added; approximate centre
+Wattala,gampaha,6.9892,79.8917,30725,GeoNames 1224085
+Welisara,gampaha,7.0281,79.9014,41306,GeoNames 1223648
+Ambalantota,hambantota,6.1196,81.0214,80506,GeoNames 1251568
+Beliatta,hambantota,6.0496,80.7325,58675,GeoNames 1250066
+Hambantota,hambantota,6.1241,81.1185,19999,GeoNames 1244926
+Tangalle,hambantota,6.0234,80.7974,10497,GeoNames 1227037
+Tissamaharama,hambantota,6.28,81.29,,added; approximate centre
+Weeraketiya,hambantota,6.13,80.78,,added; approximate centre
+Chavakachcheri,jaffna,9.66,80.16,,added; approximate centre
+Jaffna,jaffna,9.6684,80.0074,169102,GeoNames 1242833
+Kayts,jaffna,9.69,79.86,,added; approximate centre
+Nallur,jaffna,9.672,80.03,,added; approximate centre
+Point Pedro,jaffna,9.8167,80.2333,89810,GeoNames 1229989
+Valvedditturai,jaffna,9.8167,80.1667,78205,GeoNames 1225142
+Agalawatta,kalutara,6.54,80.16,,added; approximate centre
+Bandaragama,kalutara,6.71,79.99,,added; approximate centre
+Bentota,kalutara,6.426,79.9958,37000,GeoNames 1249978
+Beruwala,kalutara,6.4788,79.9828,34250,GeoNames 1249931
+Horana,kalutara,6.7159,80.0626,8982,GeoNames 1243867
+Kalutara,kalutara,6.5831,79.9593,37081,GeoNames 1241964
+Matugama,kalutara,6.52,80.11,,added; approximate centre
+Panadura,kalutara,6.7132,79.9026,33735,GeoNames 1231410
+Digana,kandy,7.3,80.76,,added; approximate centre
+Gampola,kandy,7.1643,80.5696,24283,GeoNames 1246000
+Kadugannawa,kandy,7.2547,80.5242,1214,GeoNames 1242571
+Kandy,kandy,7.2906,80.6336,111701,GeoNames 1241622
+Katugastota,kandy,7.333,80.622,,added; approximate centre
+Nawalapitiya,kandy,7.05,80.53,,added; approximate centre
+Peradeniya,kandy,7.269,80.596,,added; approximate centre
+Kegalle,kegalle,7.2523,80.3436,17962,GeoNames 1240723
+Mawanella,kegalle,7.253,80.447,,added; approximate centre
+Rambukkana,kegalle,7.322,80.392,,added; approximate centre
+Ruwanwella,kegalle,7.044,80.257,,added; approximate centre
+Warakapola,kegalle,7.226,80.197,,added; approximate centre
+Kilinochchi,kilinochchi,9.3961,80.3982,13006,GeoNames 1240372
+Pallai,kilinochchi,9.6,80.33,,added; approximate centre
+Paranthan,kilinochchi,9.44,80.4,,added; approximate centre
+Poonakary,kilinochchi,9.5,80.21,,added; approximate centre
+Kuliyapitiya,kurunegala,7.4688,80.0401,6877,GeoNames 1238427
+Kurunegala,kurunegala,7.4839,80.3683,28571,GeoNames 1237980
+Narammala,kurunegala,7.432,80.218,,added; approximate centre
+Nikaweratiya,kurunegala,7.75,80.117,,added; approximate centre
+Polgahawela,kurunegala,7.333,80.3,,added; approximate centre
+Wariyapola,kurunegala,7.623,80.239,,added; approximate centre
+Madhu,mannar,8.853,80.2,,added; approximate centre
+Mannar,mannar,8.9894,79.8784,35817,GeoNames 1236150
+Murunkan,mannar,8.84,80.04,,added; approximate centre
+Talaimannar,mannar,9.087,79.733,,added; approximate centre
+Dambulla,matale,7.86,80.6517,66716,GeoNames 1248749
+Galewela,matale,7.76,80.57,,added; approximate centre
+Matale,matale,7.4698,80.6217,36462,GeoNames 1235855
+Naula,matale,7.71,80.65,,added; approximate centre
+Rattota,matale,7.52,80.68,,added; approximate centre
+Sigiriya,matale,7.9495,80.7504,1001,GeoNames 1228051
+Akuressa,matara,6.1,80.48,,added; approximate centre
+Devinuwara,matara,5.9283,80.5888,45000,GeoNames 1248158
+Dickwella,matara,5.966,80.69,,added; approximate centre
+Hakmana,matara,6.08,80.64,,added; approximate centre
+Matara,matara,5.9485,80.5353,76254,GeoNames 1235846
+Mirissa,matara,5.9466,80.4583,4695,GeoNames 11979654
+Weligama,matara,5.975,80.4297,22179,GeoNames 1223738
+Bibile,monaragala,7.17,81.22,,added; approximate centre
+Buttala,monaragala,6.76,81.24,,added; approximate centre
+Kataragama,monaragala,6.4134,81.3346,20935,GeoNames 1241076
+Monaragala,monaragala,6.8714,81.3487,10236,GeoNames 1234808
+Siyambalanduwa,monaragala,6.9,81.55,,added; approximate centre
+Wattegama,monaragala,6.7989,81.4808,8000,GeoNames 1224061
+Wellawaya,monaragala,6.7369,81.1028,10000,GeoNames 11126122
+Mallavi,mullaitivu,9.13,80.33,,added; approximate centre
+Mullaitivu,mullaitivu,9.268,80.815,28973,GeoNames 1234393
+Oddusuddan,mullaitivu,9.15,80.65,,added; approximate centre
+Puthukkudiyiruppu,mullaitivu,9.31,80.7,,added; approximate centre
+Hatton,nuwara_eliya,6.8916,80.5955,15073,GeoNames 1244596
+Maskeliya,nuwara_eliya,6.83,80.57,,added; approximate centre
+Nuwara Eliya,nuwara_eliya,6.9708,80.7829,27500,GeoNames 1232783
+Ragala,nuwara_eliya,6.99,80.79,,added; approximate centre
+Talawakele,nuwara_eliya,6.9371,80.6581,3545,GeoNames 1227300
+Walapane,nuwara_eliya,7.09,80.86,,added; approximate centre
+Dimbulagala,polonnaruwa,7.86,81.12,,added; approximate centre
+Hingurakgoda,polonnaruwa,8.04,80.95,,added; approximate centre
+Kaduruwela,polonnaruwa,7.932,81.03,,added; approximate centre
+Medirigiriya,polonnaruwa,8.145,80.96,,added; approximate centre
+Polonnaruwa,polonnaruwa,7.9397,81.0027,13900,GeoNames 1229901
+Anamaduwa,puttalam,7.88,80.0,,added; approximate centre
+Chilaw,puttalam,7.5758,79.7953,24712,GeoNames 1249145
+Kalpitiya,puttalam,8.23,79.765,,added; approximate centre
+Marawila,puttalam,7.41,79.83,,added; approximate centre
+Puttalam,puttalam,8.0362,79.8283,45661,GeoNames 1229293
+Wennappuwa,puttalam,7.35,79.85,,added; approximate centre
+Balangoda,ratnapura,6.647,80.703,,added; approximate centre
+Eheliyagoda,ratnapura,6.85,80.268,,added; approximate centre
+Embilipitiya,ratnapura,6.343,80.849,,added; approximate centre
+Pelmadulla,ratnapura,6.62,80.542,,added; approximate centre
+Ratnapura,ratnapura,6.6858,80.4036,47832,GeoNames 1228730
+Kantale,trincomalee,8.36,81.01,,added; approximate centre
+Kinniya,trincomalee,8.49,81.18,,added; approximate centre
+Kuchchaveli,trincomalee,8.82,81.1,,added; approximate centre
+Mutur,trincomalee,8.45,81.27,,added; approximate centre
+Trincomalee,trincomalee,8.5778,81.2289,108420,GeoNames 1226260
+Cheddikulam,vavuniya,8.66,80.3,,added; approximate centre
+Nedunkeni,vavuniya,8.95,80.63,,added; approximate centre
+Omanthai,vavuniya,8.88,80.5,,added; approximate centre
+Vavuniya,vavuniya,8.7514,80.4971,60176,GeoNames 1225018

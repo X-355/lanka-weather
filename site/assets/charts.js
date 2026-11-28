@@ -293,14 +293,18 @@ export function districtMap(container, opts) {
   el("rect", { width: 7, height: 7, fill: "var(--surface-1)" }, pat);
   el("line", { x1: 0, y1: 0, x2: 0, y2: 7, stroke: "var(--neutral)", "stroke-width": 2.2 }, pat);
   const shapes = el("g", {}, svg), labels = el("g", { "pointer-events": "none" }, svg);
-  for (const [key, d] of Object.entries(DISTRICTS)) {
+  const order = Object.keys(DISTRICTS).sort((x, y) => (x === opts.selected) - (y === opts.selected));
+  for (const key of order) {
+    const d = DISTRICTS[key];
     const a = opts.areas[key] || {};
     const path = el("path", { d, fill: a.fill || "var(--surface-2)", stroke: "var(--surface-1)", "stroke-width": 1.6,
       "stroke-linejoin": "round" }, shapes);
     if (a.muted) path.setAttribute("stroke-dasharray", "3 2"), path.setAttribute("stroke", "var(--axis)");
-    path.style.cursor = "default";
+    path.style.cursor = opts.onClick ? "pointer" : "default";
+    if (opts.onClick) path.addEventListener("click", () => { hideTip(); opts.onClick(key); });
+    if (opts.selected === key) { path.setAttribute("stroke", "var(--text-primary)"); path.setAttribute("stroke-width", 3); }
     path.addEventListener("mousemove", e => { path.setAttribute("stroke", "var(--text-primary)"); showTip(e, a.tip || key); });
-    path.addEventListener("mouseleave", () => { path.setAttribute("stroke", a.muted ? "var(--axis)" : "var(--surface-1)"); hideTip(); });
+    path.addEventListener("mouseleave", () => { path.setAttribute("stroke", opts.selected === key ? "var(--text-primary)" : a.muted ? "var(--axis)" : "var(--surface-1)"); hideTip(); });
     const b = path.getBBox(), n = (opts.labelNudge || {})[key] || [0, 0];
     const t = el("text", { x: b.x + b.width / 2 + n[0], y: b.y + b.height / 2 + 4 + n[1], "text-anchor": "middle",
       style: "font-size:13px;font-weight:500;fill:var(--text-primary);paint-order:stroke;stroke:var(--surface-1);stroke-width:3px;stroke-linejoin:round" }, labels);

@@ -16,7 +16,8 @@ a static HF Space).
 
 ## What's on the site
 
-1. **Forecast checker**: an island map and tomorrow's rain chance per district and a live, append-only track record. It also
+1. **Forecast checker**: a district map of tomorrow's rain chance. Click a district to see its towns (165 towns in
+   `config/places.csv`) and a live, append-only track record. It also
    shows the backtest scoreboard against baselines and ECMWF / GFS / ICON day-ahead forecasts, a
    reliability diagram, skill by town, and a tool to look up what every forecast said on any test day.
 2. **Monsoon & rainfall dashboard**: monthly rainfall vs the 1991–2020 normal (with P10–P90 range),
@@ -101,7 +102,10 @@ Delete `data/raw` before fetching real data.
 
 Weather data by [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0), including Copernicus ERA5 and
 archived ECMWF, NOAA GFS and DWD ICON forecasts. Solar irradiance from the
-[NASA POWER](https://power.larc.nasa.gov/) project. Not an official forecast: use the
+[NASA POWER](https://power.larc.nasa.gov/) project. Town locations from [GeoNames](https://www.geonames.org/)
+(CC BY 4.0), plus some main towns added by hand with approximate centres (marked in `config/places.csv`). District
+boundaries from [MapSVG](https://mapsvg.com/maps/sri-lanka) via [svg-maps](https://github.com/VictorCazanave/svg-maps)
+(CC BY 4.0). Not an official forecast: use the
 [Department of Meteorology, Sri Lanka](https://www.meteo.gov.lk) and the
 [Disaster Management Centre](https://www.dmc.gov.lk) for warnings.
 
