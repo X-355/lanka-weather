@@ -64,6 +64,32 @@ function townOptions(select, selected) {
 }
 const townName = k => state.meta.towns.find(t => t.key === k)?.name ?? k;
 
+// Pickers that also offer the towns inside each district: grouped by district, district first.
+// Values: "colombo" for a district, "t:colombo:Ja-Ela" for a town.
+function placeOptions(select, selected) {
+  const places = state.forecast?.places || [];
+  const ds = [...state.meta.towns].sort((a, b) => a.name.localeCompare(b.name));
+  select.innerHTML = ds.map(d => {
+    const ts = places.filter(p => p.district === d.key).map(p => p.name).sort((a, b) => a.localeCompare(b));
+    return `<optgroup label="${d.name} District"><option value="${d.key}">${d.name} (district)</option>` +
+      ts.map(n => `<option value="t:${d.key}:${n}">${n}</option>`).join("") + `</optgroup>`;
+  }).join("");
+  select.value = selected || "colombo";
+}
+// Towns in the same ~25 km weather grid square as a district point have identical rainfall records.
+const sharedNote = P => {
+  const sh = state.placesBacktest?.[P.name]?.shares_cell_with;
+  return sh ? ` ${P.name} sits in the same ~25 km weather grid square as ${townName(sh)}'s district point, so their rainfall records are the same.` : "";
+};
+const parsePlace = v => v.startsWith("t:") ? { town: true, district: v.split(":")[1], name: v.split(":").slice(2).join(":") }
+                                          : { town: false, district: v, name: townName(v) };
+const bundles = {};
+function townBundle(district) {
+  if (!bundles[district]) bundles[district] = fetch(`data/towns/${district}.json?v=${state.meta.generated_at || ""}`)
+    .then(r => r.ok ? r.json() : null).catch(() => null);
+  return bundles[district];
+}
+
 // ------------------------------------------------------------------ forecast checker
 let mapMode = "rain";
 let selectedDistrict = null;
@@ -427,7 +453,7 @@ function renderScoreboards() {
 function setupChecker() {
   const B = state.backtest;
   if (!B) { $("ck-result").innerHTML = "<p class='muted'>No backtest data.</p>"; return; }
-  townOptions($("ck-town"));
+  placeOptions($("ck-town"), "colombo");
   const first = Object.values(B)[0];
   const d = $("ck-date");
   d.min = first.dates[0];
@@ -440,7 +466,20 @@ function setupChecker() {
 function renderChecker() {
   const B = state.backtest;
   if (!B) return;
-  const town = $("ck-town").value, b = B[town];
+  const P = parsePlace($("ck-town").value);
+  let b = B[P.district], label = P.name;
+  if (P.town) {
+    const got = (bundles[P.district] && bundles[P.district].__value) || null;
+    if (!got) {
+      $("ck-result").innerHTML = "<p class='muted'>Loading the town's test results…</p>";
+      townBundle(P.district).then(v => { bundles[P.district].__value = v || { towns: {} }; renderChecker(); });
+      return;
+    }
+    const tb = got.towns?.[P.name]?.backtest;
+    if (!tb) { $("ck-result").innerHTML = `<p class='muted'>No day-by-day test results for ${P.name} yet. They appear after the next retrain.</p>`; $("ck-timeline").innerHTML = ""; return; }
+    b = tb;
+  }
+  const town = P.district;
   let i = b.dates.indexOf($("ck-date").value);
   if (i < 0) { i = b.dates.length - 1; $("ck-date").value = b.dates[i]; }
   const thr = state.meta.targets.rain_mm, obs = b.obs[i], rained = obs != null && obs >= thr;
@@ -454,10 +493,11 @@ function renderChecker() {
     const right = yes === rained;
     return `<span class="verdict">${right ? "✓ right" : "✗ wrong"}</span>`;
   };
-  $("ck-result").innerHTML = `<p style="margin:0 0 10px"><b>${townName(town)}, ${fmtDate(b.dates[i])}</b>. Observed: <b>${obs == null ? "–" : obs.toFixed(1) + " mm"}</b> (${rained ? "a rain day" : "dry"}).</p>
+  $("ck-result").innerHTML = `<p style="margin:0 0 10px"><b>${P.town ? `${label} (${townName(town)} District)` : townName(town)}, ${fmtDate(b.dates[i])}</b>. Observed: <b>${obs == null ? "–" : obs.toFixed(1) + " mm"}</b> (${rained ? "a rain day" : "dry"}).</p>
     <table class="data"><thead><tr><th>Forecast</th><th class="num">Said</th><th>Call at 50% / 1 mm</th></tr></thead><tbody>
     ${entries.map(([n, v, kind, hl]) => `<tr class="${hl ? "hl" : ""}"><td>${n}</td><td class="num">${v == null ? "–" : kind === "prob" ? pct(v) + " chance" : v.toFixed(1) + " mm"}</td><td>${verdict(v, kind)}</td></tr>`).join("")}
     </tbody></table>
+    ${P.town ? `<p class="sub small" style="margin:10px 0 0">For towns, the test covers Weather Lab alone and the baselines: the archive of professional forecasts was only collected for the 25 district points. The town's calendar odds come from its own record before the test years.</p>` : ""}
     ${hasHy ? `<p class="sub small" style="margin:10px 0 0">The hybrid and calibrated ECMWF shown here come from a fit that didn't include this day: months before July 2025 use a fit on later months, and later months use a fit on earlier ones.</p>` : b.hybrid ? `<p class="sub small" style="margin:10px 0 0">The hybrid starts in February 2024, when the archive of professional forecasts begins.</p>` : ""}
     <p class="sub small" style="margin:10px 0 0">A single day can't show skill. A 30% forecast is supposed to see rain on about 3 days in 10. The tables above are the real test.</p>`;
   const lo = Math.max(0, i - 45), hi = Math.min(b.dates.length, i + 15);
@@ -478,7 +518,7 @@ let moSeason = null;
 
 function setupMonsoon() {
   if (!state.climate) return;
-  townOptions($("mo-town"));
+  placeOptions($("mo-town"), "colombo");
   const years = Object.keys(Object.values(state.climate.towns)[0].by_year).reverse();
   $("mo-year").innerHTML = years.map(y => `<option>${y}</option>`).join("");
   const m = new Date(state.climate.last_day).getMonth() + 1;
@@ -495,9 +535,19 @@ function setupMonsoon() {
 }
 
 renderers.monsoon = () => {
-  const CL = state.climate;
+  let CL = state.climate;
   if (!CL) return;
-  const t = CL.towns[$("mo-town").value], year = $("mo-year").value, yv = t.by_year[year];
+  const P = parsePlace($("mo-town").value);
+  let t = CL.towns[P.district];
+  if (P.town) {
+    const got = bundles[P.district]?.__value;
+    if (!got) { townBundle(P.district).then(v => { bundles[P.district].__value = v || { towns: {} }; renderers.monsoon(); }); return; }
+    const e = got.towns?.[P.name];
+    if (!e) return;
+    t = e.climate;
+    CL = { ...CL, baseline: got.baseline, provisional_through: null, last_day: got.last_day };
+  }
+  const year = $("mo-year").value, yv = t.by_year[year] || new Array(12).fill(null);
   const [b0, b1] = CL.baseline;
   const ytd = yv.reduce((a, v) => a + (v ?? 0), 0);
   const nMonths = yv.filter(v => v != null).length;
@@ -511,7 +561,8 @@ renderers.monsoon = () => {
     <div class="card kpi"><div class="label">Normal year</div><div class="value">${t.annual_normal.toLocaleString()} mm</div><div class="note">${b0}–${b1} average</div></div>
     <div class="card kpi"><div class="label">${moSeason} ${sp ? sp.year + " (in progress)" : "normal"}</div><div class="value">${sp ? Math.round(sp.total) : Math.round(seasonNormal ?? 0)} mm</div><div class="note">${sp ? `${sp.days} of ${sp.of} days; full-season normal ${Math.round(seasonNormal)} mm` : state.meta.seasons[moSeason]}</div></div>
     <div class="card kpi"><div class="label">Final data through</div><div class="value" style="font-size:20px">${fmtDate(CL.last_day)}</div><div class="note">${CL.provisional_through ? `final; provisional through ${fmtDate(CL.provisional_through)}` : "ERA5 is published ~5 days late"}</div></div>`;
-  $("mo-monthly-sub").textContent = `Grey bars are the ${b0}–${b1} average. Whiskers span the 10th–90th percentile of past years.${lastIsPartial ? ` ${MONTHS[lastMonth]} ${year} is incomplete.` : ""}`;
+  $("mo-monthly-sub").textContent = `Grey bars are the ${b0}–${b1} average. Whiskers span the 10th–90th percentile of past years.${lastIsPartial ? ` ${MONTHS[lastMonth]} ${year} is incomplete.` : ""}` +
+    (P.town ? ` ${P.name}'s own weather record starts in ${b0}, so its "normal" is the ${b0}–${b1} average, not the 30-year normal the districts use.${sharedNote(P)}` : "");
   $("mo-monthly").innerHTML = "";
   bars($("mo-monthly"), {
     categories: MONTHS,
@@ -592,7 +643,7 @@ function heavyStatus(p, clim) {
 
 function setupHeavy() {
   if (!state.heavy) return;
-  townOptions($("hv-town"), "ratnapura");
+  placeOptions($("hv-town"), "ratnapura");
   $("hv-town").addEventListener("change", () => renderers.heavy());
 }
 
@@ -628,14 +679,24 @@ renderers.heavy = () => {
     $("hv-skill").innerHTML = `On the unseen test years, heavy-rain days were <b>${pct(M.model.base_rate, 1)}</b> of district-days. The model's average precision is <b>${num(M.model.avg_precision)}</b>, against <b>${num(M.climatology.avg_precision)}</b> for calendar odds. AUC is ${num(M.model.auc)}, and Brier skill vs climatology is ${pct(M.model.bss, 1)}. Read these as "somewhat better than the calendar", not as a warning system. The status labels are fixed probability thresholds, not calibrated alerts.`;
   }
   if (H) {
-    const t = H.towns[$("hv-town").value];
+    const P = parsePlace($("hv-town").value);
+    let t = H.towns[P.district], since = "", townLine = "";
+    if (P.town) {
+      const got = bundles[P.district]?.__value;
+      if (!got) { townBundle(P.district).then(v => { bundles[P.district].__value = v || { towns: {} }; renderers.heavy(); }); return; }
+      t = got.towns?.[P.name]?.heavy;
+      if (!t) return;
+      since = t.years[0];
+      const fp = (f?.places || []).find(p => p.name === P.name && p.district === P.district);
+      townLine = (fp ? `Tomorrow's chance of ≥ ${thr} mm in ${P.name}: <b>${pct(fp.p_heavy, 1)}</b>${fp.p_clim_heavy != null ? `, against ${pct(fp.p_clim_heavy, 1)} normal for the date (from its record since ${since})` : ""}. ` : "") + sharedNote(P).trim();
+    }
     $("hv-months").innerHTML = "";
     bars($("hv-months"), {
       categories: MONTHS,
       series: [{ name: `Average ≥ ${thr} mm days`, color: C.model, values: t.per_month }],
       fmt: v => v.toFixed(1), yTitle: "days / month", height: 230,
     });
-    $("hv-events").innerHTML = `<p class="sub">Record day in the data: <b>${t.max.mm} mm</b> on ${fmtDate(t.max.date)}.</p>` + scoreTable(t.recent_events.slice(0, 10), [
+    $("hv-events").innerHTML = (townLine ? `<p class="sub">${townLine}</p>` : "") + `<p class="sub">Record day${since ? ` since ${since}` : " in the data"}: <b>${t.max.mm} mm</b> on ${fmtDate(t.max.date)}.</p>` + scoreTable(t.recent_events.slice(0, 10), [
       { label: "Date", get: r => fmtDate(r.date) }, { label: "Rainfall", num: true, get: r => r.mm + " mm" }]);
   }
 };

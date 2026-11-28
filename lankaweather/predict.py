@@ -367,8 +367,34 @@ def predict_places(live: pd.DataFrame, issue_date: pd.Timestamp, meta: dict, off
         except Exception as e:
             log.warning("town professional forecasts failed: %s", e)
     today = add_hybrid(today.assign(key=today["town"]), nwp)
+    clim = town_climatology(today["target_date"].iloc[0])
+    def c(name, k):
+        v = clim.get(name, {}).get(k)
+        return None if v is None or pd.isna(v) else round(float(v), 4)
     return [{"name": r.town, "district": r.district, "lat": round(float(r.lat), 4), "lon": round(float(r.lon), 4),
              "elevation": None if pd.isna(r.elevation) else round(float(r.elevation)),
              "p_rain": round(float(r.p_rain), 3), "p_heavy": round(float(r.p_heavy), 4),
+             "p_clim": c(r.town, "rain"), "p_clim_heavy": c(r.town, "heavy"),
              "today_precip": None if pd.isna(r.precip) else round(float(r.precip), 1), "method": r.method}
             for r in today.sort_values(["district", "town"]).itertuples()]
+
+
+def town_climatology(target: pd.Timestamp, window: int = 15) -> dict:
+    """Each town's calendar odds for the target date: share of days within ±window days of the same day of
+    year with ≥ rain_mm / ≥ heavy_mm, from the town's own record (2014 onwards, days before the target)."""
+    from .fetch import load_place_history
+    cfg = load_config()
+    try:
+        ph = load_place_history()
+    except Exception:
+        ph = None
+    if ph is None:
+        return {}
+    ph = ph[ph["date"] < target].dropna(subset=["precip"])
+    doy = ph["date"].dt.dayofyear.to_numpy()
+    d = abs(doy - target.dayofyear)
+    near = np.minimum(d, 366 - d) <= window
+    sub = ph[near]
+    g = sub.groupby("town")["precip"]
+    return {t: {"rain": float((v >= cfg["target"]["rain_mm"]).mean()), "heavy": float((v >= cfg["target"]["heavy_mm"]).mean())}
+            for t, v in g}

@@ -112,47 +112,100 @@ def build_climate(hist: pd.DataFrame) -> None:
     out = {"last_day": last_day.date().isoformat(), "baseline": [min(base_years), max(base_years)], "towns": {},
            "provisional_through": None if live is None else live["date"].max().date().isoformat()}
     for town, g in h.groupby("town"):
-        monthly = g.groupby(["year", "month"]).agg(total=("precip", "sum"), wet=("precip", lambda x: int((x >= rain_mm).sum())),
-                                                   days=("precip", "size")).reset_index()
-        base = monthly[monthly["year"].isin(base_years)]
-        normal = base.groupby("month")[["total", "wet"]].mean()
-        p10 = base.groupby("month")["total"].quantile(0.1)
-        p90 = base.groupby("month")["total"].quantile(0.9)
-        years = sorted(monthly["year"].unique())[-6:]
-        by_year = {}
-        for y in years:
-            m = monthly[monthly["year"] == y].set_index("month")
-            by_year[int(y)] = [None if mo not in m.index else round(float(m.at[mo, "total"]), 1) for mo in range(1, 13)]
-        # Seasonal totals by "monsoon year" (NEM Dec counts toward the following year's NEM).
-        s = g.assign(season=g["month"].map(SEASON_OF_MONTH), syear=np.where(g["month"] == 12, g["year"] + 1, g["year"]))
-        st = s.groupby(["syear", "season"])["precip"].agg(["sum", "size"]).reset_index()
-        expected = {"NEM": 90, "FIM": 61, "SWM": 153, "SIM": 61}
-        seasons = {}
-        for code in ["NEM", "FIM", "SWM", "SIM"]:
-            q = st[st["season"] == code]
-            complete = q[q["size"] >= expected[code] - 1]
-            seasons[code] = {"years": complete["syear"].astype(int).tolist(), "totals": _r(complete["sum"]),
-                             "partial": None}
-            inprog = q[(q["size"] < expected[code] - 1) & (q["syear"] == q["syear"].max())]
-            if len(inprog) and inprog["syear"].iloc[0] >= last_day.year:
-                seasons[code]["partial"] = {"year": int(inprog["syear"].iloc[0]), "total": round(float(inprog["sum"].iloc[0]), 1),
-                                            "days": int(inprog["size"].iloc[0]), "of": expected[code]}
-        recent = g[g["date"] > last_day - pd.Timedelta(days=90)]
         prov = []
         if live is not None:
             lv = live[(live["town"] == town) & (live["date"] > g["date"].max())].sort_values("date")
             prov = [{"date": d.date().isoformat(), "precip": None if pd.isna(p) else round(float(p), 1)}
                     for d, p in zip(lv["date"], lv["precip"])]
-        out["towns"][town] = {
-            "normal_total": _r(normal["total"]), "normal_wet": _r(normal["wet"]),
-            "p10": _r(p10), "p90": _r(p90), "by_year": by_year,
-            "annual_normal": round(float(normal["total"].sum()), 0),
-            "seasons": seasons,
+        out["towns"][town] = _climate_one(g, base_years, last_day, rain_mm, prov)
+    _write("climate.json", out)
+
+
+def _climate_one(g: pd.DataFrame, base_years: list, last_day: pd.Timestamp, rain_mm: float, prov: list) -> dict:
+    """Monthly normals, recent years, monsoon seasons and the last 90 days for one place."""
+    g = g.assign(year=g["date"].dt.year, month=g["date"].dt.month)
+    monthly = g.groupby(["year", "month"]).agg(total=("precip", "sum"), wet=("precip", lambda x: int((x >= rain_mm).sum())),
+                                               days=("precip", "size")).reset_index()
+    base = monthly[monthly["year"].isin(base_years)]
+    normal = base.groupby("month")[["total", "wet"]].mean()
+    p10 = base.groupby("month")["total"].quantile(0.1)
+    p90 = base.groupby("month")["total"].quantile(0.9)
+    by_year = {}
+    for y in sorted(monthly["year"].unique())[-6:]:
+        m = monthly[monthly["year"] == y].set_index("month")
+        by_year[int(y)] = [None if mo not in m.index else round(float(m.at[mo, "total"]), 1) for mo in range(1, 13)]
+    # Seasonal totals by "monsoon year" (NEM Dec counts toward the following year's NEM).
+    s_ = g.assign(season=g["month"].map(SEASON_OF_MONTH), syear=np.where(g["month"] == 12, g["year"] + 1, g["year"]))
+    st = s_.groupby(["syear", "season"])["precip"].agg(["sum", "size"]).reset_index()
+    expected = {"NEM": 90, "FIM": 61, "SWM": 153, "SIM": 61}
+    seasons = {}
+    for code in ["NEM", "FIM", "SWM", "SIM"]:
+        q = st[st["season"] == code]
+        complete = q[q["size"] >= expected[code] - 1]
+        seasons[code] = {"years": complete["syear"].astype(int).tolist(), "totals": _r(complete["sum"]), "partial": None}
+        inprog = q[(q["size"] < expected[code] - 1) & (q["syear"] == q["syear"].max())]
+        if len(inprog) and inprog["syear"].iloc[0] >= last_day.year:
+            seasons[code]["partial"] = {"year": int(inprog["syear"].iloc[0]), "total": round(float(inprog["sum"].iloc[0]), 1),
+                                        "days": int(inprog["size"].iloc[0]), "of": expected[code]}
+    recent = g[g["date"] > last_day - pd.Timedelta(days=90)]
+    return {"normal_total": _r(normal["total"]), "normal_wet": _r(normal["wet"]), "p10": _r(p10), "p90": _r(p90),
+            "by_year": by_year, "annual_normal": round(float(normal["total"].sum()), 0), "seasons": seasons,
             "recent": {"dates": recent["date"].dt.strftime("%Y-%m-%d").tolist(), "precip": _r(recent["precip"])},
             # Days newer than ERA5, from the operational analysis used for tonight's forecast. Replaced once ERA5 has them.
-            "provisional": prov,
-        }
-    _write("climate.json", out)
+            "provisional": prov}
+
+
+def _heavy_one(g: pd.DataFrame, thr: float) -> dict:
+    g = g.assign(month=g["date"].dt.month)
+    n_years = max(1.0, len(g) / 365.25)  # places can have different record lengths
+    heavy = g[g["precip"] >= thr]
+    per_month = heavy.groupby("month").size().reindex(range(1, 13), fill_value=0) / n_years
+    events = heavy.sort_values("date", ascending=False).head(15)
+    return {"per_month": _r(per_month, 2), "per_year": round(len(heavy) / n_years, 2),
+            "max": {"mm": round(float(g["precip"].max()), 1), "date": g.loc[g["precip"].idxmax(), "date"].date().isoformat()},
+            "recent_events": [{"date": d.date().isoformat(), "mm": round(float(p), 1)} for d, p in zip(events["date"], events["precip"])],
+            "years": [int(g["date"].dt.year.min()), int(g["date"].dt.year.max())]}
+
+
+def build_town_bundles() -> None:
+    """One file per district with its towns: rainfall dashboard, heavy-rain record and day-by-day backtest.
+
+    Town weather comes from each town's own ERA5 cell, which starts in places.history_start (2014), so a town's
+    "normal" is the average of its full years since then, not the 1991–2020 normal the districts use. The pages
+    say so. Loaded only when someone picks a town.
+    """
+    from .fetch import load_place_history, load_places
+    ph, places = load_place_history(), load_places()
+    if ph is None or places is None:
+        return
+    cfg = load_config()
+    rain_mm, thr = cfg["target"]["rain_mm"], cfg["target"]["heavy_mm"]
+    ph = ph[["town", "date", "precip"]].dropna(subset=["precip"])
+    last_day = ph["date"].max()
+    years = ph["date"].dt.year
+    full = sorted(y for y in years.unique() if (ph[years == y]["date"].dt.dayofyear.max() >= 365))
+    pred_p = REPORTS / "places_test_predictions.parquet"
+    pred = pd.read_parquet(pred_p) if pred_p.exists() else None
+    out_dir = SITE_DATA / "towns"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    district_of = dict(zip(places["name"], places["district"]))
+    for district, names in places.groupby("district")["name"]:
+        bundle = {"district": district, "baseline": [int(min(full)), int(max(full))] if full else None,
+                  "last_day": last_day.date().isoformat(), "towns": {}}
+        for name in names:
+            g = ph[ph["town"] == name].sort_values("date")
+            if len(g) < 365:
+                continue
+            entry = {"climate": _climate_one(g, full, last_day, rain_mm, []), "heavy": _heavy_one(g, thr)}
+            if pred is not None:
+                q = pred[pred["town"] == name].sort_values("target_date")
+                if len(q):
+                    entry["backtest"] = {"dates": q["target_date"].dt.strftime("%Y-%m-%d").tolist(), "obs": _r(q["y_amount"]),
+                                         "p": _r(q["p_rain"], 3), "ph": _r(q["p_heavy"], 3), "clim": _r(q["p_clim"], 3),
+                                         "markov": _r(q["p_markov"], 3)}
+            bundle["towns"][name] = entry
+        (out_dir / f"{district}.json").write_text(json.dumps(bundle, separators=(",", ":"), default=str))
+    log.info("town bundles written for %d districts", places["district"].nunique())
 
 
 def build_solar(hist: pd.DataFrame) -> None:
@@ -186,16 +239,7 @@ def build_heavy(hist: pd.DataFrame) -> None:
     h = hist.assign(month=hist["date"].dt.month, year=hist["date"].dt.year)
     out = {"threshold_mm": thr, "towns": {}}
     for town, g in h.groupby("town"):
-        n_years = max(1.0, len(g) / 365.25)  # towns can have different record lengths
-        heavy = g[g["precip"] >= thr]
-        per_month = heavy.groupby("month").size().reindex(range(1, 13), fill_value=0) / n_years
-        events = heavy.sort_values("date", ascending=False).head(15)
-        out["towns"][town] = {
-            "per_month": _r(per_month, 2),
-            "per_year": round(len(heavy) / n_years, 2),
-            "max": {"mm": round(float(g["precip"].max()), 1), "date": g.loc[g["precip"].idxmax(), "date"].date().isoformat()},
-            "recent_events": [{"date": d.date().isoformat(), "mm": round(float(p), 1)} for d, p in zip(events["date"], events["precip"])],
-        }
+        out["towns"][town] = _heavy_one(g, thr)
     _write("heavy.json", out)
 
 
@@ -210,6 +254,7 @@ def run() -> None:
     build_climate(hist)
     build_solar(hist)
     build_heavy(hist)
+    build_town_bundles()
     build_cyclones()
     if (REPORTS / "REPORT.md").exists():
         shutil.copy(REPORTS / "REPORT.md", SITE_DATA / "REPORT.md")

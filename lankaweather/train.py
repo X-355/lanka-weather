@@ -281,6 +281,11 @@ def evaluate_places(hist: pd.DataFrame, models: dict, cols: list, cfg: dict) -> 
     test["p_heavy"] = models["y_heavy"].predict(X, num_iteration=models["y_heavy"].best_iteration)
     test = add_baselines(test, climatology_table(base, "y_rain"), climatology_table(base, "y_heavy"),
                          markov_table(base, rain_mm), rain_mm)
+    # Day-by-day results per town, for the site's "check any day" tool (out of sample: test years only).
+    keep = [c for c in ["town", "district", "target_date", "y_amount", "y_rain", "y_heavy", "p_rain", "p_heavy",
+                        "p_clim", "p_clim_heavy", "p_markov"] if c in test]
+    REPORTS.mkdir(exist_ok=True)
+    test[keep].to_parquet(REPORTS / "places_test_predictions.parquet", index=False)
 
     cells = pd.read_csv(CELL_MAP)
     cell_of = dict(zip(cells.loc[cells["kind"] == "place", "name"], cells.loc[cells["kind"] == "place", "cell_id"]))
