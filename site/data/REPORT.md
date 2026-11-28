@@ -70,6 +70,18 @@ Base rate 1.1%. Model Brier skill 9.4%, AUC 0.930, average precision 0.212 (clim
 | trincomalee | 32.4% | 20.7% | 0.881 | 43.1% |
 | vavuniya | 27.5% | 17.3% | 0.851 | 44.7% |
 
+## Towns the model never trained on (2022-01-01 → 2026-11-22)
+
+13 towns in 9 ERA5 cells that contain no district point; each cell counted once (16,083 cell-days). Baselines from each town's own 2014–2021 data. Coverage: 112 of 165 towns scored.
+
+| Forecast | Brier ↓ | Skill vs climatology ↑ | AUC ↑ |
+|---|---|---|---|
+| model | 0.154 | 29.8% | 0.861 |
+| markov | 0.176 | 19.7% | 0.807 |
+| climatology | 0.219 | 0.0% | 0.708 |
+
+Towns sharing a district point's cell (99 towns, 25 cells): model skill 30.3%, Markov 18.7%.
+
 ## Cross-check against NASA POWER precipitation
 
 ERA5 and NASA POWER agree on rain/no-rain on 78.4% of test days. Scored against POWER instead of ERA5, the model's Brier skill is 24.0% (Markov 12.7%).
