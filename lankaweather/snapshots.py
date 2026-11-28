@@ -103,7 +103,7 @@ def run() -> dict:
             done[name] = f"failed: {e}"
         time.sleep(2)
     try:  # the cyclone list too, so a GDACS timeout at night is retried within 3 hours
-        from .build_site import build_cyclones
+        from .cyclones import build as build_cyclones
         build_cyclones()
         done["cyclones"] = "ok"
     except Exception as e:
