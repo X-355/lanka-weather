@@ -78,7 +78,7 @@ ECMWF is turned into a probability, and the hybrid is fitted, on 2024-02-05 → 
 
 20 gauges in 17 districts; day shift 1 (agreement with ERA5 by shift on pre-test years: {'0': 0.673, '1': 0.687}).
 
-**Rain gauges, 2024+ (with professional forecasts)**: 2024-02-14 → 2026-11-09, 2,138 rows on 501 days, identical for every forecast. Rain (≥ 1 mm) on 42.6% of rows here vs 75.6% in ERA5.
+**Rain gauges: with the hybrid and ECMWF**: 2024-02-14 → 2026-11-09, 2,138 rows on 501 days, identical for every forecast. Rain (≥ 1 mm) on 42.6% of rows here vs 75.6% in ERA5.
 
 | Forecast | Ranking AUC (95% range) ↑ | Adjusted skill, 2025-04 → 2026-11 (95% range) ↑ |
 |---|---|---|
@@ -89,11 +89,13 @@ ECMWF is turned into a probability, and the hybrid is fitted, on 2024-02-05 → 
 
 - hybrid - ecmwf_cal: AUC +0.004 (-0.009 to +0.017); adjusted skill 2.8% (0.4% to 5.3%)
 
+- hybrid - model: AUC +0.039 (+0.021 to +0.060); adjusted skill -3.3% (-6.9% to 0.2%)
+
 - model - ecmwf_cal: AUC -0.035 (-0.068 to -0.006); adjusted skill 6.1% (1.4% to 11.7%)
 
 - model - markov: AUC +0.024 (+0.005 to +0.042); adjusted skill 3.0% (0.7% to 5.4%)
 
-**Rain gauges, all test years**: 2022-01-01 → 2026-11-09, 15,898 rows on 1,253 days, identical for every forecast. Rain (≥ 1 mm) on 37.0% of rows here vs 66.7% in ERA5.
+**Rain gauges: Weather Lab vs Markov, all days with gauge data**: 2022-01-01 → 2026-11-09, 15,898 rows on 1,253 days, identical for every forecast. Rain (≥ 1 mm) on 37.0% of rows here vs 66.7% in ERA5.
 
 | Forecast | Ranking AUC (95% range) ↑ | Adjusted skill, 2023-09 → 2026-11 (95% range) ↑ |
 |---|---|---|
@@ -105,29 +107,31 @@ ECMWF is turned into a probability, and the hybrid is fitted, on 2024-02-05 → 
 ## Against NASA IMERG satellite rainfall
 
 
-**NASA IMERG, 2024+ (with professional forecasts)**: 2025-07-19 → 2026-11-22, 12,300 rows on 492 days, identical for every forecast. Rain (≥ 1 mm) on 48.8% of rows here vs 56.8% in ERA5.
+**NASA IMERG: with the hybrid and ECMWF**: 2024-02-05 → 2026-11-22, 25,550 rows on 1,022 days, identical for every forecast. Rain (≥ 1 mm) on 46.0% of rows here vs 57.5% in ERA5.
 
-| Forecast | Ranking AUC (95% range) ↑ | Adjusted skill, 2026-03 → 2026-11 (95% range) ↑ |
+| Forecast | Ranking AUC (95% range) ↑ | Adjusted skill, 2025-06 → 2026-11 (95% range) ↑ |
 |---|---|---|
-| hybrid | 0.850 (0.837–0.864) | 30.8% (25.2% to 36.0%) |
-| model | 0.791 (0.772–0.809) | 17.1% (10.6% to 22.7%) |
-| ecmwf_cal | 0.832 (0.816–0.847) | 25.1% (19.1% to 30.7%) |
-| markov | 0.743 (0.726–0.761) | 7.8% (1.9% to 13.1%) |
+| hybrid | 0.845 (0.834–0.856) | 32.7% (29.3% to 36.2%) |
+| model | 0.779 (0.764–0.794) | 19.9% (15.7% to 23.8%) |
+| ecmwf_cal | 0.832 (0.820–0.844) | 28.2% (24.6% to 31.7%) |
+| markov | 0.730 (0.716–0.743) | 12.9% (9.6% to 16.1%) |
 
-- hybrid - ecmwf_cal: AUC +0.018 (+0.012 to +0.024); adjusted skill 5.7% (3.7% to 7.6%)
+- hybrid - ecmwf_cal: AUC +0.013 (+0.008 to +0.018); adjusted skill 4.5% (3.0% to 6.0%)
 
-- model - ecmwf_cal: AUC -0.041 (-0.058 to -0.026); adjusted skill -8.1% (-11.7% to -4.6%)
+- hybrid - model: AUC +0.065 (+0.058 to +0.073); adjusted skill 12.9% (10.7% to 15.1%)
 
-- model - markov: AUC +0.048 (+0.038 to +0.057); adjusted skill 9.3% (7.0% to 11.5%)
+- model - ecmwf_cal: AUC -0.053 (-0.064 to -0.041); adjusted skill -8.3% (-11.7% to -5.2%)
 
-**NASA IMERG, all test years**: 2025-07-19 → 2026-11-22, 12,300 rows on 492 days, identical for every forecast. Rain (≥ 1 mm) on 48.8% of rows here vs 56.8% in ERA5.
+- model - markov: AUC +0.050 (+0.043 to +0.057); adjusted skill 6.9% (5.2% to 8.6%)
 
-| Forecast | Ranking AUC (95% range) ↑ | Adjusted skill, 2026-03 → 2026-11 (95% range) ↑ |
+**NASA IMERG: Weather Lab vs Markov, all days with satellite data**: 2022-01-01 → 2026-11-22, 44,675 rows on 1,787 days, identical for every forecast. Rain (≥ 1 mm) on 46.7% of rows here vs 60.0% in ERA5.
+
+| Forecast | Ranking AUC (95% range) ↑ | Adjusted skill, 2024-06 → 2026-11 (95% range) ↑ |
 |---|---|---|
-| model | 0.791 (0.772–0.809) | 17.1% (10.6% to 22.7%) |
-| markov | 0.743 (0.726–0.761) | 7.8% (1.9% to 13.1%) |
+| model | 0.776 (0.765–0.787) | 20.2% (17.4% to 23.1%) |
+| markov | 0.720 (0.710–0.730) | 13.9% (11.7% to 16.1%) |
 
-- model - markov: AUC +0.048 (+0.038 to +0.057); adjusted skill 9.3% (7.0% to 11.5%)
+- model - markov: AUC +0.057 (+0.051 to +0.062); adjusted skill 6.4% (5.1% to 7.5%)
 
 ## Heavy rain (≥ 50.0 mm) — research only
 
