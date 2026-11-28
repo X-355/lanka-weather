@@ -181,3 +181,6 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: s
 .suggest button { display: block; width: 100%; text-align: left; border: 0; background: none; color: var(--text-primary);
   font: inherit; padding: 7px 10px; cursor: pointer; }
 .suggest button[aria-selected="true"], .suggest button:hover { background: var(--surface-2); }
+
+/* keep Leaflet maps beneath the sticky header */
+.leaflet-container { z-index: 0; isolation: isolate; }
