@@ -1,4 +1,5 @@
 import { bars, districtMap, dotplot, hbars, reliability, timeline } from "./charts.js?v=dev";
+import { fill, fitSoon } from "./fit.js?v=dev";
 
 const C = {
   model: "var(--series-1)", nwp: "var(--series-2)", markov: "var(--series-3)", hybrid: "var(--series-4)",
@@ -31,7 +32,7 @@ function setupTabs() {
     document.querySelector(`nav.tabs button[data-tab="${tab}"]`)?.scrollIntoView({ block: "nearest", inline: "center" });
     document.querySelectorAll("main section").forEach(s => s.classList.toggle("active", s.id === tab));
     if (location.hash.slice(1) !== tab) history.replaceState(null, "", "#" + tab);
-    renderers[tab]?.();
+    Promise.resolve(renderers[tab]?.()).then(fitSoon).catch(e => console.error(e));
     scrollTo(0, 0);
   };
   buttons.forEach(b => b.addEventListener("click", () => go(b.dataset.tab)));
@@ -39,7 +40,7 @@ function setupTabs() {
   go(document.getElementById(h) ? h : "forecast");
   addEventListener("hashchange", () => { const k = location.hash.slice(1); if (k !== active && document.getElementById(k)) go(k); });
   let t;
-  addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => renderers[active]?.(), 150); });
+  addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => Promise.resolve(renderers[active]?.()).then(fitSoon), 150); });
   const isDark = () => document.documentElement.dataset.theme
     ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
   const syncSwitch = () => {
@@ -136,7 +137,21 @@ function renderDistrictPanel() {
     ])}</div>
     <p class="sub small" style="margin:8px 0 0">${places.length ? (Object.keys(state.placesBacktest).length
         ? "Town forecasts use the same model, fed with each town's own weather. <b>Tested skill</b> is the town's backtest on the test years: how much better than the town's own calendar odds (hover for detail). Most towns are places the model never trained on. Towns close together often share weather data, so similar numbers are expected."
-        : "Town forecasts use the same model, fed with each town's own weather. Their backtest is still downloading (“not yet”); the published scores are for the district points. Towns close together often share weather data, so similar numbers are expected.") : "No town list for this district yet."}</p>`;
+        : "Town forecasts use the same model, fed with each town's own weather. Their backtest is still downloading (“not yet”); the published scores are for the district points. Towns close together often share weather data, so similar numbers are expected.") : "No town list for this district yet."}</p>
+    <div id="dp-recent" class="dp-recent"></div>`;
+  // Spare height under the town table: the district's rain over the last 30 days (hidden when there's no room).
+  const rec = state.climate?.towns?.[selectedDistrict]?.recent;
+  if (rec?.dates?.length) {
+    const n = Math.min(30, rec.dates.length), ds = rec.dates.slice(-n), ps = rec.precip.slice(-n);
+    fill($("dp-recent"), h => {
+      if (h < 1) return;
+      $("dp-recent").innerHTML = `<h3 style="margin:10px 0 2px;font-size:14px">Rain at the district point, last ${n} days of final data</h3>`;
+      const box = document.createElement("div"); $("dp-recent").appendChild(box);
+      bars(box, { categories: ds.map(d => d.slice(5)), height: Math.max(80, h - 64), min: 0, fmt: v => v.toFixed(0), yTitle: "mm",
+        series: [{ name: "Daily rain (ERA5)", color: C.model, values: ps }], tipTitle: i => fmtDate(ds[i]) });
+    }, { base: 0, min: 0, max: 360, hideBelow: 150 });
+    fitSoon();
+  }
 }
 // Label nudges (SVG units) where a district's box centre isn't a good spot.
 const NUDGE = { colombo: [-14, 0], gampaha: [-6, 0], kalutara: [-4, 2], puttalam: [4, 10], jaffna: [8, 6],
@@ -690,12 +705,12 @@ renderers.heavy = () => {
       const fp = (f?.places || []).find(p => p.name === P.name && p.district === P.district);
       townLine = (fp ? `Tomorrow's chance of ≥ ${thr} mm in ${P.name}: <b>${pct(fp.p_heavy, 1)}</b>${fp.p_clim_heavy != null ? `, against ${pct(fp.p_clim_heavy, 1)} normal for the date (from its record since ${since})` : ""}. ` : "") + sharedNote(P).trim();
     }
-    $("hv-months").innerHTML = "";
-    bars($("hv-months"), {
+    fill($("hv-months"), h => bars($("hv-months"), {
       categories: MONTHS,
       series: [{ name: `Average ≥ ${thr} mm days`, color: C.model, values: t.per_month }],
-      fmt: v => v.toFixed(1), yTitle: "days / month", height: 230,
-    });
+      fmt: v => v.toFixed(1), yTitle: "days / month", height: h,
+    }), { base: 230, max: 520 });
+    fitSoon();
     $("hv-events").innerHTML = (townLine ? `<p class="sub">${townLine}</p>` : "") + `<p class="sub">Record day${since ? ` since ${since}` : " in the data"}: <b>${t.max.mm} mm</b> on ${fmtDate(t.max.date)}.</p>` + scoreTable(t.recent_events.slice(0, 10), [
       { label: "Date", get: r => fmtDate(r.date) }, { label: "Rainfall", num: true, get: r => r.mm + " mm" }]);
   }

@@ -1,4 +1,5 @@
 // Weather tab: the full picture for any district capital, town, or the visitor's own location.
+import { fill, fitSoon } from "./fit.js?v=dev";
 // Everything is fetched live in the browser from free, keyless services, and each card names its source:
 //   Open-Meteo Forecast (ECMWF and other national models), Air Quality (Copernicus CAMS),
 //   Flood (Copernicus GloFAS), Marine; plus our own model's chance of rain and GDACS cyclones (nightly).
@@ -223,12 +224,16 @@ function renderHourly(f) {
   const tip = i => new Date(h.time[idx[i]]).toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" });
   $("wx-hourly").innerHTML = `<h3 style="margin:0 0 4px;font-size:15px">Temperature (°C)</h3><div id="wx-h-t"></div>
     <h3 style="margin:14px 0 4px;font-size:15px">Chance of rain (%)</h3><div id="wx-h-p"></div>`;
-  bars($("wx-h-t"), { categories: cats, height: 200, fmt: v => v.toFixed(0), tipTitle: tip,
+  // Start compact; fit.js grows both charts to fill the box when the Air quality box beside it is taller.
+  fill($("wx-h-t"), ht => bars($("wx-h-t"), { categories: cats, height: ht, fmt: v => v.toFixed(0), tipTitle: tip,
     min: Math.floor(Math.min(...idx.map(i => h.temperature_2m[i])) - 2),
     series: [{ name: "Temperature", color: "var(--series-2)", kind: "line", values: idx.map(i => h.temperature_2m[i]) },
-             { name: "Feels like", color: "var(--series-3)", kind: "line", values: idx.map(i => h.apparent_temperature[i]) }] });
-  bars($("wx-h-p"), { categories: cats, height: 150, fmt: v => v.toFixed(0), min: 0, max: 100, tipTitle: tip,
-    series: [{ name: "Chance of rain", color: "var(--series-1)", values: idx.map(i => h.precipitation_probability[i]) }] });
+             { name: "Feels like", color: "var(--series-3)", kind: "line", values: idx.map(i => h.apparent_temperature[i]) }] }),
+    { base: 160, max: 320, weight: 1.3 });
+  fill($("wx-h-p"), hp => bars($("wx-h-p"), { categories: cats, height: hp, fmt: v => v.toFixed(0), min: 0, max: 100, tipTitle: tip,
+    series: [{ name: "Chance of rain", color: "var(--series-1)", values: idx.map(i => h.precipitation_probability[i]) }] }),
+    { base: 120, max: 260, weight: 1 });
+  fitSoon();
 }
 
 function renderDaily(f) {
@@ -299,7 +304,19 @@ function renderSun(f) {
     <div class="kpi"><div class="label">Sunset</div><div class="value" style="font-size:22px">${d ? fmtTime(d.sunset[0]) : "–"}</div><div class="note">${dl ? `${Math.floor(dl / 3600)} h ${Math.round(dl % 3600 / 60)} min of daylight` : ""}</div></div>
     <div class="kpi"><div class="label">Moon</div><div class="value" style="font-size:22px">${m.icon} ${m.name}</div><div class="note">${Math.round(m.illum * 100)}% lit</div></div>
     <div class="kpi"><div class="label">Next full moon (Poya)</div><div class="value" style="font-size:22px">${m.nextFull.toLocaleDateString("en-GB", { timeZone: TZ, weekday: "short", day: "numeric", month: "short" })}</div><div class="note">Astronomical estimate; the official Poya holiday can differ by a day.</div></div>
-  </div>`;
+  </div><div id="wx-sun-uv" class="fill-bottom"></div>`;
+  // Spare height in this box: the week's peak UV index (WHO: 8–10 very high, 11+ extreme). Hidden if there's no room.
+  if (d?.uv_index_max) {
+    const days = d.time.map(t => new Date(t + "T00:00").toLocaleDateString("en-GB", { weekday: "short" }));
+    fill($("wx-sun-uv"), hh => {
+      if (hh < 1) return;
+      $("wx-sun-uv").innerHTML = `<h3 style="margin:12px 0 2px;font-size:14px">Peak UV index, next 7 days</h3>`;
+      const box = document.createElement("div"); $("wx-sun-uv").appendChild(box);
+      bars(box, { categories: days, height: Math.max(80, hh - 64), min: 0, fmt: v => v.toFixed(0),
+        series: [{ name: "Peak UV index (8–10 very high, 11+ extreme)", color: "var(--series-2)", values: d.uv_index_max }] });
+    }, { base: 0, min: 0, max: 320, hideBelow: 150 });
+    fitSoon();
+  }
 }
 
 function renderSea(m) {
@@ -328,10 +345,11 @@ function renderRiver(fl, place) {
     : d.river_discharge_p75[pi] && peak > d.river_discharge_p75[pi] ? ["serious", "Higher than usual"] : ["good", "Within the usual range"];
   $("wx-river").innerHTML = `<p style="margin:0 0 8px">${badge(...lvl)} Peak flow in the next 10 days: <b>${r0(peak)} m³/s</b> on ${new Date(d.time[pi] + "T00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}${ratio ? ` (${r1(ratio)}× the long-term average for the date)` : ""}.</p><div id="wx-river-chart"></div>
     <p class="muted small" style="margin:8px 0 0">Copernicus <a href="https://global-flood.emergency.copernicus.eu">GloFAS</a> river model, nearest ~5 km river cell to ${place.name}. It may be a small stream rather than the main river, and it is a model, not a gauge. For flood warnings, follow the Irrigation Department and the Disaster Management Centre.</p>`;
-  bars($("wx-river-chart"), { categories: d.time.map(t => t.slice(5)), height: 200, fmt: v => v.toFixed(0), yTitle: "m³/s", min: 0,
+  fill($("wx-river-chart"), hr => bars($("wx-river-chart"), { categories: d.time.map(t => t.slice(5)), height: hr, fmt: v => v.toFixed(0), yTitle: "m³/s", min: 0,
     series: [{ name: "River flow (past week + forecast)", color: "var(--series-1)", values: d.river_discharge },
              { name: "Long-term average", color: "var(--neutral)", kind: "line", values: d.river_discharge_mean },
-             { name: "Wettest year on record", color: "var(--critical)", kind: "line", values: d.river_discharge_max }] });
+             { name: "Wettest year on record", color: "var(--critical)", kind: "line", values: d.river_discharge_max }] }), { base: 200, max: 480 });
+  fitSoon();
 }
 
 function renderCyclones() {

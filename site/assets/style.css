@@ -259,3 +259,12 @@ input.timeline { accent-color: var(--series-1);
 #fc-ledger > .card + .card { margin-top: 12px; }
 .ledger-box .lead { font-size: 15px; margin: 0; }
 .ledger-box .sub { margin: 10px 0 0; }
+
+.dp-recent { margin-top: auto; }  /* sits at the bottom of the district panel, under the table and note */
+
+/* A column of boxes beside one tall box: the boxes share the height, the last one takes what's left */
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.stack > .card:last-child { flex: 1 1 auto; }
+.fill-bottom { margin-top: auto; }
+.stack > .card, .card:has(> .fill-bottom), .card:has(.fill-bottom) { display: flex; flex-direction: column; }
+.card > div:has(> .fill-bottom) { display: flex; flex-direction: column; flex: 1 1 auto; }
