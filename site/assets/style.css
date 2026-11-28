@@ -91,8 +91,8 @@ main section { scroll-margin-top: 80px; display: none; padding: 28px 0 48px; }
 main section.active { display: block; }
 h1 { font-size: 26px; letter-spacing: -0.02em; margin: 0 0 4px; font-weight: 650; }
 h2 { font-size: 18px; margin: 36px 0 4px; font-weight: 620; letter-spacing: -0.01em; }
-.lede { color: var(--text-secondary); margin: 0 0 18px; max-width: 760px; }
-.sub { color: var(--text-secondary); font-size: 14px; margin: 0 0 14px; max-width: 760px; }
+.lede { color: var(--text-secondary); margin: 0 0 18px; max-width: none; }
+.sub { color: var(--text-secondary); font-size: 14px; margin: 0 0 14px; max-width: none; }
 
 .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
 .grid { display: grid; gap: 12px; }
@@ -249,3 +249,13 @@ input.timeline { accent-color: var(--series-1);
   .rank-cols { grid-template-columns: 1fr 1fr; }
   .rank-head.second { display: grid; }
 }
+
+/* Text inside boxes spans the box, like the tables; lists start at the text edge */
+.card p, .card ul { max-width: none; }
+.card ul { padding-left: 1.1em; }
+/* District panel: the note follows the table; spare height stays at the bottom */
+.panel-fill .table-scroll { flex: 0 1 auto; }
+/* Live track record: one box, one text size */
+#fc-ledger > .card + .card { margin-top: 12px; }
+.ledger-box .lead { font-size: 15px; margin: 0; }
+.ledger-box .sub { margin: 10px 0 0; }
