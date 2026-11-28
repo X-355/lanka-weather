@@ -236,6 +236,9 @@ def evaluate_extended(test: pd.DataFrame, hist: pd.DataFrame, cfg: dict) -> dict
                                                            pairs=[("model", "markov")], label="Rain gauges: Weather Lab vs Markov, all days with gauge data"),
                          "strict": verify.score_against(strict_rows, g, rain_mm, heavy_mm, strict_fc, pairs=pairs,
                                                         label="Rain gauges: strict test, later days only") if summ else None,
+                         "strict_available": (lambda j: {"n": int(len(j)), "n_days": int(j["target_date"].nunique()),
+                                                         "stations": int(j["station"].nunique()), "from": summ["test_period"][0]})(
+                             g[g["target_date"] >= summ["test_period"][0]]) if summ else None,
                          "nwp_era": verify.score_against(test, g, rain_mm, heavy_mm, nwp_fc, pairs=pairs,
                                                          label="Rain gauges: with the hybrid and ECMWF, out-of-fold") if summ else None}
     im = imerg.truth()

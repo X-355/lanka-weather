@@ -26,6 +26,8 @@ GSOD = "https://noaa-gsod-pds.s3.amazonaws.com"
 GHCN = "https://noaa-ghcn-pds.s3.amazonaws.com"
 GHCN_STATIONS = ["CE000043497", "CE000434730", "CEM00043418", "CEM00043424", "CEM00043441", "CEM00043466"]
 FIRST_YEAR = 2010   # 2010–2021 give each gauge its own climatology; 2022+ are the test years
+QC_MIN_CORR = 0.3
+QC_MIN_DAYS = 30
 MAX_KM = 35         # a gauge is matched to the nearest district point within this distance
 # GSOD precipitation flags that mean a complete 24-hour total (NOAA GSOD readme): D = four 6-hour amounts,
 # F = two 12-hour amounts, G = one 24-hour amount. Others are partial or "possibly had rain".
@@ -160,6 +162,35 @@ def truth(era5: pd.DataFrame | None = None, test_start: str = "2022-01-01") -> t
             info["shift_days"] = shift
             info["agreement_by_shift"] = {str(k): round(v, 3) for k, v in agree.items()}
     g = g.assign(target_date=g["date"] - pd.Timedelta(days=shift))
+    # Quality check against NASA IMERG: from late 2024 NOAA's Sri Lankan rain values stop tracking real rain
+    # (missing reports appear to be stored as 0 mm). A station's half-year is dropped when its daily rain has
+    # (log) correlation below QC_MIN_CORR with IMERG, or has fewer than QC_MIN_DAYS days to check it on. This asks only
+    # "is this gauge recording rain at all?"; it uses no forecast, so it can't favour one.
+    try:
+        from . import imerg
+        im = imerg.truth()
+    except Exception:
+        im = None
+    if im is not None and len(im):
+        j = g.merge(im[["town", "target_date", "obs_mm"]].rename(columns={"obs_mm": "im"}), on=["town", "target_date"])
+        j["half"] = j["target_date"].dt.year * 10 + (j["target_date"].dt.month > 6) + 1
+        def _c(x):
+            return np.corrcoef(np.log1p(x["prcp_mm"]), np.log1p(x["im"]))[0, 1] if len(x) >= QC_MIN_DAYS and x["prcp_mm"].std() > 0 else np.nan
+        cc = j.groupby(["station", "half"]).apply(_c).rename("corr").reset_index()
+        # too few shared days to check counts as failing: an unverifiable record isn't used as truth
+        bad = cc[(cc["corr"] < QC_MIN_CORR) | cc["corr"].isna()]
+        g_keys = g.assign(half=g["target_date"].dt.year * 10 + (g["target_date"].dt.month > 6) + 1)[["station", "half"]].drop_duplicates()
+        unchecked = g_keys.merge(cc[["station", "half"]], how="left", indicator=True)
+        bad = pd.concat([bad[["station", "half"]], unchecked[unchecked["_merge"] == "left_only"][["station", "half"]]])
+        # Only the years NASA covers can be checked; earlier years (used for each gauge's climatology) are kept.
+        first = im["target_date"].min()
+        bad = bad[bad["half"] >= first.year * 10 + (first.month > 6) + 1]
+        g["half"] = g["target_date"].dt.year * 10 + (g["target_date"].dt.month > 6) + 1
+        before = len(g)
+        g = g.merge(bad[["station", "half"]].assign(_bad=1), on=["station", "half"], how="left")
+        g = g[g["_bad"].isna()].drop(columns=["_bad", "half"])
+        info["qc"] = {"rule": f"keep a station's half-year only if its daily rain has log-correlation ≥ {QC_MIN_CORR} with NASA IMERG over ≥ {QC_MIN_DAYS} shared days",
+                      "dropped_station_halfyears": int(len(bad)), "dropped_rows": int(before - len(g))}
     # each gauge's own wet-day climatology from its pre-test years (±15 days of year)
     pre = g[g["target_date"] < test_start]
     clim = {}

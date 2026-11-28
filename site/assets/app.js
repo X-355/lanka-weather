@@ -245,6 +245,7 @@ function renderTruths(M) {
         { label: "95% range", num: true, get: r => `${num(r.auc.lo)}–${num(r.auc.hi)}` },
         { label: "Adjusted skill ↑", num: true, get: r => r.adj ? pct(r.adj.bss, 1) : "–", title: `Same recalibration for every forecast, fitted on ${a.fit_period[0]} → ${a.fit_period[1]}; scored ${a.test_period[0]} → ${a.test_period[1]} against each ${src === "gauge" ? "gauge" : "district"}'s own calendar odds` },
         { label: "95% range", num: true, get: r => r.adj ? range(r.adj) : "–" }]) +
+      (r.n_days < 365 ? `<p class="sub small" style="margin:8px 0 0"><span class="status"><span class="dot" style="background:var(--warning)"></span><b>Too small to judge:</b></span> only ${r.n_days} days, less than one full monsoon cycle. Read the ranges, not the order.</p>` : "") +
       (plain.length ? `<p class="sub small" style="margin:8px 0 0">${plain.join(" ")}</p>` : "") +
       (cmp.length ? `<p class="sub small" style="margin:8px 0 2px"><b>Head to head, on the same days</b> (each gap is measured pair by pair, resampling whole days):</p><ul class="sub small" style="margin:0;padding-left:20px">${cmp.join("")}</ul>` : "");
   };
@@ -254,7 +255,9 @@ function renderTruths(M) {
     const st = t.strict, ne = t.nwp_era, al = t.all_years;
     const dup = ne && al && ne.n === al.n && ne.period[0] === al.period[0] && ne.period[1] === al.period[1];
     const oofNote = ne ? `<p class="sub small" style="margin:14px 0 0">${st ? "The next table uses more days." : ""} It starts in February 2024 but is still out of sample: each day's hybrid and ECMWF calibration come from a fit that didn't include it. Days before July 2025 are predicted by a fit on the later months, and later days by a fit on the earlier months.</p>` : "";
-    return (st ? `<p class="sub small" style="margin:0"><b>Strict test first.</b> Only days from ${st.period[0]}, with the hybrid and ECMWF calibration fitted on earlier months alone. These are the same rows as the fair comparison above.</p>` + block(st, src) : "") +
+    const sa = t.strict_available;
+    const noStrict = !st && sa ? `<p class="sub small" style="margin:0"><b>No strict gauge test.</b> After quality checks, only ${sa.n} gauge-days (${sa.n_days} days at ${sa.stations} stations) remain from ${sa.from}: far too few to judge. NOAA's recent Sri Lankan rain records mostly fail the check against NASA's satellite rain, because missing days seem to be stored as 0 mm. Those records are left out.</p>` : "";
+    return noStrict + (st ? `<p class="sub small" style="margin:0"><b>Strict test first.</b> Only days from ${st.period[0]}, with the hybrid and ECMWF calibration fitted on earlier months alone. These are the same rows as the fair comparison above.</p>` + block(st, src) : "") +
       oofNote + block(ne, src) + (dup ? "" : block(al, src));
   };
   const g = M.gauges, im = M.imerg;
@@ -262,7 +265,7 @@ function renderTruths(M) {
     el.innerHTML = `<p class="muted small" style="margin:0">Rain-gauge and NASA satellite checks appear here after the next retrain.</p>`;
     return;
   }
-  el.innerHTML = (g ? `<p class="sub small" style="margin:0"><b>Rain gauges</b> from NOAA's global station archive: ${g.info.stations} Sri Lankan weather stations. A gauge measures one spot, so it sees rain on far fewer days than a 25 km square does, and every forecast here is over-confident about rain at a single gauge. So two fair measures are shown, on identical rows: <b>ranking</b> (does the forecast give higher chances on the days the gauge got rain?) and <b>adjusted skill</b> (every forecast gets the same one-step correction from square to gauge, fitted on earlier days and scored on later ones, against each gauge's own calendar odds). NOAA's Sri Lankan records thin out after early 2024, so the professional-forecast period has far fewer gauge days than the older years.</p>` + both(g, "gauge") : "") +
+  el.innerHTML = (g ? `<p class="sub small" style="margin:0"><b>Rain gauges</b> from NOAA's global station archive: ${g.info.stations} Sri Lankan weather stations. A gauge measures one spot, so it sees rain on far fewer days than a 25 km square does, and every forecast here is over-confident about rain at a single gauge. So two fair measures are shown, on identical rows: <b>ranking</b> (does the forecast give higher chances on the days the gauge got rain?) and <b>adjusted skill</b> (every forecast gets the same one-step correction from square to gauge, fitted on earlier days and scored on later ones, against each gauge's own calendar odds). NOAA's Sri Lankan records thin out after early 2024, so the professional-forecast period has far fewer gauge days than the older years.${g.info?.qc ? ` <b>Quality check:</b> from 2022 on, a station's half-year is used only if its rain tracks NASA's satellite rain at all (correlation ≥ 0.3 over at least 30 days). This uses no forecast, so it can't favour one, and it dropped ${g.info.qc.dropped_station_halfyears} station half-years.` : ""}</p>` + both(g, "gauge") : "") +
     (im ? `<p class="sub small" style="margin:${g ? 18 : 0}px 0 0"><b>NASA GPM IMERG</b>: satellite rainfall, calibrated with gauges in its final version. Its days run 05:30–05:30 Sri Lanka time (UTC days), which lowers every score a little but treats all forecasts alike.</p>` + both(im, "satellite") : "");
 }
 
