@@ -423,6 +423,12 @@ renderers.heavy = () => {
   }
 };
 
+// ------------------------------------------------------------------ live sky (loaded on first visit)
+renderers.live = async () => {
+  const { renderLiveSky } = await import("./livesky.js");
+  renderLiveSky(state);
+};
+
 // ------------------------------------------------------------------ about
 renderers.about = () => {
   const m = state.meta, sp = m.model.split || {};

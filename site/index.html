@@ -14,6 +14,7 @@
     <div class="brand">Sri Lanka Weather Lab <small>experimental</small></div>
     <nav class="tabs" role="tablist">
       <button role="tab" data-tab="forecast" aria-selected="true">Forecast checker</button>
+      <button role="tab" data-tab="live" aria-selected="false">Live sky</button>
       <button role="tab" data-tab="monsoon" aria-selected="false">Monsoon &amp; rainfall</button>
       <button role="tab" data-tab="solar" aria-selected="false">Rooftop solar</button>
       <button role="tab" data-tab="heavy" aria-selected="false">Heavy-rain risk</button>
@@ -77,6 +78,29 @@
     </div>
     <div class="card" id="ck-result"></div>
     <div class="card" style="margin-top:12px"><div id="ck-timeline"></div></div>
+  </section>
+
+  <!-- ======================================================= LIVE SKY -->
+  <section id="live">
+    <h1>Live sky</h1>
+    <p class="lede">The last three hours of clouds and rain moving over Sri Lanka, from the Meteosat satellite over the Indian Ocean. New pictures arrive every 15 minutes, about 30–40 minutes after they're taken. District shading shows tomorrow's rain chance.</p>
+    <div class="controls">
+      <label>Imagery <div class="seg" id="ls-base">
+        <button data-v="ir" aria-pressed="true">Clouds (infrared)</button><button data-v="natural" aria-pressed="false">True colour (day)</button><button data-v="none" aria-pressed="false">Off</button></div></label>
+      <label>Rain <div class="seg" id="ls-rain">
+        <button data-v="eum" aria-pressed="true">Satellite, 15 min</button><button data-v="imerg" aria-pressed="false">NASA IMERG (~5 h late)</button><button data-v="none" aria-pressed="false">Off</button></div></label>
+      <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="ls-tint" checked> Shade districts by tomorrow's forecast</label>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div id="ls-map" style="height:min(70vh,620px);background:var(--surface-2)"></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;flex-wrap:wrap">
+        <button class="theme-btn" id="ls-play" aria-pressed="false">▶ Play</button>
+        <input type="range" id="ls-slider" min="0" max="11" value="11" style="flex:1;min-width:160px" aria-label="Time">
+        <span id="ls-time" class="small">Loading imagery…</span>
+      </div>
+    </div>
+    <p class="sub small" id="ls-note" style="margin-top:10px"></p>
+    <div class="notice" style="border-left-color:var(--warning)"><b>No weather radar here yet.</b> Public radar networks don't include a Sri Lankan radar, so this tab uses satellite pictures and satellite rain estimates. They're good for seeing storm systems approach, but coarser than radar. If the Department of Meteorology shares its radar feed, it would go here.</div>
   </section>
 
   <!-- ======================================================= MONSOON -->
@@ -169,7 +193,7 @@
 
 <footer><div class="wrap">
   <span id="foot-model"></span>
-  <span>Data: <a href="https://open-meteo.com" rel="noopener">Open-Meteo</a> (ERA5, archived forecasts, CC BY 4.0) · <a href="https://power.larc.nasa.gov" rel="noopener">NASA POWER</a> · Towns: <a href="https://www.geonames.org" rel="noopener">GeoNames</a> (CC BY 4.0) · Code: <a href="https://github.com/X-355/lanka-weather" rel="noopener">github.com/X-355/lanka-weather</a></span>
+  <span>Data: <a href="https://open-meteo.com" rel="noopener">Open-Meteo</a> (ERA5, archived forecasts, CC BY 4.0) · <a href="https://power.larc.nasa.gov" rel="noopener">NASA POWER</a> · Towns: <a href="https://www.geonames.org" rel="noopener">GeoNames</a> (CC BY 4.0) · Satellite: <a href="https://view.eumetsat.int" rel="noopener">EUMETSAT</a>, <a href="https://earthdata.nasa.gov/gibs" rel="noopener">NASA GIBS</a> · Code: <a href="https://github.com/X-355/lanka-weather" rel="noopener">github.com/X-355/lanka-weather</a></span>
 </div></footer>
 
 <script type="module" src="assets/app.js"></script>
