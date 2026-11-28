@@ -44,6 +44,8 @@ def main(argv=None) -> int:
         if not a.skip_nwp:  # small, so first: problems with it surface early
             res["nwp"] = fetch.fetch_nwp(cl)
         res["history"] = fetch.fetch_history(cl)
+        if not res["history"]["stopped"]:
+            res["places_history"] = fetch.fetch_places_history(cl)
         if not a.skip_power:
             res["power"] = fetch.fetch_power(cl)
         res["weight_spent"] = cl.spent
@@ -83,16 +85,22 @@ def main(argv=None) -> int:
         from . import build_site, fetch, predict
         from .config import MODELS
         cl = client()
-        # Fills any gaps (so the first days also finish the history bootstrap) and refreshes this year.
-        print(fetch.fetch_history(cl))
+        # Forecast first, so tonight's forecast never competes with backfill downloads for the API limit.
+        if (MODELS / "metadata.json").exists():
+            print(predict.score_ledger())
+            predict.run(offline=a.offline, force=a.force)
+        else:
+            print("no trained model yet — run the 'Train model' workflow once history is complete")
+        # Then fill gaps / refresh this year (districts first, then town cells for the backtest).
+        h = fetch.fetch_history(cl)
+        print(h)
+        if not h["stopped"]:
+            print(fetch.fetch_places_history(cl))
         if not a.skip_nwp:
             print(fetch.fetch_nwp(cl))
-        if not (MODELS / "metadata.json").exists():
-            print("no trained model yet — run the 'Train model' workflow once history is complete")
-            return 0
-        print(predict.score_ledger())
-        predict.run(offline=a.offline, force=a.force)
-        build_site.run()
+        if (MODELS / "metadata.json").exists():
+            print(predict.score_ledger())  # again, with any newly published ERA5 days
+            build_site.run()
     else:
         print(__doc__)
         return 2

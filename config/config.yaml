@@ -44,6 +44,11 @@ data:
   # does hit them stops cleanly and resumes next run.
   max_weight_per_run: 8000
 
+places:
+  # Towns inside districts (config/places.csv). History is only needed for the backtest:
+  # 2014-2021 for each town's own baselines, 2022+ for the test years.
+  history_start: "2014-01-01"
+
 target:
   rain_mm: 1.0      # "rain day" = daily precipitation >= 1.0 mm (WMO convention)
   heavy_mm: 50.0    # "heavy rain day" for the research-only risk tracker

@@ -52,7 +52,11 @@ def build_metrics() -> None:
     p = REPORTS / "metrics.json"
     if p.exists():
         full = json.loads(p.read_text())
-        _write("metrics.json", {"metrics": full["metrics"], "importance": full["importance"]})
+        m = dict(full["metrics"])
+        places = m.pop("places", None)
+        _write("metrics.json", {"metrics": m, "importance": full["importance"],
+                                "places_summary": {k: v for k, v in (places or {}).items() if k != "by_place"} or None})
+        _write("places_backtest.json", (places or {}).get("by_place", {}))
 
 
 def build_backtest() -> None:

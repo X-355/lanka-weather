@@ -16,7 +16,7 @@ from datetime import date, datetime, timedelta
 import numpy as np
 import pandas as pd
 
-from .config import ERA5_DIR, LIVE_DIR, NWP_DIR, PLACES, POWER_DIR, Town, load_config, towns
+from .config import CELL_MAP, CELLS_DIR, ERA5_DIR, LIVE_DIR, NWP_DIR, PLACES, POWER_DIR, Town, load_config, towns
 from .http import BudgetExhausted, Client, RateLimited, openmeteo_weight
 
 log = logging.getLogger(__name__)
@@ -285,3 +285,100 @@ def fetch_live_places(client: Client, places: pd.DataFrame, past_days: int = 45,
     live = pd.concat(frames, ignore_index=True)
     live.to_parquet(LIVE_DIR / "places.parquet", index=False)
     return live
+
+
+# ----------------------------------------------------------------------------- town history (backtest)
+
+def _cell_id(lat: float, lon: float) -> str:
+    return f"c{lat:.3f}_{lon:.3f}"
+
+
+def probe_cells(client: Client) -> pd.DataFrame:
+    """Find the ERA5 grid cell (and point elevation) for every district point and town. Cached."""
+    cfg = load_config()
+    places = load_places()
+    pts = [{"kind": "district", "name": t.key, "lat": t.lat, "lon": t.lon} for t in towns()]
+    pts += [{"kind": "place", "name": r.name, "lat": r.lat, "lon": r.lon} for r in places.itertuples()]
+    have = pd.read_csv(CELL_MAP) if CELL_MAP.exists() else pd.DataFrame(columns=["kind", "name", "lat", "lon"])
+    known = {(k, n, round(a, 4), round(b, 4)) for k, n, a, b in have[["kind", "name", "lat", "lon"]].itertuples(index=False)}
+    todo = [p for p in pts if (p["kind"], p["name"], round(p["lat"], 4), round(p["lon"], 4)) not in known]
+    rows = []
+    for i in range(0, len(todo), 50):
+        part = todo[i:i + 50]
+        params = {"latitude": ",".join(f"{p['lat']:.4f}" for p in part), "longitude": ",".join(f"{p['lon']:.4f}" for p in part),
+                  "start_date": "2020-01-01", "end_date": "2020-01-01", "daily": "precipitation_sum",
+                  "timezone": cfg["timezone"], "models": cfg["data"]["archive_model"]}
+        payload = client.get_json(ARCHIVE_URL, params, weight=len(part))
+        payload = payload if isinstance(payload, list) else [payload]
+        for p, loc in zip(part, payload):
+            rows.append({**p, "cell_lat": loc["latitude"], "cell_lon": loc["longitude"],
+                         "cell_id": _cell_id(loc["latitude"], loc["longitude"]), "elevation": loc.get("elevation")})
+    keep = {(p["kind"], p["name"]) for p in pts}
+    cells = pd.concat([have, pd.DataFrame(rows)], ignore_index=True)
+    cells = cells[[(k, n) in keep for k, n in zip(cells["kind"], cells["name"])]]
+    cells = cells.drop_duplicates(["kind", "name"], keep="last")
+    CELL_MAP.parent.mkdir(parents=True, exist_ok=True)
+    cells.to_csv(CELL_MAP, index=False)
+    return cells
+
+
+def fetch_places_history(client: Client) -> dict:
+    """ERA5 history for every grid cell that has a town but no district point. Resumable, like fetch_history."""
+    cfg = load_config()
+    stats = {"cells": 0, "fetched": 0, "skipped": 0, "stopped": None}
+    if load_places() is None:
+        return stats
+    try:
+        cells = probe_cells(client)
+        district_cells = set(cells.loc[cells["kind"] == "district", "cell_id"])
+        need = cells[(cells["kind"] == "place") & ~cells["cell_id"].isin(district_cells)].drop_duplicates("cell_id")
+        stats["cells"] = len(need)
+        start = date.fromisoformat(cfg["places"]["history_start"])
+        end = latest_archive_day()
+        for c in need.itertuples():
+            cdir = CELLS_DIR / c.cell_id
+            cdir.mkdir(parents=True, exist_ok=True)
+            for year in range(start.year, end.year + 1):
+                y0, y1 = max(start, date(year, 1, 1)), min(end, date(year, 12, 31))
+                path = cdir / f"{year}.parquet"
+                if path.exists() and pd.read_parquet(path, columns=["date"])["date"].max().date() >= y1:
+                    stats["skipped"] += 1
+                    continue
+                params = {"latitude": c.cell_lat, "longitude": c.cell_lon, "start_date": y0.isoformat(),
+                          "end_date": y1.isoformat(), "timezone": cfg["timezone"], "models": cfg["data"]["archive_model"]}
+                df = _request_daily(client, ARCHIVE_URL, params, (y1 - y0).days + 1).dropna(subset=["precip"])
+                df.to_parquet(path, index=False)
+                stats["fetched"] += 1
+    except (BudgetExhausted, RateLimited) as e:
+        log.warning("stopping town-history fetch early: %s (will resume next run)", e)
+        stats["stopped"] = str(e)
+    return stats
+
+
+def load_place_history() -> pd.DataFrame | None:
+    """Long frame (town=<place name>, date, vars, elevation) for every town whose cell history is complete."""
+    if not CELL_MAP.exists() or load_places() is None:
+        return None
+    cfg = load_config()
+    start = date.fromisoformat(cfg["places"]["history_start"])
+    cells = pd.read_csv(CELL_MAP)
+    dmap = dict(zip(cells.loc[cells["kind"] == "district", "cell_id"], cells.loc[cells["kind"] == "district", "name"]))
+    frames, cache = [], {}
+    for r in cells[cells["kind"] == "place"].itertuples():
+        if r.cell_id not in cache:
+            if r.cell_id in dmap:
+                h = load_history(dmap[r.cell_id]).drop(columns="town")
+                h = h[h["date"] >= pd.Timestamp(start)]
+            else:
+                files = sorted((CELLS_DIR / r.cell_id).glob("*.parquet"))
+                years = {int(f.stem) for f in files}
+                if not files or not set(range(start.year, latest_archive_day().year)) <= years:
+                    cache[r.cell_id] = None
+                    continue
+                h = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
+            cache[r.cell_id] = h
+        h = cache[r.cell_id]
+        if h is None:
+            continue
+        frames.append(h.assign(town=r.name, cell_id=r.cell_id, elevation=r.elevation))
+    return pd.concat(frames, ignore_index=True) if frames else None

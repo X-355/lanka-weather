@@ -74,7 +74,16 @@ function renderDistrictPanel() {
     panel.innerHTML = `<h2 style="margin:0 0 4px">${t.name} District</h2><p class="sub" style="margin:0">No forecast yet for this district. It starts with the first forecast after the 25-district retrain.</p>`;
     return;
   }
-  const rows = [{ name: `${t.name} (district point)`, p_rain: d.p_rain, p_heavy: d.p_heavy, today_precip: d.today_precip, elevation: t.elevation, hl: true }, ...places];
+  const dsk = state.metrics?.metrics?.by_town?.[selectedDistrict];
+  const rows = [{ name: `${t.name} (district point)`, p_rain: d.p_rain, p_heavy: d.p_heavy, today_precip: d.today_precip, elevation: t.elevation, hl: true,
+                  skill: dsk ? { bss: dsk.model.bss, markov_bss: dsk.markov.bss, auc: dsk.model.auc, unseen_cell: false } : null },
+                ...places.map(p => ({ ...p, skill: state.placesBacktest[p.name] }))];
+  const skillCell = r => {
+    const k = r.skill;
+    if (!k || k.bss == null) return `<span class="muted">not yet</span>`;
+    const note = k.shares_cell_with ? `shares weather data with the ${townName(k.shares_cell_with)} district point` : k.unseen_cell ? "location never seen in training" : "district point";
+    return `<span title="Brier skill vs this town's own climatology, test years. Markov baseline ${pct(k.markov_bss, 0)}. AUC ${num(k.auc, 2)}. ${note}.">${pct(k.bss, 0)}</span>`;
+  };
   panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
       <h2 style="margin:0">${t.name} District</h2><span class="muted small">${t.region} Province · ${t.zone} zone · normal for the date ${pct(d.p_clim)}</span></div>
     <div class="table-scroll" style="margin-top:8px">${scoreTable(rows, [
@@ -83,8 +92,11 @@ function renderDistrictPanel() {
       { label: `Heavy ≥ ${thr.heavy_mm} mm`, num: true, get: r => pct(r.p_heavy, 1) },
       { label: "Rain today", num: true, get: r => r.today_precip == null ? "–" : `${r.today_precip} mm` },
       { label: "Elevation", num: true, get: r => r.elevation == null ? "–" : `${r.elevation} m` },
+      { label: "Tested skill", num: true, get: skillCell, title: "Backtest skill vs climatology on 2022→ test years" },
     ])}</div>
-    <p class="sub small" style="margin:8px 0 0">${places.length ? "Town forecasts use the same model with each town's own weather. They have not been backtested separately yet; the published scores are for the district points. Towns close together often share weather data, so similar numbers are expected." : "No town list for this district yet."}</p>`;
+    <p class="sub small" style="margin:8px 0 0">${places.length ? (Object.keys(state.placesBacktest).length
+        ? "Town forecasts use the same model, fed with each town's own weather. <b>Tested skill</b> is the town's backtest on the test years: how much better than the town's own calendar odds (hover for detail). Most towns are places the model never trained on. Towns close together often share weather data, so similar numbers are expected."
+        : "Town forecasts use the same model, fed with each town's own weather. Their backtest is still downloading (“not yet”); the published scores are for the district points. Towns close together often share weather data, so similar numbers are expected.") : "No town list for this district yet."}</p>`;
 }
 // Label nudges (SVG units) where a district's box centre isn't a good spot.
 const NUDGE = { colombo: [-14, 0], gampaha: [-6, 0], kalutara: [-4, 2], puttalam: [4, 10], jaffna: [8, 6],
@@ -178,6 +190,8 @@ function renderScoreboards() {
   const names = { model: "Weather Lab model", markov: "Markov chain (yesterday + season)", climatology: "Climatology (calendar odds)", persistence: "Persistence (tomorrow = today)" };
   const rows = Object.entries(M.rain).map(([k, v]) => ({ ...v, name: names[k] || k, hl: k === "model" }));
   $("fc-scoreboard").innerHTML = scoreTable(rows, [{ label: "Forecast", get: r => r.name }, ...SCORE_COLS]);
+  const ps = state.metrics?.places_summary?.unseen_cells;
+  if (ps) $("fc-scoreboard").insertAdjacentHTML("beforeend", `<p class="sub small" style="margin:10px 0 0"><b>At places it never trained on</b>: ${ps.n_towns} towns in ${ps.n_cells} separate grid cells, same test years. The model's skill is <b>${pct(ps.model.bss, 1)}</b>, against ${pct(ps.markov.bss, 1)} for the Markov baseline (AUC ${num(ps.model.auc)}).</p>`);
 
   const c = M.nwp_comparison;
   if (!c) {
@@ -428,10 +442,11 @@ renderers.about = () => {
 
 // ------------------------------------------------------------------ boot
 (async () => {
-  const [meta, forecast, metrics, backtest, ledger, climate, solar, heavy] = await Promise.all(
-    ["meta.json", "forecast.json", "metrics.json", "backtest.json", "ledger.json", "climate.json", "solar.json", "heavy.json"].map(get));
+  const [meta, forecast, metrics, backtest, ledger, climate, solar, heavy, placesBacktest] = await Promise.all(
+    ["meta.json", "forecast.json", "metrics.json", "backtest.json", "ledger.json", "climate.json", "solar.json", "heavy.json",
+     "places_backtest.json"].map(get));
   if (!meta) { $("fc-lede").textContent = "Site data has not been built yet."; return; }
-  Object.assign(state, { meta, forecast, metrics, backtest, ledger, climate, solar, heavy });
+  Object.assign(state, { meta, forecast, metrics, backtest, ledger, climate, solar, heavy, placesBacktest: placesBacktest || {} });
   if (meta.synthetic) $("banner").innerHTML = `<div class="banner"><b>Demo data.</b> This build uses synthetic weather to test the pipeline. Real numbers appear after the first training run on GitHub Actions.</div>`;
   $("foot-model").textContent = meta.model.version ? `Model ${meta.model.version} · data updated ${new Date(meta.generated_at).toLocaleDateString("en-GB")}` : "";
   setupChecker(); setupMonsoon(); setupSolar(); setupHeavy();

@@ -71,3 +71,19 @@ def test_ledger_locks_first_forecast(tmp_path, monkeypatch):
     predict.append_ledger(pd.DataFrame([dict(row, issued_at="t2", p_rain=0.9)]))
     led = predict.read_ledger()
     assert len(led) == 1 and led["p_rain"].iloc[0] == 0.3
+
+
+def test_town_features_do_not_see_the_future():
+    """Same guard for towns: their features use their own past and the districts' same-day context only."""
+    df = _toy()
+    pts = pd.DataFrame([{"name": "Testtown", "district": "kandy", "lat": 7.3, "lon": 80.6}])
+    town = df[df["town"] == "kandy"].assign(town="Testtown", elevation=450.0)
+    k = pd.Timestamp("2020-03-01")
+    a = features.build_points(df, town, pts)
+    df2, town2 = df.copy(), town.copy()
+    for frame in (df2, town2):
+        future = frame["date"] > k
+        frame.loc[future, "precip"] = frame.loc[future, "precip"] * 3 + 7
+    b = features.build_points(df2, town2, pts)
+    cols = [c for c in features.feature_columns(a) if c in b]
+    pd.testing.assert_frame_equal(a[a["date"] <= k][cols].reset_index(drop=True), b[b["date"] <= k][cols].reset_index(drop=True))

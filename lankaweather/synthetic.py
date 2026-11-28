@@ -10,7 +10,7 @@ from datetime import date, timedelta
 import numpy as np
 import pandas as pd
 
-from .config import ERA5_DIR, NWP_DIR, POWER_DIR, load_config, towns
+from .config import CELL_MAP, CELLS_DIR, ERA5_DIR, NWP_DIR, PLACES, POWER_DIR, load_config, towns
 
 # Rough monthly rain-day propensity by zone (Jan..Dec), shaped like Sri Lanka's monsoons.
 SEASON = {
@@ -82,4 +82,35 @@ def generate(end: date | None = None, seed: int = 7) -> None:
             "precip": (amount * rng.lognormal(0, 0.5, n)).round(1),
             "t2m": (tmax + tmin) / 2,
         }).to_parquet(POWER_DIR / f"{town.key}.parquet", index=False)
+    _synthetic_places(rng)
     (ERA5_DIR / "SYNTHETIC").write_text("This data is synthetic. Do not publish.\n")
+
+
+def _synthetic_places(rng) -> None:
+    """Town cells: every third town shares its district's cell; the rest get a noisy copy of the district."""
+    if not PLACES.exists():
+        return
+    cfg = load_config()
+    places = pd.read_csv(PLACES)
+    start = pd.Timestamp(cfg["places"]["history_start"])
+    rows = [{"kind": "district", "name": t.key, "lat": t.lat, "lon": t.lon, "cell_lat": t.lat, "cell_lon": t.lon,
+             "cell_id": f"d_{t.key}", "elevation": t.elevation} for t in towns()]
+    for i, r in enumerate(places.itertuples()):
+        shared = i % 3 == 0
+        cid = f"d_{r.district}" if shared else f"c_{i}"
+        rows.append({"kind": "place", "name": r.name, "lat": r.lat, "lon": r.lon, "cell_lat": r.lat, "cell_lon": r.lon,
+                     "cell_id": cid, "elevation": 50})
+        if shared:
+            continue
+        frames = [pd.read_parquet(f) for f in sorted((ERA5_DIR / r.district).glob("*.parquet"))]
+        d = pd.concat(frames, ignore_index=True)
+        d = d[d["date"] >= start].copy()
+        flip = rng.random(len(d)) < 0.12  # towns differ from their district point on some days
+        d.loc[flip, "precip"] = np.where(d.loc[flip, "precip"] >= 1, rng.random(flip.sum()) * 0.8, rng.gamma(0.8, 8, flip.sum()) + 1)
+        d["rain"] = d["precip"]
+        cdir = CELLS_DIR / cid
+        cdir.mkdir(parents=True, exist_ok=True)
+        for y, g in d.groupby(d["date"].dt.year):
+            g.to_parquet(cdir / f"{y}.parquet", index=False)
+    CELL_MAP.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_csv(CELL_MAP, index=False)

@@ -17,9 +17,9 @@ import numpy as np
 import pandas as pd
 
 from . import __version__
-from .config import ERA5_DIR, MODELS, NWP_DIR, REPORTS, load_config, towns
-from .features import CATEGORICAL, SEASON_NAMES, SEASON_OF_MONTH, build, feature_columns
-from .fetch import load_history, load_power
+from .config import CELL_MAP, ERA5_DIR, MODELS, NWP_DIR, REPORTS, load_config, towns
+from .features import CATEGORICAL, SEASON_NAMES, SEASON_OF_MONTH, build, build_points, feature_columns
+from .fetch import load_history, load_place_history, load_places, load_power
 from .metrics import reliability, scores
 
 log = logging.getLogger(__name__)
@@ -168,6 +168,67 @@ def evaluate(test: pd.DataFrame, nwp_models: dict) -> dict:
     return _rnd(rep)
 
 
+# ----------------------------------------------------------------------------- towns (spatial generalisation)
+
+def evaluate_places(hist: pd.DataFrame, models: dict, cols: list, cfg: dict) -> dict | None:
+    """Score the frozen district-trained model at towns, on the same test years.
+
+    The headline uses towns in ERA5 cells that contain no district point, i.e. places whose weather the
+    model never saw in training. Each cell counts once in the aggregate. Baselines (climatology, Markov)
+    come from each town's own pre-test years (history_start..valid_end), never from the test years.
+    """
+    ph = load_place_history()
+    places = load_places()
+    if ph is None or places is None or not CELL_MAP.exists():
+        return None
+    rain_mm = cfg["target"]["rain_mm"]
+    v_end = pd.Timestamp(cfg["split"]["valid_end"])
+    start = pd.Timestamp(cfg["places"]["history_start"]) + pd.Timedelta(days=31)
+    places = places[places["name"].isin(ph["town"].unique())]
+    feat = build_points(hist, ph.drop(columns=["cell_id"]), places)
+    lab = feat.dropna(subset=["y_rain"])
+    base = lab[(lab["target_date"] >= start) & (lab["target_date"] <= v_end)]
+    test = lab[lab["target_date"] > v_end].copy()
+    if test.empty or base.empty:
+        return None
+    X = test.reindex(columns=cols)
+    test["p_rain"] = models["y_rain"].predict(X, num_iteration=models["y_rain"].best_iteration)
+    test["p_heavy"] = models["y_heavy"].predict(X, num_iteration=models["y_heavy"].best_iteration)
+    test = add_baselines(test, climatology_table(base, "y_rain"), climatology_table(base, "y_heavy"),
+                         markov_table(base, rain_mm), rain_mm)
+
+    cells = pd.read_csv(CELL_MAP)
+    cell_of = dict(zip(cells.loc[cells["kind"] == "place", "name"], cells.loc[cells["kind"] == "place", "cell_id"]))
+    district_cells = dict(zip(cells.loc[cells["kind"] == "district", "cell_id"], cells.loc[cells["kind"] == "district", "name"]))
+    test["cell_id"] = test["town"].map(cell_of)
+
+    def agg(df):
+        rep = df.drop_duplicates(["cell_id", "target_date"])  # one vote per grid cell per day
+        y, clim = rep["y_rain"], rep["p_clim"]
+        return {"n_towns": int(df["town"].nunique()), "n_cells": int(rep["cell_id"].nunique()), "n_days": int(len(rep)),
+                **{n: scores(y, rep[c], clim) for n, c in [("model", "p_rain"), ("markov", "p_markov"), ("climatology", "p_clim")]},
+                "heavy": scores(rep["y_heavy"], rep["p_heavy"], rep["p_clim_heavy"], threshold=0.2)}
+
+    unseen = test[~test["cell_id"].isin(district_cells)]
+    shared = test[test["cell_id"].isin(district_cells)]
+    by_place = {}
+    for name, g in test.groupby("town"):
+        s_m = scores(g["y_rain"], g["p_rain"], g["p_clim"])
+        s_k = scores(g["y_rain"], g["p_markov"], g["p_clim"])
+        cid = cell_of[name]
+        by_place[name] = {"district": g["district"].iloc[0], "bss": s_m.get("bss"), "auc": s_m.get("auc"),
+                          "markov_bss": s_k.get("bss"), "brier": s_m["brier"], "n": s_m["n"],
+                          "base_rate": s_m["base_rate"], "unseen_cell": cid not in district_cells,
+                          "shares_cell_with": district_cells.get(cid)}
+    out = {"period": [str(test["target_date"].min().date()), str(test["target_date"].max().date())],
+           "baseline_years": [str(start.date()), str(v_end.date())],
+           "unseen_cells": agg(unseen) if len(unseen) else None,
+           "district_cells": agg(shared) if len(shared) else None,
+           "by_place": by_place,
+           "coverage": {"towns_scored": int(test["town"].nunique()), "towns_total": int(len(load_places()))}}
+    return _rnd(out)
+
+
 # ----------------------------------------------------------------------------- main
 
 def run() -> dict:
@@ -201,6 +262,9 @@ def run() -> dict:
     if nwp is not None:
         test = test.merge(nwp, on=["town", "target_date"], how="left")
     report = evaluate(test, cfg["nwp"]["models"])
+    places_rep = evaluate_places(hist, models, cols, cfg)
+    if places_rep:
+        report["places"] = places_rep
 
     imp = models["y_rain"].feature_importance("gain")
     importance = sorted(zip(cols, (imp / imp.sum()).round(4).tolist()), key=lambda x: -x[1])[:25]
@@ -287,6 +351,21 @@ def write_report_md(full: dict) -> None:
     lines += ["", "## By town", "", "| Town | Model BSS | Markov BSS | AUC | Base rate |", "|---|---|---|---|---|"]
     for t, s in m["by_town"].items():
         lines.append(f"| {t} | {_f(s['model'].get('bss'), True)} | {_f(s['markov'].get('bss'), True)} | {_f(s['model'].get('auc'))} | {_f(s['model']['base_rate'], True)} |")
+    pl = m.get("places")
+    if pl and pl.get("unseen_cells"):
+        u = pl["unseen_cells"]
+        lines += ["", f"## Towns the model never trained on ({pl['period'][0]} → {pl['period'][1]})", "",
+                  f"{u['n_towns']} towns in {u['n_cells']} ERA5 cells that contain no district point; each cell counted once "
+                  f"({u['n_days']:,} cell-days). Baselines from each town's own {pl['baseline_years'][0][:4]}–{pl['baseline_years'][1][:4]} data. "
+                  f"Coverage: {pl['coverage']['towns_scored']} of {pl['coverage']['towns_total']} towns scored.", "",
+                  "| Forecast | Brier ↓ | Skill vs climatology ↑ | AUC ↑ |", "|---|---|---|---|"]
+        for n in ["model", "markov", "climatology"]:
+            s_ = u[n]
+            lines.append(f"| {n} | {_f(s_.get('brier'))} | {_f(s_.get('bss'), True)} | {_f(s_.get('auc'))} |")
+        if pl.get("district_cells"):
+            d = pl["district_cells"]
+            lines += ["", f"Towns sharing a district point's cell ({d['n_towns']} towns, {d['n_cells']} cells): "
+                          f"model skill {_f(d['model'].get('bss'), True)}, Markov {_f(d['markov'].get('bss'), True)}."]
     alt = m.get("alt_truth_power")
     if alt:
         lines += ["", "## Cross-check against NASA POWER precipitation", "",
