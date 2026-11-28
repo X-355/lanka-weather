@@ -143,7 +143,8 @@ function renderForecastCards() {
     $("fc-lede").textContent = "No forecast has been issued yet. The daily job publishes one each evening.";
     return;
   }
-  $("fc-lede").innerHTML = `Chance of at least ${state.meta.targets.rain_mm} mm of rain on <b>${fmtDate(f.target_date)}</b>, ${f.season}. Issued ${new Date(f.issued_at).toLocaleString("en-GB", { timeZone: "Asia/Colombo", dateStyle: "medium", timeStyle: "short" })} Sri Lanka time.`;
+  $("fc-lede").innerHTML = `Chance of at least ${state.meta.targets.rain_mm} mm of rain on <b>${fmtDate(f.target_date)}</b>, ${f.season}. Issued ${new Date(f.issued_at).toLocaleString("en-GB", { timeZone: "Asia/Colombo", dateStyle: "medium", timeStyle: "short" })} Sri Lanka time.` +
+    (f.towns.some(t => t.method === "hybrid") ? ` <span class="muted">Method: hybrid, the Weather Lab model corrected with tomorrow's ECMWF, GFS and ICON rain forecasts.</span>` : "");
   const zones = Object.fromEntries(state.meta.towns.map(t => [t.key, t.zone]));
   const info = Object.fromEntries(state.meta.towns.map(t => [t.key, t]));
   const rows = [...f.towns].sort((a, b) => (info[a.town].region + a.name).localeCompare(info[b.town].region + b.name));
@@ -177,8 +178,13 @@ const SCORE_COLS = [
 function renderLedger() {
   const L = state.ledger;
   const s = L?.summary;
+  const pv = s?.provisional_imerg;
+  const prov = pv ? `<div class="card" style="margin-top:12px"><b>Next-day check against NASA satellite rain (provisional).</b>
+    ${pv.n.toLocaleString()} forecasts, ${pv.first_target} → ${pv.last_target}. Skill vs climatology: published forecast <b>${pct(pv.scores.published?.bss, 1)}</b>,
+    Markov baseline ${pct(pv.scores.markov?.bss, 1)}${pv.scores.ecmwf_ens ? `, ECMWF ensemble ${pct(pv.scores.ecmwf_ens.bss, 1)}` : ""}.
+    <span class="muted">NASA IMERG is available the day after; the final score uses the reanalysis about six days later.</span></div>` : "";
   if (!s || !s.scored) {
-    $("fc-ledger").innerHTML = `<div class="card"><b>${s?.issued ?? 0}</b> town-forecasts issued so far, <b>${s?.pending ?? 0}</b> waiting for observations. The first scores appear about six days after launch. Until then, the backtest below is the evidence.</div>`;
+    $("fc-ledger").innerHTML = `<div class="card"><b>${s?.issued ?? 0}</b> town-forecasts issued so far, <b>${s?.pending ?? 0}</b> waiting for observations. Final scores appear about six days after each forecast${pv ? "; a provisional next-day check is below" : ""}. Until then, the backtest below is the evidence.</div>${prov}`;
     return;
   }
   const a = s.all;
@@ -187,7 +193,30 @@ function renderLedger() {
     <div class="card kpi"><div class="label">Live skill vs climatology</div><div class="value">${pct(a.model.bss, 1)}</div><div class="note">Markov baseline ${pct(a.markov.bss, 1)}</div></div>
     <div class="card kpi"><div class="label">Live Brier score</div><div class="value">${num(a.model.brier)}</div><div class="note">Climatology ${num(a.climatology.brier)}</div></div>
     <div class="card kpi"><div class="label">Last 30 days skill</div><div class="value">${pct(s.last30.model.bss, 1)}</div><div class="note">${s.last30.model.n} town-days</div></div>
-  </div>`;
+  </div>${s.vs_ecmwf_ens ? `<p class="sub small" style="margin:10px 0 0">Same days, probability against probability: published forecast ${pct(s.vs_ecmwf_ens.published.bss, 1)}, model alone ${pct(s.vs_ecmwf_ens.model.bss, 1)}, ECMWF's 51-member ensemble ${pct(s.vs_ecmwf_ens.ecmwf_ens.bss, 1)} (${s.vs_ecmwf_ens.published.n} district-days).</p>` : ""}${prov}`;
+}
+
+const range = c => c ? `${pct(c.lo, 1)} to ${pct(c.hi, 1)}` : "–";
+
+function renderTruths(M) {
+  const el = $("fc-truths");
+  if (!el) return;
+  const NAMES = { hybrid: "Hybrid (published)", model: "Weather Lab alone", ecmwf_cal: "ECMWF, calibrated probability", markov: "Markov baseline" };
+  const block = (r, src) => {
+    if (!r) return "";
+    const rows = Object.entries(r.entries).map(([k, v]) => ({ ...v, name: NAMES[k] || k, ci: r.bootstrap?.skill?.[k], hl: k === "hybrid" }));
+    return `<h3 style="margin:14px 0 4px;font-size:15px">${r.label}</h3><p class="sub small" style="margin:0 0 6px">${r.period[0]} → ${r.period[1]}, ${r.n.toLocaleString()} ${src}-days in ${r.towns} districts. ${src === "gauge" ? "Each gauge is compared with the forecast for its district." : "Average of NASA's 0.1° cells around each district point."} Rain/no-rain agrees with ERA5 on ${pct(r.agreement_with_era5)} of days.</p>` +
+      scoreTable(rows, [{ label: "Forecast", get: r => r.name },
+        { label: "Skill vs climatology ↑", num: true, get: r => r.ci ? `<b>${pct(r.ci.bss, 1)}</b>` : pct(r.bss, 1) },
+        { label: "95% range", num: true, get: r => range(r.ci) }, { label: "AUC ↑", num: true, get: r => num(r.auc) }]);
+  };
+  const g = M.gauges, im = M.imerg;
+  if (!g && !im) {
+    el.innerHTML = `<p class="muted small" style="margin:0">Rain-gauge and NASA satellite checks appear here after the next retrain.</p>`;
+    return;
+  }
+  el.innerHTML = (g ? `<p class="sub small" style="margin:0"><b>Rain gauges</b> from NOAA's global station archive: ${g.info.stations} Sri Lankan weather stations, each scored against its own long-term wet-day frequency. Gauges catch the showers a 25 km grid smooths away, so every forecast scores lower here; what matters is the order.</p>` + block(g.nwp_era, "gauge") + block(g.all_years, "gauge") : "") +
+    (im ? `<p class="sub small" style="margin:${g ? 18 : 0}px 0 0"><b>NASA GPM IMERG</b>: satellite rainfall, calibrated with gauges in its final version. Its days run 05:30–05:30 Sri Lanka time (UTC days), which lowers every score a little but treats all forecasts alike.</p>` + block(im.nwp_era, "satellite") + block(im.all_years, "satellite") : "");
 }
 
 function renderScoreboards() {
@@ -198,14 +227,35 @@ function renderScoreboards() {
   const names = { model: "Weather Lab model", markov: "Markov chain (yesterday + season)", climatology: "Climatology (calendar odds)", persistence: "Persistence (tomorrow = today)" };
   const rows = Object.entries(M.rain).map(([k, v]) => ({ ...v, name: names[k] || k, hl: k === "model" }));
   $("fc-scoreboard").innerHTML = scoreTable(rows, [{ label: "Forecast", get: r => r.name }, ...SCORE_COLS]);
+  const bm = M.bootstrap_main;
+  if (bm?.skill?.model) {
+    const d = bm.diff["model - markov"];
+    $("fc-scoreboard").insertAdjacentHTML("beforeend", `<p class="sub small" style="margin:10px 0 0"><b>Error bars.</b> On any day one weather system rains on many districts at once, so district-days aren't independent. Resampling whole days ${bm.B.toLocaleString()} times gives a 95% range for the model's skill of <b>${range(bm.skill.model)}</b>, and ${range(bm.skill.markov)} for Markov. The gap between them, ${pct(d.est, 1)} (${pct(d.lo, 1)} to ${pct(d.hi, 1)}), is ${d.lo > 0 ? "clearly above zero: a real difference" : "not clearly above zero"}.</p>`);
+  }
   const ps = state.metrics?.places_summary?.unseen_cells;
   if (ps) $("fc-scoreboard").insertAdjacentHTML("beforeend", `<p class="sub small" style="margin:10px 0 0"><b>At places it never trained on</b>: ${ps.n_towns} towns in ${ps.n_cells} separate grid cells, same test years. The model's skill is <b>${pct(ps.model.bss, 1)}</b>, against ${pct(ps.markov.bss, 1)} for the Markov baseline (AUC ${num(ps.model.auc)}).</p>`);
 
-  const c = M.nwp_comparison;
-  if (!c) {
+  const F = M.fair;
+  if (F) {
+    const b = F.bootstrap, dHE = b.diff["hybrid - ecmwf_cal"], dME = b.diff["model - ecmwf_cal"];
+    $("fc-nwp-lede").innerHTML = `A fair test, probability against probability. ECMWF gives rain amounts, so its forecasts are turned into probabilities using how often ECMWF's amounts came true in ${F.fit_period[0].slice(0, 7)} → ${F.fit_period[1].slice(0, 7)}. Scored as plain yes/no, as before, ECMWF looks far worse than it is. The <b>hybrid</b> feeds tomorrow's ECMWF, GFS and ICON rain into the Weather Lab forecast, the way forecast offices correct weather models. It was fitted on the same earlier months only. Every row is scored on the same <b>${F.n_test.toLocaleString()} later district-days</b> (${F.test_period[0]} → ${F.test_period[1]}).`;
+    const rows2 = Object.entries(F.entries).map(([k, v]) => ({ ...v, key: k, ci: b.skill[k], hl: k === "hybrid" }));
+    $("fc-nwp").innerHTML = scoreTable(rows2, [
+      { label: "Forecast", get: r => r.label }, { label: "Type", get: r => `<span class="muted">${r.kind}</span>` },
+      { label: "Skill vs climatology ↑", num: true, get: r => r.ci ? `<b>${pct(r.ci.bss, 1)}</b>` : pct(r.bss, 1) },
+      { label: "95% range", num: true, get: r => r.ci ? `${pct(r.ci.lo, 1)} to ${pct(r.ci.hi, 1)}` : "<span class='muted'>–</span>" },
+      SCORE_COLS[0], SCORE_COLS[3],
+    ]) + `<p class="sub small" style="margin:10px 0 0"><b>What this shows.</b> Weather Lab alone and ECMWF are <b>${dME.lo < 0 && dME.hi > 0 ? "level" : dME.est > 0 ? "apart, Weather Lab ahead" : "apart, ECMWF ahead"}</b>: the difference is ${pct(dME.est, 1)}, with a 95% range of ${pct(dME.lo, 1)} to ${pct(dME.hi, 1)}. The hybrid beats ECMWF by <b>${pct(dHE.est, 1)}</b> (${pct(dHE.lo, 1)} to ${pct(dHE.hi, 1)}). ${state.forecast?.towns?.some(t => t.method === "hybrid") ? "The published forecast is now the hybrid." : "The published forecast switches to the hybrid from the next nightly run."} The truth here is still ERA5, which is itself made by ECMWF. That's why the next table checks everything against rain gauges and NASA's satellite rainfall, which no forecast model has seen.</p>`;
+  } else {
     $("fc-nwp-lede").textContent = "Archived day-ahead forecasts from operational weather models are not available yet.";
     $("fc-nwp").innerHTML = "";
-  } else {
+  }
+  renderTruths(M);
+  const c = null;
+  if (!F && !c) {
+    $("fc-nwp-lede").textContent = "Archived day-ahead forecasts from operational weather models are not available yet.";
+    $("fc-nwp").innerHTML = "";
+  } else if (c) {
     $("fc-nwp-lede").innerHTML = `Day-ahead runs of operational weather models (Open-Meteo archive of forecasts issued ~24 h ahead), ${c.period[0]} → ${c.period[1]}, on the same ${c.n.toLocaleString()} town-days. NWP gives rain amounts, not probabilities, so it is scored as yes/no (≥ 1 mm forecast). Brier punishes yes/no forecasts hard, so compare CSI, POD and FAR as well. <b>Caveat:</b> the "truth" here is ERA5, the same dataset our model learned from, so it has a home advantage the professional models don't. Treat this comparison as indicative until it's repeated against rain gauges.`;
     const rows2 = Object.entries(c.entries).map(([k, v]) => ({ ...v, hl: k === "model" }));
     $("fc-nwp").innerHTML = scoreTable(rows2, [
@@ -414,6 +464,19 @@ renderers.heavy = () => {
       { label: "Heavy days / yr", num: true, get: r => H?.towns[r.town]?.per_year == null ? "–" : H.towns[r.town].per_year.toFixed(1) },
     ]);
   }
+  const HS = state.metrics?.metrics?.heavy_fair, HM = state.metrics?.metrics?.heavy_main;
+  const card = (h, title) => !h ? "" : `<h3 style="margin:12px 0 4px;font-size:15px">${title}</h3><p class="sub small" style="margin:0 0 6px">${h.events} heavy-rain district-days out of ${h.n.toLocaleString()}${h.period ? `, ${h.period[0]} → ${h.period[1]}` : ""}.</p>` +
+    scoreTable(Object.values(h.entries).map(e => ({ ...e, hl: /Hybrid, warn at ≥ 30/.test(e.label) })), [
+      { label: "Warning rule", get: r => r.label },
+      { label: "Caught", num: true, get: r => r.hits }, { label: "Missed", num: true, get: r => r.misses },
+      { label: "False alarms", num: true, get: r => r.false_alarms },
+      { label: "Caught %", num: true, get: r => pct(r.pod), title: "Probability of detection" },
+      { label: "False-alarm %", num: true, get: r => pct(r.far), title: "Share of warnings that were wrong" },
+      { label: "CSI ↑", num: true, get: r => num(r.csi), title: "Hits / (hits + misses + false alarms)" }]);
+  if ($("hv-scorecard")) $("hv-scorecard").innerHTML = (HS || HM)
+    ? card(HS, "Against ECMWF, same days") + card(HM, "Weather Lab alone, all test years") +
+      `<p class="sub small" style="margin:10px 0 0">Heavy days are rare (about 1 in 70 district-days), so accuracy and Brier score look good even for a forecast that misses most floods. These counts are the honest measure. The thresholds were fixed in advance, not tuned on these days.</p>`
+    : "<p class='muted small'>Appears after the next retrain.</p>";
   const M = state.metrics?.metrics?.heavy;
   if (M) {
     $("hv-skill").innerHTML = `On the unseen test years, heavy-rain days were <b>${pct(M.model.base_rate, 1)}</b> of town-days. The model's average precision is <b>${num(M.model.avg_precision)}</b>, against <b>${num(M.climatology.avg_precision)}</b> for calendar odds. AUC is ${num(M.model.auc)}, and Brier skill vs climatology is ${pct(M.model.bss, 1)}. Read these as "somewhat better than the calendar", not as a warning system. The status labels are fixed probability thresholds, not calibrated alerts.`;
