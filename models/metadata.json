@@ -1,6 +1,6 @@
 {
   "version": "0.1.0+20261128",
-  "trained_at": "2026-11-28T02:12:31Z",
+  "trained_at": "2026-11-28T03:20:54Z",
   "data_source": "Open-Meteo ERA5 reanalysis",
   "features": [
     "precip",
@@ -122,12 +122,12 @@
     "test": 44675
   },
   "best_iteration": {
-    "y_rain": 832,
-    "y_heavy": 236
+    "y_rain": 963,
+    "y_heavy": 135
   },
   "production_rounds": {
-    "y_rain": 1000,
-    "y_heavy": 283
+    "y_rain": 1157,
+    "y_heavy": 162
   },
   "towns": [
     "colombo",
