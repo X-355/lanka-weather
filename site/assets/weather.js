@@ -225,7 +225,7 @@ function renderHealth(f, a) {
   const rows = [
     ["Heat stress (feels like " + r0(d.apparent_temperature_max[0]) + "°C)", heat],
     ["UV (max " + r1(d.uv_index_max[0]) + ")", uv],
-    ["Air quality", aqi || ["good", "–", ""]],
+    ["Air quality (worst hour today)", aqi || ["good", "–", ""]],
     ["Outdoor activities", [...outdoor, `Based on rain chance (${rainP}%), heat and air quality.`]],
     ["Drying clothes outside", [...laundry, "Based on rain chance and humidity."]],
     ["Mosquito activity", [...mosq, "Rough guide from warmth, humidity and rain. Clear standing water to help prevent dengue."]],

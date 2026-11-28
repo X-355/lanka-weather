@@ -20,10 +20,16 @@ a static HF Space).
    `config/places.csv`) and a live, append-only track record. It also
    shows the backtest scoreboard against baselines and ECMWF / GFS / ICON day-ahead forecasts, a
    reliability diagram, skill by town, and a tool to look up what every forecast said on any test day.
-2. **Monsoon & rainfall dashboard**: monthly rainfall vs the 1991–2020 normal (with P10–P90 range),
+2. **Weather**: for any district capital, town or your own location: current conditions, 48-hour and 7-day
+   forecast, feels-like temperature, air quality (Copernicus CAMS), heat/UV/outdoor/mosquito guides, sunrise,
+   sunset, moon and next Poya, sea state for coastal places, river levels against normal (Copernicus GloFAS), and
+   a nightly cyclone check (GDACS). Our model's chance of rain is shown next to the professional forecast.
+3. **Live sky**: animated Meteosat clouds (every 15 min) and satellite rain estimates over Sri Lanka, with the
+   district forecast on top.
+4. **Monsoon & rainfall dashboard**: monthly rainfall vs the 1991–2020 normal (with P10–P90 range),
    season totals by year for NEM / FIM / SWM / SIM, and the last 90 days.
-3. **Rooftop solar estimator**: monthly and yearly kWh, value and payback, from NASA POWER irradiance.
-4. **Heavy-rain risk tracker** (research only): chance of ≥ 50 mm per town vs calendar odds, how
+5. **Rooftop solar estimator**: monthly and yearly kWh, value and payback, from NASA POWER irradiance.
+6. **Heavy-rain risk tracker** (research only): chance of ≥ 50 mm per town vs calendar odds, how
    heavy-rain days are spread across the year, and recent extreme days. It is clearly marked as not a
    warning service.
 
