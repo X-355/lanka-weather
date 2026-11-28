@@ -290,6 +290,45 @@ function renderCyclones() {
   $("wx-cyclone").innerHTML += `<p class="muted small" style="margin:8px 0 0">Checked ${new Date(c.fetched_at).toLocaleString("en-GB", { timeZone: TZ, dateStyle: "medium", timeStyle: "short" })} from <a href="https://www.gdacs.org">GDACS</a>, which compiles agency advisories. Official cyclone warnings come from the Department of Meteorology.</p>`;
 }
 
+const LOCATE_HELP = {
+  1: "Location permission is blocked for this site. Allow it via the padlock or site-settings icon in the address bar, then try again. On Windows, also check Settings → Privacy & security → Location. (The browser inside the Claude app doesn't share location at all; open the site in Chrome, Edge or Safari.)",
+  2: "Your device couldn't work out where it is. On a computer, turn on location services (Windows: Settings → Privacy & security → Location); on a phone, turn on Location.",
+  3: "Finding your location took too long. Try again, ideally with Wi-Fi or location services on.",
+};
+
+function locateMsg(text) {
+  $("wx-locate-msg").textContent = text;
+  $("wx-locate-msg").style.display = text ? "" : "none";
+}
+
+function locate() {
+  const btn = $("wx-locate");
+  locateMsg("");
+  if (!("geolocation" in navigator) || !window.isSecureContext) {
+    locateMsg("This browser can't share your location. Pick the nearest town from the list instead.");
+    return;
+  }
+  btn.textContent = "Locating…";
+  btn.disabled = true;
+  const done = () => { btn.textContent = "📍 Use my location"; btn.disabled = false; };
+  const ok = pos => {
+    done();
+    const { latitude: lat, longitude: lon } = pos.coords;
+    const near = nearestDistrict(lat, lon);
+    const inLanka = lat > 5.7 && lat < 10.1 && lon > 79.4 && lon < 82.1;
+    if (!inLanka) locateMsg("You seem to be outside Sri Lanka. Showing your location anyway; the rain-model comparison uses the nearest district.");
+    $("wx-place").value = near.id;
+    load({ id: near.id, name: inLanka ? `Your location (near ${near.name})` : "Your location", lat, lon, district: near.district });
+  };
+  // A quick, low-accuracy fix is plenty for weather; retry once more patiently if it times out.
+  navigator.geolocation.getCurrentPosition(ok, err => {
+    if (err.code === 3) {
+      navigator.geolocation.getCurrentPosition(ok, e2 => { done(); locateMsg(LOCATE_HELP[e2.code] || "Couldn't get your location."); },
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 600000 });
+    } else { done(); locateMsg(LOCATE_HELP[err.code] || "Couldn't get your location."); }
+  }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 });
+}
+
 export async function renderWeather(appState) {
   state = appState;
   if (built) return;
@@ -298,15 +337,6 @@ export async function renderWeather(appState) {
   populateSelect();
   try { cyclones = await fetch("data/cyclones.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null); } catch { cyclones = null; }
   $("wx-place").addEventListener("change", e => load(places.find(p => p.id === e.target.value)));
-  $("wx-locate").addEventListener("click", () => {
-    if (!navigator.geolocation) return;
-    $("wx-locate").textContent = "Locating…";
-    navigator.geolocation.getCurrentPosition(pos => {
-      const { latitude: lat, longitude: lon } = pos.coords;
-      const near = nearestDistrict(lat, lon);
-      $("wx-locate").textContent = "📍 Use my location";
-      load({ id: near.id, name: "Your location", lat, lon, district: near.district });
-    }, () => { $("wx-locate").textContent = "Location unavailable"; }, { timeout: 10000 });
-  });
+  $("wx-locate").addEventListener("click", locate);
   load(places.find(p => p.id === "d:colombo"));
 }
