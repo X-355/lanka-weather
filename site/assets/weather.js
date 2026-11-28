@@ -360,7 +360,12 @@ function renderCyclones() {
   const active = c.events.filter(e => e.ongoing);
   $("wx-cyclone").innerHTML = active.length
     ? active.map(e => `<p style="margin:0 0 6px">${badge(e.alert === "Red" ? "critical" : e.alert === "Orange" ? "serious" : "warning", `${e.alert} alert`)} <b>${e.name}</b>, ${e.severity || ""}. ${e.url ? `<a href="${e.url}" rel="noopener">GDACS report</a>` : ""}</p>`).join("")
-    : `<p style="margin:0">${badge("good", "None active")} No tropical cyclones in the region around Sri Lanka in the last two weeks.</p>`;
+    : `<p style="margin:0">${badge("good", "None active")} No tropical cyclone is active in the region around Sri Lanka right now.</p>`;
+  // Systems from the last two weeks that have ended, so the record is complete (newest first).
+  const past = c.events.filter(e => !e.ongoing).sort((a, b) => String(b.to).localeCompare(String(a.to)));
+  const day = t => t ? new Date(t + "Z").toLocaleDateString("en-GB", { timeZone: TZ, day: "numeric", month: "short" }) : "";
+  if (past.length) $("wx-cyclone").innerHTML += `<p class="small" style="margin:8px 0 2px">Ended in the last two weeks:</p><ul class="small" style="margin:0">${past.map(e =>
+    `<li>${e.url ? `<a href="${e.url}" rel="noopener">${e.name}</a>` : e.name}, ${day(e.from)}${e.to && e.to !== e.from ? `–${day(e.to)}` : ""}${e.countries ? ` (${e.countries})` : ""}: ${(e.severity || "").replace(/\s*\(.*\)/, "").toLowerCase() || "system"}.</li>`).join("")}</ul>`;
   $("wx-cyclone").innerHTML += `<p class="muted small" style="margin:8px 0 0">${c.ok ? `Checked ${when(c.fetched_at)}` : `Last successful check ${when(c.last_ok_at)}; the latest try (${when(c.fetched_at)}) couldn't reach GDACS and is retried every 3 hours`} from <a href="https://www.gdacs.org">GDACS</a>, which compiles agency advisories. Official cyclone warnings come from the Department of Meteorology.</p>`;
 }
 
