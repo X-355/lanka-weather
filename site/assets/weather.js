@@ -100,7 +100,9 @@ const remember = id => { try { localStorage.setItem(LAST, id); } catch {} };
 const recall = () => { try { return localStorage.getItem(LAST); } catch { return null; } };
 
 // Lower-case, drop Latin accents, keep letters, digits and combining marks (Sinhala/Tamil vowel signs matter).
-const fold = t => (t || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}\p{M}]/gu, "");
+const fold = t => (t || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}\p{M}]/gu, "")
+  // English spellings of Sinhala/Tamil names vary: Thudella/Tudella, Kapuwaththa/Kapuwatta, Kandy/Kandi…
+  .replace(/([a-z])h/g, (m, c) => "tdkgbpc".includes(c) ? c : m).replace(/([a-z])\1+/g, "$1").replace(/v/g, "w");
 function populateSelect() {
   for (const p of places) p._k = [fold(p.name), fold(p.si), fold(p.ta)];
 }
