@@ -72,13 +72,13 @@ Base rate 1.1%. Model Brier skill 9.4%, AUC 0.930, average precision 0.212 (clim
 
 ## Towns the model never trained on (2022-01-01 → 2026-11-22)
 
-53 towns in 29 ERA5 cells that contain no district point; each cell counted once (51,823 cell-days). Baselines from each town's own 2014–2021 data. Coverage: 153 of 166 towns scored.
+64 towns in 39 ERA5 cells that contain no district point; each cell counted once (69,693 cell-days). Baselines from each town's own 2014–2021 data. Coverage: 164 of 166 towns scored.
 
 | Forecast | Brier ↓ | Skill vs climatology ↑ | AUC ↑ |
 |---|---|---|---|
-| model | 0.144 | 27.6% | 0.873 |
-| markov | 0.163 | 18.0% | 0.834 |
-| climatology | 0.199 | 0.0% | 0.760 |
+| model | 0.143 | 27.3% | 0.875 |
+| markov | 0.162 | 18.0% | 0.836 |
+| climatology | 0.197 | 0.0% | 0.763 |
 
 Towns sharing a district point's cell (100 towns, 25 cells): model skill 30.3%, Markov 18.7%.
 
