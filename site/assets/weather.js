@@ -229,10 +229,10 @@ function renderHourly(f) {
     min: Math.floor(Math.min(...idx.map(i => h.temperature_2m[i])) - 2),
     series: [{ name: "Temperature", color: "var(--series-2)", kind: "line", values: idx.map(i => h.temperature_2m[i]) },
              { name: "Feels like", color: "var(--series-3)", kind: "line", values: idx.map(i => h.apparent_temperature[i]) }] }),
-    { base: 160, max: 320, weight: 1.3 });
+    { base: 130, max: 320, weight: 1.3 });
   fill($("wx-h-p"), hp => bars($("wx-h-p"), { categories: cats, height: hp, fmt: v => v.toFixed(0), min: 0, max: 100, tipTitle: tip,
     series: [{ name: "Chance of rain", color: "var(--series-1)", values: idx.map(i => h.precipitation_probability[i]) }] }),
-    { base: 120, max: 260, weight: 1 });
+    { base: 96, max: 260, weight: 1 });
   fitSoon();
 }
 
@@ -348,7 +348,7 @@ function renderRiver(fl, place) {
   fill($("wx-river-chart"), hr => bars($("wx-river-chart"), { categories: d.time.map(t => t.slice(5)), height: hr, fmt: v => v.toFixed(0), yTitle: "m³/s", min: 0,
     series: [{ name: "River flow (past week + forecast)", color: "var(--series-1)", values: d.river_discharge },
              { name: "Long-term average", color: "var(--neutral)", kind: "line", values: d.river_discharge_mean },
-             { name: "Wettest year on record", color: "var(--critical)", kind: "line", values: d.river_discharge_max }] }), { base: 200, max: 480 });
+             { name: "Wettest year on record", color: "var(--critical)", kind: "line", values: d.river_discharge_max }] }), { base: 220, max: 480 });
   fitSoon();
 }
 
