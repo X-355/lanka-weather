@@ -255,12 +255,12 @@ function renderAir(a) {
       <div><div class="muted small">US AQI now</div><div style="font-size:40px;font-weight:650">${r0(c.us_aqi)}</div>${badge(lvl, label)}</div>
       <p style="flex:1;min-width:220px;margin:0">${advice}</p>
     </div>
-    <table class="data" style="margin-top:10px"><tbody>
-      <tr><td>PM2.5 (fine particles)</td><td class="num">${r1(c.pm2_5)} µg/m³</td><td>PM10</td><td class="num">${r1(c.pm10)} µg/m³</td></tr>
-      <tr><td>Ozone (O₃)</td><td class="num">${r0(c.ozone)} µg/m³</td><td>Nitrogen dioxide (NO₂)</td><td class="num">${r1(c.nitrogen_dioxide)} µg/m³</td></tr>
-      <tr><td>Sulphur dioxide (SO₂)</td><td class="num">${r1(c.sulphur_dioxide)} µg/m³</td><td>Carbon monoxide (CO)</td><td class="num">${r0(c.carbon_monoxide)} µg/m³</td></tr>
-    </tbody></table>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${keys.map((k, i) => { const [l, n] = aqiLevel(days[k]); return `<div class="card" style="padding:8px 12px"><div class="muted small">${fmtDay(k, i)}</div><b>${days[k]}</b> ${badge(l, n)}</div>`; }).join("")}</div>
+    <div class="pairs">
+      <div><span>PM2.5 (fine particles)</span><b>${r1(c.pm2_5)} µg/m³</b></div><div><span>PM10</span><b>${r1(c.pm10)} µg/m³</b></div>
+      <div><span>Ozone (O₃)</span><b>${r0(c.ozone)} µg/m³</b></div><div><span>Nitrogen dioxide (NO₂)</span><b>${r1(c.nitrogen_dioxide)} µg/m³</b></div>
+      <div><span>Sulphur dioxide (SO₂)</span><b>${r1(c.sulphur_dioxide)} µg/m³</b></div><div><span>Carbon monoxide (CO)</span><b>${r0(c.carbon_monoxide)} µg/m³</b></div>
+    </div>
+    <div class="chips">${keys.map((k, i) => { const [l, n] = aqiLevel(days[k]); return `<div class="card"><div class="muted small">${fmtDay(k, i)}</div><b>${days[k]}</b> ${badge(l, n)}</div>`; }).join("")}</div>
     <p class="muted small" style="margin:8px 0 0">Model estimate from <a href="https://atmosphere.copernicus.eu">Copernicus CAMS</a> (~10–40 km grid) via Open-Meteo, not a ground monitor. City-street pollution can be higher than shown.</p>`;
 }
 

@@ -20,7 +20,8 @@
       <button role="tab" data-tab="solar" aria-selected="false">Rooftop solar</button>
       <button role="tab" data-tab="heavy" aria-selected="false">Heavy-rain risk</button>
     </nav>
-    <button class="theme-btn" id="theme" title="Toggle dark mode" aria-label="Toggle dark mode">◐ Theme</button>
+    <button class="theme-switch" id="theme" role="switch" aria-checked="false" aria-label="Dark mode">
+      <span class="track"><span class="thumb" aria-hidden="true">☀️</span></span></button>
   </div>
 </header>
 
@@ -85,9 +86,9 @@
     <h1>Weather</h1>
     <p class="lede">Conditions, hourly and 7-day forecast, air quality, health and activity guides, sun and moon, sea state and river levels for any district capital or town, or where you are. Each section names its source.</p>
     <div class="controls">
-      <label style="position:relative">Place
-        <input id="wx-place" role="combobox" aria-autocomplete="list" aria-controls="wx-suggest" autocomplete="off" spellcheck="false"
-          style="min-width:340px;font:inherit;color:var(--text-primary);background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:6px 9px"
+      <label style="position:relative;flex:0 1 440px">Place
+        <input id="wx-place" class="text" role="combobox" aria-autocomplete="list" aria-controls="wx-suggest" autocomplete="off" spellcheck="false"
+          style="width:100%"
           placeholder="Type a town or village — English, සිංහල or தமிழ்">
         <div id="wx-suggest" role="listbox" class="suggest" style="display:none"></div>
       </label>
@@ -122,7 +123,7 @@
         <button data-v="ir" aria-pressed="true">Clouds (infrared)</button><button data-v="natural" aria-pressed="false">True colour (day)</button><button data-v="none" aria-pressed="false">Off</button></div></label>
       <label>Rain <div class="seg" id="ls-rain">
         <button data-v="eum" aria-pressed="true">Satellite, 15 min</button><button data-v="imerg" aria-pressed="false">NASA IMERG (~5 h late)</button><button data-v="none" aria-pressed="false">Off</button></div></label>
-      <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="ls-tint" checked> Shade districts by tomorrow's forecast</label>
+      <label class="check"><input type="checkbox" id="ls-tint" checked> Shade districts by tomorrow's forecast</label>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
       <div id="ls-map" style="height:min(70vh,620px);background:var(--surface-2)"></div>
@@ -168,7 +169,7 @@
   <section id="solar">
     <h1>Rooftop solar estimator</h1>
     <p class="lede">A rough yearly and monthly output estimate for a rooftop system, from satellite-derived sunlight records. Use it to get a feel for the numbers. A proper site survey should come first.</p>
-    <div class="controls">
+    <div class="controls form">
       <label>Town <select id="so-town"></select></label>
       <label>System size (kWp) <input type="number" id="so-kwp" value="5" min="0.5" max="100" step="0.5"></label>
       <label>Roof faces

@@ -28,6 +28,7 @@ function setupTabs() {
   const go = tab => {
     active = tab;
     buttons.forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
+    document.querySelector(`nav.tabs button[data-tab="${tab}"]`)?.scrollIntoView({ block: "nearest", inline: "center" });
     document.querySelectorAll("main section").forEach(s => s.classList.toggle("active", s.id === tab));
     if (location.hash.slice(1) !== tab) history.replaceState(null, "", "#" + tab);
     renderers[tab]?.();
@@ -39,12 +40,19 @@ function setupTabs() {
   addEventListener("hashchange", () => { const k = location.hash.slice(1); if (k !== active && document.getElementById(k)) go(k); });
   let t;
   addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => renderers[active]?.(), 150); });
+  const isDark = () => document.documentElement.dataset.theme
+    ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  const syncSwitch = () => {
+    const d = isDark();
+    $("theme").setAttribute("aria-checked", d);
+    $("theme").querySelector(".thumb").textContent = d ? "🌙" : "☀️";
+  };
+  syncSwitch();
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncSwitch);
   $("theme").addEventListener("click", () => {
-    const dark = document.documentElement.dataset.theme
-      ? document.documentElement.dataset.theme === "dark"
-      : matchMedia("(prefers-color-scheme: dark)").matches;
-    document.documentElement.dataset.theme = dark ? "light" : "dark";
+    document.documentElement.dataset.theme = isDark() ? "light" : "dark";
     try { localStorage.setItem("theme", document.documentElement.dataset.theme); } catch {}
+    syncSwitch();
     renderers[active]?.();
   });
 }
@@ -403,7 +411,7 @@ renderers.heavy = () => {
       { label: "Chance ≥ " + thr + " mm", num: true, get: r => pct(r.p_heavy, 1) },
       { label: "Normal for date", num: true, get: r => pct(r.p_clim_heavy, 1) },
       { label: "× normal", num: true, get: r => r.p_clim_heavy > 0 ? (r.p_heavy / r.p_clim_heavy).toFixed(1) + "×" : "–" },
-      { label: "Heavy days / yr", num: true, get: r => H?.towns[r.town]?.per_year ?? "–" },
+      { label: "Heavy days / yr", num: true, get: r => H?.towns[r.town]?.per_year == null ? "–" : H.towns[r.town].per_year.toFixed(1) },
     ]);
   }
   const M = state.metrics?.metrics?.heavy;
