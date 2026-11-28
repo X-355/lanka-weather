@@ -16,6 +16,7 @@
       <button role="tab" data-tab="forecast" aria-selected="true">Forecast checker</button>
       <button role="tab" data-tab="weather" aria-selected="false">Weather</button>
       <button role="tab" data-tab="live" aria-selected="false">Live sky</button>
+      <button role="tab" data-tab="rivers" aria-selected="false">Rivers &amp; reservoirs</button>
       <button role="tab" data-tab="monsoon" aria-selected="false">Monsoon &amp; rainfall</button>
       <button role="tab" data-tab="solar" aria-selected="false">Rooftop solar</button>
       <button role="tab" data-tab="heavy" aria-selected="false">Heavy-rain risk</button>
@@ -143,6 +144,31 @@
     <div class="notice" style="border-left-color:var(--warning)"><b>No weather radar here yet.</b> Public radar networks don't include a Sri Lankan radar, so this tab uses satellite pictures and satellite rain estimates. They're good for seeing storm systems approach, but coarser than radar. If the Department of Meteorology shares its radar feed, it would go here.</div>
   </section>
 
+  <!-- ======================================================= RIVERS -->
+  <section id="rivers">
+    <h1>Rivers &amp; reservoirs</h1>
+    <p class="lede">The 10-day outlook for Sri Lanka's main rivers at their gauging stations, and how much rain is falling and forecast upstream of the major reservoirs.</p>
+    <div class="notice"><b>For official river levels and flood warnings</b>, use the Irrigation Department's <a href="https://rivernet.lk" rel="noopener">rivernet.lk</a>.
+      Spill-gate openings are announced by the <a href="https://www.irrigation.gov.lk" rel="noopener">Irrigation Department</a> and the
+      <a href="https://mahaweli.gov.lk" rel="noopener">Mahaweli Authority</a>. Disaster warnings: <a href="https://www.dmc.gov.lk" rel="noopener">Disaster Management Centre</a>, hotline <b>117</b>.
+      This page is a model-based outlook, not a warning.</div>
+    <p class="sub small" id="rv-status"></p>
+    <div class="grid map-layout">
+      <div class="card" style="padding:0;overflow:hidden"><div id="rv-map" style="height:520px;background:var(--surface-2)"></div>
+        <div class="legend" style="padding:8px 12px;margin:0">
+          <span><svg width="12" height="12" style="margin-right:6px"><circle cx="6" cy="6" r="5" fill="var(--neutral)"/></svg>River gauging station</span>
+          <span><svg width="12" height="12" style="margin-right:6px"><rect x="2" y="2" width="8" height="8" transform="rotate(45 6 6)" fill="var(--neutral)"/></svg>Reservoir</span>
+          <span>Colour = status in the tables</span></div></div>
+      <div class="card" id="rv-detail"></div>
+    </div>
+    <h2>Main rivers</h2>
+    <p class="sub">Modelled flow (Copernicus GloFAS) at each station: now, and the highest expected in the next 10 days compared with the long-term average and the wettest year on record for that date. Click a row for the chart.</p>
+    <div class="card" id="rv-rivers"></div>
+    <h2>Reservoir watch</h2>
+    <p class="sub">Average rain over each reservoir's catchment: the last 3 days and the next 3 days (forecast). Heavy rain upstream fills reservoirs and makes spill-gate openings more likely, but whether and when gates open is decided by the engineers operating them. The categories are our rule of thumb, not official thresholds. Reservoir positions are approximate.</p>
+    <div class="card" id="rv-res"></div>
+  </section>
+
   <!-- ======================================================= MONSOON -->
   <section id="monsoon">
     <h1>Monsoon &amp; rainfall dashboard</h1>
@@ -234,7 +260,7 @@
 
 <footer><div class="wrap">
   <span><a href="#about" id="foot-method"><b>How the forecasts are made and tested →</b></a> · <span id="foot-model"></span></span>
-  <span>Data: <a href="https://open-meteo.com" rel="noopener">Open-Meteo</a> (ERA5, archived forecasts, CC BY 4.0) · <a href="https://power.larc.nasa.gov" rel="noopener">NASA POWER</a> · Towns: <a href="https://www.geonames.org" rel="noopener">GeoNames</a> (CC BY 4.0), <a href="https://github.com/madurapa/sri-lanka-provinces-districts-cities" rel="noopener">Sri Lanka cities dataset</a> (MIT), <a href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap contributors</a> (ODbL), GN divisions: <a href="https://data.humdata.org/dataset/cod-ab-lka" rel="noopener">Survey Department of Sri Lanka / OCHA via HDX</a> (CC BY-IGO) · Satellite: <a href="https://view.eumetsat.int" rel="noopener">EUMETSAT</a>, <a href="https://earthdata.nasa.gov/gibs" rel="noopener">NASA GIBS</a> · Air quality: <a href="https://atmosphere.copernicus.eu" rel="noopener">Copernicus CAMS</a> · Rivers: <a href="https://global-flood.emergency.copernicus.eu" rel="noopener">GloFAS</a> · Cyclones: <a href="https://www.gdacs.org" rel="noopener">GDACS</a> · Code: <a href="https://github.com/X-355/lanka-weather" rel="noopener">github.com/X-355/lanka-weather</a></span>
+  <span>Data: <a href="https://open-meteo.com" rel="noopener">Open-Meteo</a> (ERA5, archived forecasts, CC BY 4.0) · <a href="https://power.larc.nasa.gov" rel="noopener">NASA POWER</a> · Towns: <a href="https://www.geonames.org" rel="noopener">GeoNames</a> (CC BY 4.0), <a href="https://github.com/madurapa/sri-lanka-provinces-districts-cities" rel="noopener">Sri Lanka cities dataset</a> (MIT), <a href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap contributors</a> (ODbL), GN divisions: <a href="https://data.humdata.org/dataset/cod-ab-lka" rel="noopener">Survey Department of Sri Lanka / OCHA via HDX</a> (CC BY-IGO) · Satellite: <a href="https://view.eumetsat.int" rel="noopener">EUMETSAT</a>, <a href="https://earthdata.nasa.gov/gibs" rel="noopener">NASA GIBS</a> · Air quality: <a href="https://atmosphere.copernicus.eu" rel="noopener">Copernicus CAMS</a> · Rivers: <a href="https://global-flood.emergency.copernicus.eu" rel="noopener">GloFAS</a> (official levels: <a href="https://rivernet.lk" rel="noopener">rivernet.lk</a>) · Cyclones: <a href="https://www.gdacs.org" rel="noopener">GDACS</a> · Code: <a href="https://github.com/X-355/lanka-weather" rel="noopener">github.com/X-355/lanka-weather</a></span>
 </div></footer>
 
 <script type="module" src="assets/app.js?v=dev"></script>

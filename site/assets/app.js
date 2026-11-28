@@ -437,6 +437,12 @@ renderers.weather = async () => {
   renderWeather(state);
 };
 
+// ------------------------------------------------------------------ rivers & reservoirs (loaded on first visit)
+renderers.rivers = async () => {
+  const { renderRivers } = await import("./rivers.js?v=dev");
+  renderRivers();
+};
+
 // ------------------------------------------------------------------ live sky (loaded on first visit)
 renderers.live = async () => {
   const { renderLiveSky } = await import("./livesky.js?v=dev");
