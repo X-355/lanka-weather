@@ -86,8 +86,12 @@
     <h1>Weather</h1>
     <p class="lede">Conditions, hourly and 7-day forecast, air quality, health and activity guides, sun and moon, sea state and river levels for any district capital or town, or where you are. Each section names its source.</p>
     <div class="controls">
-      <label>Place <input id="wx-place" list="wx-list" autocomplete="off" spellcheck="false" style="min-width:320px;font:inherit;color:var(--text-primary);background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:6px 9px"
-        placeholder="Type a town or village — English, සිංහල or தமிழ்"><datalist id="wx-list"></datalist></label>
+      <label style="position:relative">Place
+        <input id="wx-place" role="combobox" aria-autocomplete="list" aria-controls="wx-suggest" autocomplete="off" spellcheck="false"
+          style="min-width:340px;font:inherit;color:var(--text-primary);background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:6px 9px"
+          placeholder="Type a town or village — English, සිංහල or தமிழ்">
+        <div id="wx-suggest" role="listbox" class="suggest" style="display:none"></div>
+      </label>
       <button class="theme-btn" id="wx-locate" type="button">📍 Use my location</button>
     </div>
     <p class="notice" id="wx-locate-msg" role="status" style="display:none;border-left-color:var(--warning)"></p>
@@ -223,7 +227,7 @@
 
 <footer><div class="wrap">
   <span id="foot-model"></span>
-  <span>Data: <a href="https://open-meteo.com" rel="noopener">Open-Meteo</a> (ERA5, archived forecasts, CC BY 4.0) · <a href="https://power.larc.nasa.gov" rel="noopener">NASA POWER</a> · Towns: <a href="https://www.geonames.org" rel="noopener">GeoNames</a> (CC BY 4.0), <a href="https://github.com/madurapa/sri-lanka-provinces-districts-cities" rel="noopener">Sri Lanka cities dataset</a> (MIT) · Satellite: <a href="https://view.eumetsat.int" rel="noopener">EUMETSAT</a>, <a href="https://earthdata.nasa.gov/gibs" rel="noopener">NASA GIBS</a> · Air quality: <a href="https://atmosphere.copernicus.eu" rel="noopener">Copernicus CAMS</a> · Rivers: <a href="https://global-flood.emergency.copernicus.eu" rel="noopener">GloFAS</a> · Cyclones: <a href="https://www.gdacs.org" rel="noopener">GDACS</a> · Code: <a href="https://github.com/X-355/lanka-weather" rel="noopener">github.com/X-355/lanka-weather</a></span>
+  <span>Data: <a href="https://open-meteo.com" rel="noopener">Open-Meteo</a> (ERA5, archived forecasts, CC BY 4.0) · <a href="https://power.larc.nasa.gov" rel="noopener">NASA POWER</a> · Towns: <a href="https://www.geonames.org" rel="noopener">GeoNames</a> (CC BY 4.0), <a href="https://github.com/madurapa/sri-lanka-provinces-districts-cities" rel="noopener">Sri Lanka cities dataset</a> (MIT), <a href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap contributors</a> (ODbL) · Satellite: <a href="https://view.eumetsat.int" rel="noopener">EUMETSAT</a>, <a href="https://earthdata.nasa.gov/gibs" rel="noopener">NASA GIBS</a> · Air quality: <a href="https://atmosphere.copernicus.eu" rel="noopener">Copernicus CAMS</a> · Rivers: <a href="https://global-flood.emergency.copernicus.eu" rel="noopener">GloFAS</a> · Cyclones: <a href="https://www.gdacs.org" rel="noopener">GDACS</a> · Code: <a href="https://github.com/X-355/lanka-weather" rel="noopener">github.com/X-355/lanka-weather</a></span>
 </div></footer>
 
 <script type="module" src="assets/app.js?v=dev"></script>

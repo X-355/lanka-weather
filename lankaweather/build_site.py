@@ -251,8 +251,13 @@ def build_places() -> None:
         g = pd.read_csv(gpath, dtype=str, keep_default_na=False)
         items = [[r.name, r.name_si, r.name_ta, r.district, r.postcode, round(float(r.lat), 4), round(float(r.lon), 4)]
                  for r in g.itertuples()]
+        osm = ROOT / "config" / "osm_places.csv"
+        if osm.exists():  # OpenStreetMap villages; "o" flags them so the site can credit OSM
+            o = pd.read_csv(osm, dtype=str, keep_default_na=False)
+            items += [[r.name, r.name_si, r.name_ta, r.district, "", round(float(r.lat), 4), round(float(r.lon), 4), "o"]
+                      for r in o.itertuples()]
         have = {(i[0].lower().replace("-", " "), i[3]) for i in items}
         if pl is not None:  # forecast towns that the gazetteer lacks
             items += [[r.name, "", "", r.district, "", round(float(r.lat), 4), round(float(r.lon), 4)]
                       for r in pl.itertuples() if (r.name.lower().replace("-", " "), r.district) not in have]
-        _write("gazetteer.json", {"fields": ["name", "si", "ta", "district", "postcode", "lat", "lon"], "rows": items})
+        _write("gazetteer.json", {"fields": ["name", "si", "ta", "district", "postcode", "lat", "lon", "src"], "rows": items})

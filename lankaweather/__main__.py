@@ -8,6 +8,7 @@
   site         build site/data/*.json
   publish-hf   upload model to the Hugging Face model repo
   publish-space upload site/ to a static Hugging Face Space
+  gazetteer    refresh OpenStreetMap villages for the place finder (monthly)
   daily        fetch-recent + score + predict + site   (what the daily workflow runs)
 """
 from __future__ import annotations
@@ -72,6 +73,11 @@ def main(argv=None) -> int:
     elif c == "publish-space":
         from .publish_hf import publish_space
         publish_space()
+    elif c == "gazetteer":
+        from .build_site import build_places
+        from .gazetteer import refresh
+        print(refresh())
+        build_places()
     elif c == "check":
         # exit 0 when every town has history through the training/validation split, else 3
         from .config import ERA5_DIR, town_keys

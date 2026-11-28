@@ -80,20 +80,62 @@ function placeList(gaz, townList) {
   let rows = gaz?.rows || (townList || []).map(p => [p.name, "", "", p.district, "", p.lat, p.lon]);
   const seen = {};
   for (const r of rows) seen[`${r[0]}|${r[3]}`] = (seen[`${r[0]}|${r[3]}`] || 0) + 1;
-  const ps = rows.map(([name, si, ta, district, postcode, lat, lon]) => {
-    const dup = seen[`${name}|${district}`] > 1 && postcode;
-    return { id: `g:${name}|${district}|${postcode}`, name, lat, lon, district,
-             label: `${name}${dup ? ` (${postcode})` : ""} — ${title(district)} District`, alt: [si, ta].filter(Boolean).join(" · ") };
+  const ps = rows.map(([name, si, ta, district, postcode, lat, lon, src]) => {
+    const dup = seen[`${name}|${district}`] > 1;
+    return { id: `g:${name}|${district}|${postcode}|${lat}`, name, lat, lon, district, osm: src === "o", si, ta,
+             label: `${name}${dup ? ` (${postcode || lat.toFixed(2) + "°N"})` : ""} — ${title(district)} District`, alt: [si, ta].filter(Boolean).join(" · ") };
   });
-  return [...caps, ...ps];
+  // A postal/OSM entry for a district capital itself (same name, within 3 km) would just duplicate it.
+  const near = (a, b) => Math.abs(a.lat - b.lat) < 0.03 && Math.abs(a.lon - b.lon) < 0.03;
+  const keep = ps.filter(p => !caps.some(c => c.name.toLowerCase() === p.name.toLowerCase() && near(c, p)));
+  for (const c of caps) {  // lend the capital its Sinhala/Tamil names
+    const twin = ps.find(p => p.name.toLowerCase() === c.name.toLowerCase() && near(c, p) && (p.si || p.ta));
+    if (twin) { c.si = twin.si; c.ta = twin.ta; c.alt = twin.alt; }
+  }
+  return [...caps, ...keep];
 }
 
 const LAST = "lw-weather-place";
 const remember = id => { try { localStorage.setItem(LAST, id); } catch {} };
 const recall = () => { try { return localStorage.getItem(LAST); } catch { return null; } };
 
+// Lower-case, drop Latin accents, keep letters, digits and combining marks (Sinhala/Tamil vowel signs matter).
+const fold = t => (t || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}\p{M}]/gu, "");
 function populateSelect() {
-  $("wx-list").innerHTML = places.map(p => `<option value="${p.label}"${p.alt ? ` label="${p.alt}"` : ""}></option>`).join("");
+  for (const p of places) p._k = [fold(p.name), fold(p.si), fold(p.ta)];
+}
+
+function search(qs) {
+  const q = fold(qs);
+  if (!q) return [];
+  const hits = [];
+  for (const p of places) {
+    let score = -1;
+    for (const k of p._k) {
+      if (!k) continue;
+      if (k === q) score = Math.max(score, 3);
+      else if (k.startsWith(q)) score = Math.max(score, 2);
+      else if (k.includes(q)) score = Math.max(score, 1);
+    }
+    if (score < 0) continue;
+    // capitals first, then postal towns, then OpenStreetMap villages
+    hits.push([score * 10 + (p.id.startsWith("d:") ? 3 : p.osm ? 0 : 1), p]);
+  }
+  return hits.sort((a, b) => b[0] - a[0] || a[1].name.length - b[1].name.length).slice(0, 12).map(h => h[1]);
+}
+
+let sugg = [], sel = -1;
+function showSuggestions(list) {
+  sugg = list; sel = list.length ? 0 : -1;
+  const box = $("wx-suggest");
+  box.innerHTML = list.map((p, i) => `<button type="button" role="option" data-i="${i}" aria-selected="${i === sel}">
+    <span>${p.name}</span> <span class="muted small">${title(p.district)} District${p.alt ? " · " + p.alt : ""}${p.osm ? " · village" : ""}</span></button>`).join("")
+    || ($("wx-place").value.trim() ? `<div class="muted small" style="padding:8px 10px">No match. Try another spelling, or use your location.</div>` : "");
+  box.style.display = box.innerHTML ? "" : "none";
+}
+function highlight(i) {
+  sel = i;
+  [...$("wx-suggest").children].forEach((b, j) => b.setAttribute?.("aria-selected", j === i));
 }
 
 const byLabel = label => places.find(p => p.label === label);
@@ -350,16 +392,25 @@ export async function renderWeather(appState) {
   places = placeList(gaz, townList);
   populateSelect();
   try { cyclones = await fetch("data/cyclones.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null); } catch { cyclones = null; }
-  const pick = () => {
-    const p = byLabel($("wx-place").value.trim());
+  const choose = p => {
     if (!p) return;
+    $("wx-place").value = p.label;
+    $("wx-suggest").style.display = "none";
     remember(p.label);
     $("wx-place").blur();
     load(p);
   };
-  $("wx-place").addEventListener("change", pick);
-  $("wx-place").addEventListener("input", e => { if (byLabel(e.target.value)) pick(); });
-  $("wx-place").addEventListener("focus", e => e.target.select());
+  const inp = $("wx-place");
+  inp.addEventListener("input", () => showSuggestions(search(inp.value)));
+  inp.addEventListener("focus", () => inp.select());
+  inp.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown" && sugg.length) { e.preventDefault(); highlight((sel + 1) % sugg.length); }
+    else if (e.key === "ArrowUp" && sugg.length) { e.preventDefault(); highlight((sel - 1 + sugg.length) % sugg.length); }
+    else if (e.key === "Enter") { e.preventDefault(); choose(sugg[sel] || search(inp.value)[0]); }
+    else if (e.key === "Escape") $("wx-suggest").style.display = "none";
+  });
+  $("wx-suggest").addEventListener("mousedown", e => { const b = e.target.closest("button"); if (b) { e.preventDefault(); choose(sugg[+b.dataset.i]); } });
+  inp.addEventListener("blur", () => setTimeout(() => { $("wx-suggest").style.display = "none"; }, 150));
   $("wx-locate").addEventListener("click", () => { remember("here"); locate(); });
   // Open where the visitor was last time: their own location if they chose it (and already allowed it), else their last place.
   const last = recall();
