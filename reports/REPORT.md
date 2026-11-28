@@ -1,63 +1,78 @@
 # Evaluation report
 
-Model `0.1.0+20261127` — data: Open-Meteo ERA5 reanalysis.
-Test period (never used for training or tuning): **2022-01-01 → 2026-11-21**, 17,860 town-days.
+Model `0.1.0+20261128` — data: Open-Meteo ERA5 reanalysis.
+Test period (never used for training or tuning): **2022-01-01 → 2026-11-22**, 44,675 town-days.
 
 ## Next-day rain (≥ 1.0 mm)
 
 | Forecast | Brier ↓ | Skill vs climatology ↑ | AUC ↑ | Accuracy | POD | FAR |
 |---|---|---|---|---|---|---|
-| model | 0.124 | 29.9% | 0.900 | 82.3% | 87.5% | 15.5% |
-| climatology | 0.176 | 0.0% | 0.802 | 73.4% | 75.1% | 19.4% |
-| markov | 0.144 | 18.6% | 0.863 | 80.2% | 84.7% | 16.4% |
-| persistence | 0.202 | -14.2% | 0.786 | 79.8% | 83.7% | 16.3% |
+| model | 0.127 | 29.8% | 0.897 | 81.9% | 86.7% | 16.2% |
+| climatology | 0.181 | 0.0% | 0.796 | 72.7% | 73.7% | 20.7% |
+| markov | 0.147 | 18.6% | 0.859 | 79.7% | 83.9% | 17.4% |
+| persistence | 0.206 | -14.1% | 0.785 | 79.3% | 82.8% | 17.2% |
 
-## Versus professional forecasts (2024-02-05 → 2026-11-21, 10,170 town-days)
+## Versus professional forecasts (2024-02-05 → 2026-11-22, 25,450 town-days)
 
 Same rows for every entry. NWP forecasts are day-ahead runs, scored as yes/no (≥ 1 mm forecast).
 
 | Forecast | Type | Brier ↓ | Skill vs clim ↑ | Accuracy | CSI ↑ | POD | FAR |
 |---|---|---|---|---|---|---|---|
-| Weather Lab (LightGBM) | probability | 0.128 | 27.4% | 81.8% | 0.738 | 86.9% | 16.9% |
-| Weather Lab, yes/no at 50% | yes/no | 0.182 | -3.9% | 81.8% | 0.738 | 86.9% | 16.9% |
-| ECMWF IFS 0.25° | yes/no (≥1 mm forecast) | 0.185 | -5.3% | 81.5% | 0.746 | 91.6% | 19.9% |
-| NCEP GFS | yes/no (≥1 mm forecast) | 0.197 | -12.2% | 80.3% | 0.704 | 79.2% | 13.6% |
-| DWD ICON | yes/no (≥1 mm forecast) | 0.249 | -41.7% | 75.1% | 0.608 | 65.2% | 10.0% |
-| Markov | baseline | 0.145 | 17.3% | 79.8% | 0.712 | 84.0% | 17.7% |
-| Climatology | baseline | 0.176 | 0.0% | 73.8% | 0.634 | 76.8% | 21.5% |
-| Persistence | baseline | 0.207 | -17.8% | 79.3% | 0.703 | 82.6% | 17.5% |
+| Weather Lab (LightGBM) | probability | 0.130 | 27.5% | 81.6% | 0.729 | 86.2% | 17.4% |
+| Weather Lab, yes/no at 50% | yes/no | 0.184 | -3.2% | 81.6% | 0.729 | 86.2% | 17.4% |
+| ECMWF IFS 0.25° | yes/no (≥1 mm forecast) | 0.178 | 0.2% | 82.2% | 0.747 | 91.3% | 19.6% |
+| NCEP GFS | yes/no (≥1 mm forecast) | 0.206 | -15.5% | 79.4% | 0.683 | 77.2% | 14.5% |
+| DWD ICON | yes/no (≥1 mm forecast) | 0.242 | -35.5% | 75.8% | 0.609 | 65.4% | 10.2% |
+| Markov | baseline | 0.148 | 17.3% | 79.5% | 0.701 | 83.4% | 18.5% |
+| Climatology | baseline | 0.178 | 0.0% | 73.4% | 0.622 | 75.9% | 22.6% |
+| Persistence | baseline | 0.210 | -17.9% | 79.0% | 0.691 | 81.8% | 18.4% |
 
 ## Heavy rain (≥ 50.0 mm) — research only
 
-Base rate 1.3%. Model Brier skill 9.6%, AUC 0.920, average precision 0.218 (climatology AP 0.074).
+Base rate 1.1%. Model Brier skill 8.2%, AUC 0.930, average precision 0.191 (climatology AP 0.055).
 
 ## By season
 
 | Season | Model BSS | Markov BSS | Base rate |
 |---|---|---|---|
-| First inter-monsoon (Mar–Apr) | 26.5% | 16.6% | 58.3% |
-| Northeast monsoon (Dec–Feb) | 30.9% | 18.7% | 54.9% |
-| Second inter-monsoon (Oct–Nov) | 36.2% | 22.6% | 81.4% |
-| Southwest monsoon (May–Sep) | 28.4% | 18.0% | 59.8% |
+| First inter-monsoon (Mar–Apr) | 25.0% | 15.2% | 55.6% |
+| Northeast monsoon (Dec–Feb) | 31.0% | 18.6% | 51.4% |
+| Second inter-monsoon (Oct–Nov) | 37.9% | 24.8% | 80.6% |
+| Southwest monsoon (May–Sep) | 28.2% | 17.9% | 58.6% |
 
 ## By town
 
 | Town | Model BSS | Markov BSS | AUC | Base rate |
 |---|---|---|---|---|
-| anuradhapura | 25.3% | 14.5% | 0.831 | 51.3% |
-| batticaloa | 36.3% | 26.1% | 0.889 | 49.7% |
-| colombo | 22.9% | 11.9% | 0.920 | 77.0% |
-| galle | 21.8% | 13.3% | 0.899 | 85.2% |
-| hambantota | 31.6% | 20.2% | 0.864 | 45.2% |
-| jaffna | 37.0% | 23.0% | 0.880 | 41.1% |
-| kandy | 30.5% | 18.4% | 0.842 | 61.1% |
-| nuwara_eliya | 27.8% | 17.0% | 0.880 | 75.6% |
-| ratnapura | 21.8% | 9.3% | 0.856 | 90.3% |
-| trincomalee | 31.4% | 20.8% | 0.877 | 43.2% |
+| ampara | 30.3% | 20.1% | 0.850 | 56.9% |
+| anuradhapura | 25.4% | 14.6% | 0.831 | 51.3% |
+| badulla | 39.8% | 26.9% | 0.886 | 56.8% |
+| batticaloa | 37.0% | 26.0% | 0.891 | 49.7% |
+| colombo | 24.7% | 11.7% | 0.922 | 76.9% |
+| galle | 23.1% | 13.3% | 0.902 | 85.2% |
+| gampaha | 24.7% | 11.7% | 0.922 | 76.9% |
+| hambantota | 32.2% | 20.1% | 0.866 | 45.2% |
+| jaffna | 37.0% | 23.0% | 0.879 | 41.1% |
+| kalutara | 24.4% | 11.1% | 0.912 | 80.9% |
+| kandy | 30.0% | 18.3% | 0.840 | 61.1% |
+| kegalle | 26.9% | 17.5% | 0.921 | 70.8% |
+| kilinochchi | 35.5% | 23.4% | 0.896 | 33.9% |
+| kurunegala | 24.2% | 14.8% | 0.888 | 67.3% |
+| mannar | 33.5% | 19.5% | 0.873 | 41.6% |
+| matale | 23.9% | 14.4% | 0.836 | 65.6% |
+| matara | 20.2% | 11.6% | 0.841 | 81.5% |
+| monaragala | 31.8% | 21.8% | 0.853 | 63.6% |
+| mullaitivu | 36.6% | 24.2% | 0.894 | 38.8% |
+| nuwara_eliya | 27.9% | 16.9% | 0.882 | 75.5% |
+| polonnaruwa | 30.5% | 19.4% | 0.869 | 42.0% |
+| puttalam | 23.2% | 15.2% | 0.848 | 60.1% |
+| ratnapura | 21.1% | 9.3% | 0.854 | 90.3% |
+| trincomalee | 32.2% | 20.7% | 0.880 | 43.1% |
+| vavuniya | 27.6% | 17.3% | 0.851 | 44.7% |
 
 ## Cross-check against NASA POWER precipitation
 
-ERA5 and NASA POWER agree on rain/no-rain on 78.3% of test days. Scored against POWER instead of ERA5, the model's Brier skill is 22.8% (Markov 12.1%).
+ERA5 and NASA POWER agree on rain/no-rain on 78.4% of test days. Scored against POWER instead of ERA5, the model's Brier skill is 24.3% (Markov 12.6%).
 
 ## Caveats
 
@@ -68,15 +83,15 @@ ERA5 and NASA POWER agree on rain/no-rain on 78.3% of test days. Scored against 
 
 ## Top features (share of gain)
 
-- `precip` 42.6%
-- `precip_hours` 10.8%
-- `rain` 8.8%
-- `wetdays30` 1.9%
-- `et0` 1.7%
-- `isl_trincomalee` 1.7%
-- `wind_max` 1.6%
-- `doy_cos` 1.6%
-- `doy_sin` 1.3%
-- `town_code` 1.3%
-- `rh` 1.3%
-- `isl_pmsl` 1.1%
+- `precip` 35.9%
+- `precip_hours` 14.7%
+- `rain` 10.8%
+- `town_code` 3.4%
+- `rh` 2.0%
+- `wetdays30` 1.8%
+- `doy_cos` 1.7%
+- `run_wet` 1.6%
+- `isl_trincomalee` 1.2%
+- `doy_sin` 1.1%
+- `et0` 1.0%
+- `isl_pmsl` 1.0%

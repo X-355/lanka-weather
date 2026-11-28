@@ -1,6 +1,6 @@
 {
-  "version": "0.1.0+20261127",
-  "trained_at": "2026-11-27T20:38:56Z",
+  "version": "0.1.0+20261128",
+  "trained_at": "2026-11-28T02:12:31Z",
   "data_source": "Open-Meteo ERA5 reanalysis",
   "features": [
     "precip",
@@ -56,16 +56,31 @@
     "lon",
     "elevation",
     "zone_code",
+    "isl_ampara",
     "isl_anuradhapura",
+    "isl_badulla",
     "isl_batticaloa",
     "isl_colombo",
     "isl_galle",
+    "isl_gampaha",
     "isl_hambantota",
     "isl_jaffna",
+    "isl_kalutara",
     "isl_kandy",
+    "isl_kegalle",
+    "isl_kilinochchi",
+    "isl_kurunegala",
+    "isl_mannar",
+    "isl_matale",
+    "isl_matara",
+    "isl_monaragala",
+    "isl_mullaitivu",
     "isl_nuwara_eliya",
+    "isl_polonnaruwa",
+    "isl_puttalam",
     "isl_ratnapura",
     "isl_trincomalee",
+    "isl_vavuniya",
     "isl_mean",
     "isl_wetfrac",
     "isl_pmsl",
@@ -85,7 +100,7 @@
   },
   "data_range": [
     "1980-01-01",
-    "2026-11-21"
+    "2026-11-22"
   ],
   "split": {
     "train": [
@@ -98,21 +113,21 @@
     ],
     "test": [
       "2022-01-01",
-      "2026-11-21"
+      "2026-11-22"
     ]
   },
   "rows": {
-    "train": 142440,
-    "valid": 10960,
-    "test": 17860
+    "train": 356100,
+    "valid": 27400,
+    "test": 44675
   },
   "best_iteration": {
-    "y_rain": 845,
-    "y_heavy": 142
+    "y_rain": 832,
+    "y_heavy": 236
   },
   "production_rounds": {
-    "y_rain": 1015,
-    "y_heavy": 170
+    "y_rain": 1000,
+    "y_heavy": 283
   },
   "towns": [
     "colombo",
@@ -124,6 +139,21 @@
     "anuradhapura",
     "nuwara_eliya",
     "ratnapura",
-    "hambantota"
+    "hambantota",
+    "gampaha",
+    "kalutara",
+    "matale",
+    "matara",
+    "kilinochchi",
+    "mannar",
+    "vavuniya",
+    "mullaitivu",
+    "ampara",
+    "kurunegala",
+    "puttalam",
+    "polonnaruwa",
+    "badulla",
+    "monaragala",
+    "kegalle"
   ]
 }
