@@ -2,7 +2,7 @@
 // Sources (all free, keyless, called straight from the browser):
 //   EUMETSAT EUMETView WMS — Meteosat IODC (Indian Ocean) imagery and H SAF rain rate, every 15 min
 //   NASA GIBS WMTS — GPM IMERG Early 30-min precipitation (≈5 h behind, but better calibrated)
-import { DISTRICTS, VIEWBOX } from "./sri-lanka-districts.js";
+import { DISTRICTS, VIEWBOX } from "./sri-lanka-districts.js?v=dev";
 
 const EUM = "https://view.eumetsat.int/geoserver";
 const GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best";
@@ -62,23 +62,26 @@ async function imergTimes() {
 const iso = d => d.toISOString().slice(0, 19) + "Z";
 
 function eumLayer(layer, time, opacity) {
-  return L.tileLayer.wms(`${EUM}/wms`, {
+  const l = L.tileLayer.wms(`${EUM}/wms`, {
     layers: layer, styles: "", format: "image/png", transparent: true, version: "1.3.0", time: iso(time),
-    opacity: 0, maxOpacity: opacity, attribution: "Meteosat imagery © EUMETSAT",
+    opacity: 0, attribution: "Meteosat imagery © EUMETSAT",
   });
+  l.maxOpacity = opacity;
+  return l;
 }
 
 function imergLayer(time) {
-  return L.tileLayer(`${GIBS}/${IMERG}/default/${iso(time)}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`, {
-    maxNativeZoom: 6, opacity: 0, maxOpacity: 0.85,
-    attribution: 'Rain: NASA GPM IMERG via <a href="https://earthdata.nasa.gov/gibs">GIBS</a>',
+  const l = L.tileLayer(`${GIBS}/${IMERG}/default/${iso(time)}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`, {
+    maxNativeZoom: 6, opacity: 0, attribution: 'Rain: NASA GPM IMERG via <a href="https://earthdata.nasa.gov/gibs">GIBS</a>',
   });
+  l.maxOpacity = 0.85;
+  return l;
 }
 
 function show(i) {
   idx = i;
   for (const group of [layers.base, layers.rain])
-    group.forEach((l, j) => l.setOpacity(j === i ? l.options.maxOpacity : 0));
+    group.forEach((l, j) => l.setOpacity(j === i ? l.maxOpacity : 0));
   const t = frames[i];
   const mins = Math.round((Date.now() - t) / 60e3);
   const ago = mins < 90 ? `${mins} min ago` : `${(mins / 60).toFixed(1)} h ago`;
@@ -155,12 +158,12 @@ export async function renderLiveSky(appState) {
   ui = { time: document.getElementById("ls-time"), slider: document.getElementById("ls-slider"), play: document.getElementById("ls-play"),
          note: document.getElementById("ls-note") };
   map = L.map("ls-map", { zoomControl: true, minZoom: 5, maxZoom: 10 }).setView([7.85, 80.7], 7);
-  const dark = document.documentElement.dataset.theme === "dark" ||
-    (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
-  L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? "dark_all" : "light_all"}/{z}/{x}/{y}{r}.png`, {
-    subdomains: "abcd", maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  // Keyless, public-domain basemap from NASA GIBS: Blue Marble relief + coastlines on top of everything.
+  L.tileLayer(`${GIBS}/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg`, {
+    maxNativeZoom: 8, maxZoom: 10, attribution: 'Basemap: NASA Blue Marble via <a href="https://earthdata.nasa.gov/gibs">GIBS</a>',
   }).addTo(map);
+  map.createPane("coast").style.zIndex = 450;
+  L.tileLayer(`${GIBS}/Coastlines_15m/default/GoogleMapsCompatible_Level13/{z}/{y}/{x}.png`, { pane: "coast", maxZoom: 10 }).addTo(map);
   refreshDistricts();
 
   const seg = (id, val, set) => document.getElementById(id).addEventListener("click", e => {

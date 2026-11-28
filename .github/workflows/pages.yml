@@ -25,6 +25,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { ref: main }   # pick up the commit the calling workflow just pushed
+      - name: Stamp asset URLs with this commit (so browsers never mix old and new code)
+        run: sed -i "s/?v=dev/?v=${GITHUB_SHA::8}/g" site/index.html site/assets/*.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: site }

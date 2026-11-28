@@ -1,4 +1,4 @@
-import { bars, districtMap, hbars, reliability, timeline } from "./charts.js";
+import { bars, districtMap, hbars, reliability, timeline } from "./charts.js?v=dev";
 
 const C = {
   model: "var(--series-1)", nwp: "var(--series-2)", markov: "var(--series-3)",
@@ -13,7 +13,7 @@ const $ = id => document.getElementById(id);
 
 async function get(name) {
   try {
-    const r = await fetch(`data/${name}`, { cache: "no-cache" });
+    const r = await fetch(`data/${name}`, { cache: "no-cache" });  // revalidate data on every visit
     return r.ok ? r.json() : null;
   } catch { return null; }
 }
@@ -425,7 +425,7 @@ renderers.heavy = () => {
 
 // ------------------------------------------------------------------ live sky (loaded on first visit)
 renderers.live = async () => {
-  const { renderLiveSky } = await import("./livesky.js");
+  const { renderLiveSky } = await import("./livesky.js?v=dev");
   renderLiveSky(state);
 };
 

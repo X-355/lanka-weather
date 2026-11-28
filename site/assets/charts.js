@@ -274,7 +274,7 @@ export function timeline(container, opts) {
   hit.addEventListener("mouseleave", () => { hideTip(); cross.setAttribute("visibility", "hidden"); });
 }
 
-import { DISTRICTS, VIEWBOX } from "./sri-lanka-districts.js";
+import { DISTRICTS, VIEWBOX } from "./sri-lanka-districts.js?v=dev";
 
 /**
  * District choropleth. opts: {areas: {key: {fill, label, tip, muted}}, labelNudge: {key: [dx, dy]}}
