@@ -69,3 +69,27 @@ def ensemble(client: Client, pts: pd.DataFrame, target: pd.Timestamp, rain_mm: f
                      "p_ecmwf_ens": round(float((tots >= rain_mm).mean()), 4) if len(tots) >= 20 else np.nan,
                      "p_ecmwf_ens_heavy": round(float((tots >= heavy_mm).mean()), 4) if len(tots) >= 20 else np.nan})
     return pd.DataFrame(rows)
+
+
+# Open-Meteo's own record of the model run it is serving (init = when the run started, available = when it
+# reached the API). Saved with each forecast, so live inputs can be compared with the archive used in testing.
+META = {"ecmwf": "ecmwf_ifs025", "gfs": "ncep_gfs025", "icon": "dwd_icon", "ecmwf_ens": "ecmwf_ifs025_ensemble"}
+ARCHIVE_LEAD_HOURS = (24, 30)  # the "previous_day1" archive: each hour comes from a run made about a day earlier
+
+
+def run_info(client: Client, target: pd.Timestamp) -> dict:
+    """Which run of each model tonight's forecast used, and its lead to the middle of the target day."""
+    tz = load_config()["timezone"]
+    mid = (pd.Timestamp(target.date()).tz_localize(tz) + pd.Timedelta(hours=12)).tz_convert("UTC")
+    out = {}
+    for k, m in META.items():
+        try:
+            j = client.get_json(f"https://api.open-meteo.com/data/{m}/static/meta.json", {}, weight=0.1)
+            init = pd.Timestamp(j["last_run_initialisation_time"], unit="s", tz="UTC")
+            avail = pd.Timestamp(j["last_run_availability_time"], unit="s", tz="UTC")
+            out[k] = {"run": init.strftime("%Y-%m-%dT%H:%MZ"), "available": avail.strftime("%Y-%m-%dT%H:%MZ"),
+                      "lead_to_midday_h": round((mid - init).total_seconds() / 3600, 1)}
+        except Exception as e:  # the forecast still goes out; the record says the run is unknown
+            log.warning("run info for %s failed: %s", m, e)
+            out[k] = None
+    return out

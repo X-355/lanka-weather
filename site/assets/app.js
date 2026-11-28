@@ -141,6 +141,16 @@ function renderMap() {
     + `<br><span class="muted">District map: <a href="https://mapsvg.com/maps/sri-lanka">MapSVG</a> via <a href="https://github.com/VictorCazanave/svg-maps">svg-maps</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</span>`;
 }
 
+// Which professional-forecast runs fed the hybrid, against the archive the hybrid was tested on.
+function runNote(f) {
+  const R = f.nwp_runs;
+  if (!R || !f.towns.some(t => t.method === "hybrid")) return "";
+  const fmtRun = r => r ? `${r.run.slice(11, 13)} UTC ${new Date(r.run).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}` : "unknown";
+  const e = R.ecmwf, a = f.archive_lead_h || [24, 30];
+  const verdict = !e ? "" : e.lead_to_midday_h < a[0] - 3 ? "fresher than" : e.lead_to_midday_h > a[1] + 6 ? "older than" : "in line with";
+  return ` <span class="muted">Runs used: ECMWF ${fmtRun(e)}, GFS ${fmtRun(R.gfs)}, ICON ${fmtRun(R.icon)}.${e ? ` ECMWF's run started ${e.lead_to_midday_h} h before midday of the forecast day: ${verdict} the ${a[0]}–${a[1]} h of the day-ahead runs the hybrid was tested on.` : ""}</span>`;
+}
+
 // Say plainly which method made tonight's numbers. Forecasts issued before the hybrid existed carry no method.
 function methodNote(towns) {
   if (!towns.some(t => t.method)) return "";
@@ -159,7 +169,7 @@ function renderForecastCards() {
     return;
   }
   $("fc-lede").innerHTML = `Chance of at least ${state.meta.targets.rain_mm} mm of rain on <b>${fmtDate(f.target_date)}</b>, ${f.season}. Issued ${new Date(f.issued_at).toLocaleString("en-GB", { timeZone: "Asia/Colombo", dateStyle: "medium", timeStyle: "short" })} Sri Lanka time.` +
-    methodNote(f.towns);
+    methodNote(f.towns) + runNote(f);
   renderRank();
 }
 
@@ -239,7 +249,7 @@ function renderLedger() {
   const pv = s?.provisional_imerg;
   const os_ = s?.off_schedule;
   const fmtIss = a => new Date(a).toLocaleString("en-GB", { timeZone: "Asia/Colombo", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-  const rule = `<p class="sub small" style="margin:10px 0 0"><b>Which forecast is scored.</b> One forecast per district per day, issued in a fixed window (${s?.window ?? "22:00–24:00, the evening before"}). That's about 0–2 hours before the day starts, so every forecast has the same lead time. Saved forecasts are never changed or replaced.${os_ ? ` Forecasts issued at any other time are also kept and scored, but separately, and they're left out of the scores above.` : ""}</p>` +
+  const rule = `<p class="sub small" style="margin:10px 0 0"><b>Which forecast is scored.</b> One forecast per district per day, issued in a fixed window (${s?.window ?? "18:00–22:00, the evening before"}), about 2–6 hours before the day starts, so every forecast has nearly the same lead time. Until 29 November the window was 22:00–24:00, so those forecasts were made 0–2 hours ahead. Saved forecasts are never changed or replaced.${os_ ? ` Forecasts issued at any other time are also kept and scored, but separately, and they're left out of the scores above.` : ""}</p>` +
     (os_ ? `<div class="card" style="margin-top:10px"><b>Off-schedule forecasts (${os_.issued})</b><ul class="sub small" style="margin:6px 0 0;padding-left:20px">${os_.issues.map(x => `<li>${x.n} districts for ${fmtDate(x.target_date)}, issued ${fmtIss(x.issued_at)}: <b>${x.lead_hours} h</b> before the day began (${(x.lead_hours + 24).toFixed(1)} h before it ended), ${/before hybrid/.test(x.method) ? "Weather Lab alone, before the hybrid existed" : x.method}. The evening forecast for the same day is scored in the headline.</li>`).join("")}</ul>${os_.scores ? `<p class="sub small" style="margin:6px 0 0">Scored separately: skill ${pct(os_.scores.published.bss, 1)} over ${os_.scored} forecasts (Markov ${pct(os_.scores.markov.bss, 1)}).</p>` : ""}</div>` : "");
   const bm_ = s?.by_method, meth = bm_ ? `<p class="sub small" style="margin:10px 0 0">Made by: ${Object.entries(bm_).map(([k, v]) => `${k === "hybrid" ? "hybrid" : k === "model" ? "Weather Lab alone (professional forecasts missing)" : "Weather Lab alone (before the hybrid)"} ${v.toLocaleString()}`).join(" · ")}.</p>` : "";
   const prov = pv ? `<div class="card" style="margin-top:12px"><b>Next-day check against NASA satellite rain (provisional).</b>

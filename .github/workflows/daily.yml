@@ -6,9 +6,10 @@ name: Daily forecast
 
 on:
   schedule:
-    - cron: "35 17 * * *"   # 23:05 Sri Lanka time
-    - cron: "52 17 * * *"   # backup 23:22, in case GitHub skips or delays the first; the ledger keeps the first forecast
-    - cron: "15 18 * * *"   # second backup 23:45; runs after midnight are refused by the issuing-time guard
+    - cron: "35 12 * * *"   # 18:05 Sri Lanka time: the evening forecast (issuing window 18:00–22:00)
+    - cron: "55 12 * * *"   # backups in case GitHub delays or skips a start; a second run in the same
+    - cron: "25 13 * * *"   #   window adds nothing (the record keeps the first forecast of the slot)
+    - cron: "10 14 * * *"   # 19:40
   workflow_dispatch:
 
 permissions:

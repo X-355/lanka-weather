@@ -31,15 +31,17 @@ LEDGER_COLS = ["issued_at", "issue_date", "target_date", "town", "p_rain", "p_he
                "method", "p_base", "p_base_heavy", "nwp_ecmwf_ifs025", "nwp_gfs_seamless", "nwp_icon_seamless",
                "p_ecmwf_ens", "p_ecmwf_ens_heavy", "obs_imerg", "imerg_product",
                # added 29 Nov 2026: every issue is kept and scored separately; the headline uses the evening slot
-               "issue_slot", "lead_hours"]
+               "issue_slot", "lead_hours",
+               # added 29 Nov 2026: which model run fed the hybrid (start time, UTC) and its lead to midday
+               "run_ecmwf", "run_gfs", "run_icon", "run_lead_ecmwf_h"]
 TEXT_COLS = ["issued_at", "issue_date", "target_date", "town", "model_version", "input_source", "scored_at", "method",
-             "imerg_product", "issue_slot"]
+             "imerg_product", "issue_slot", "run_ecmwf", "run_gfs", "run_icon"]
 
 
 def issue_slot(issued_at: str, target_date: str) -> tuple[str, float]:
     """("evening" | "off-schedule", hours from issue to the start of the target day, Sri Lanka time).
 
-    Evening = issued 22:00–24:00 on the day before the target day. Anything else (a manual run, a job GitHub
+    Evening = issued 18:00–22:00 on the day before the target day. Anything else (a manual run, a job GitHub
     started hours late) is kept and scored, but reported separately and left out of the headline scores.
     """
     tz = load_config()["timezone"]
@@ -47,7 +49,7 @@ def issue_slot(issued_at: str, target_date: str) -> tuple[str, float]:
     t = (t.tz_localize("UTC") if t.tzinfo is None else t).tz_convert(tz)
     start = pd.Timestamp(target_date).tz_localize(tz)
     lead = round((start - t).total_seconds() / 3600, 1)
-    evening = (start - pd.Timedelta(days=1)).date() == t.date() and t.hour >= EARLIEST_HOUR
+    evening = (start - pd.Timedelta(days=1)).date() == t.date() and EARLIEST_HOUR <= t.hour < LATEST_HOUR
     return ("evening" if evening else "off-schedule"), lead
 
 
@@ -99,9 +101,10 @@ def predict_frame(live: pd.DataFrame, issue_date: pd.Timestamp):
     return meta, today
 
 
-EARLIEST_HOUR = 22  # local time: the nightly forecast is issued between 22:00 and midnight, so every
-                    # forecast has the same lead time (0–2 h before the day starts). Runs outside the
-                    # window need --force and are recorded as "off-schedule".
+EARLIEST_HOUR = 18  # local time: the evening forecast is issued from 18:00, about 6 h before the day starts,
+LATEST_HOUR = 22    # while people are still awake. Issues 18:00–22:00 are the "evening" slot (the headline);
+                    # a run GitHub starts later (22:00–24:00) is still kept, as "off-schedule". Runs after
+                    # midnight are refused; manual runs outside the window need --force.
 
 
 def run(offline: bool = False, force: bool = False) -> dict:
@@ -128,12 +131,16 @@ def run(offline: bool = False, force: bool = False) -> dict:
     cfg_t = cfg["target"]
     target_ts = today["target_date"].iloc[0]
     pts = pd.DataFrame([{"key": t.key, "lat": t.lat, "lon": t.lon} for t in towns() if t.key in set(today["town"])])
-    nwp = ens = None
+    nwp = ens = runs = None
     if not (offline or synthetic):
         try:
             nwp = livenwp.deterministic(Client(budget=500), pts, target_ts)
         except Exception as e:  # the base model still issues a forecast
             log.warning("live professional forecasts failed: %s", e)
+        try:
+            runs = livenwp.run_info(Client(budget=10), target_ts)
+        except Exception as e:
+            log.warning("run info failed: %s", e)
         try:
             ens = livenwp.ensemble(Client(budget=1000), pts, target_ts, cfg_t["rain_mm"], cfg_t["heavy_mm"])
         except Exception as e:
@@ -163,6 +170,8 @@ def run(offline: bool = False, force: bool = False) -> dict:
         **{c: today[c].round(1) for c in hybrid.NWP},
         "p_ecmwf_ens": today["p_ecmwf_ens"],
         "p_ecmwf_ens_heavy": today["p_ecmwf_ens_heavy"],
+        **{f"run_{k}": ((runs or {}).get(k) or {}).get("run") for k in ("ecmwf", "gfs", "icon")},
+        "run_lead_ecmwf_h": ((runs or {}).get("ecmwf") or {}).get("lead_to_midday_h"),
     })
     append_ledger(new)
 
@@ -176,6 +185,8 @@ def run(offline: bool = False, force: bool = False) -> dict:
         "season": SEASON_NAMES[season],
         "model_version": meta["version"],
         "input_source": source,
+        "nwp_runs": runs,
+        "archive_lead_h": list(livenwp.ARCHIVE_LEAD_HOURS),
         "towns": [
             {"town": r.town, "name": names[r.town], "p_rain": round(float(r.p_rain), 3),
              "p_heavy": round(float(r.p_heavy), 4), "p_clim": round(float(r.p_clim), 3),
@@ -281,7 +292,7 @@ def ledger_summary() -> dict:
     off = every[slot != "evening"]
     done = led.dropna(subset=["obs_rain"])
     summary = {"issued": int(len(led)), "scored": int(len(done)), "pending": int(len(led) - len(done)),
-               "window": f"{EARLIEST_HOUR:02d}:00–24:00 Sri Lanka time, the evening before"}
+               "window": f"{EARLIEST_HOUR:02d}:00–{LATEST_HOUR:02d}:00 Sri Lanka time, the evening before"}
     if len(off):
         od = off.dropna(subset=["obs_rain"])
         summary["off_schedule"] = {
