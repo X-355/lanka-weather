@@ -34,7 +34,7 @@ const FC_HOURS = 12;
 const FC_GRID = { lat0: 5.5, lat1: 10.3, lon0: 79.0, lon1: 82.6, step: 0.3 };
 
 // frames: [{ t: Date, fc: bool, layers: [Leaflet layers] }] — past satellite frames, then forecast hours.
-let map, L, state, ui = {}, frames = [], idx = 0, timer = null, base = "enhanced", rain = "eum", tint = true, future = true, built = false;
+let map, L, state, ui = {}, frames = [], idx = 0, timer = null, base = "enhanced", rain = "none", tint = true, future = true, built = false;
 let fcCache = null, liveTimer = null, lastObs = 0;
 
 async function loadLeaflet() {
@@ -91,8 +91,8 @@ function imergLayer(time) {
 // so brightness stands in for cloud-top height. Breakpoints were set by eye on Sri Lankan scenes; they are bands of
 // "how tall", not calibrated temperatures.
 const STOPS = [ // [grey value, r, g, b, alpha]
-  [70, 255, 255, 255, 0], [150, 225, 230, 238, 0.7], [151, 150, 200, 240, 0.8], [175, 60, 140, 230, 0.85],
-  [176, 50, 200, 90, 0.9], [192, 255, 220, 20, 0.92], [193, 255, 150, 20, 0.95], [212, 240, 50, 40, 0.97], [213, 215, 60, 240, 1], [255, 255, 200, 255, 1],
+  [70, 255, 255, 255, 0], [150, 225, 230, 238, 0.7], [151, 150, 200, 240, 0.8], [178, 60, 140, 230, 0.85],
+  [179, 50, 200, 90, 0.9], [196, 255, 220, 20, 0.92], [197, 255, 150, 20, 0.95], [220, 240, 50, 40, 0.97], [221, 215, 60, 240, 1], [255, 255, 200, 255, 1],
 ];
 const LUT = (() => {
   const lut = new Uint8ClampedArray(256 * 4);
