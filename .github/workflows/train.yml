@@ -36,6 +36,13 @@ jobs:
       - name: Fetch ERA5 history, archived NWP forecasts, NASA POWER
         run: python -m lankaweather fetch
 
+      - name: Independent truths — NOAA rain gauges and NASA IMERG satellite rain
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: |
+          python -m lankaweather gauges || echo "gauges failed (training continues)"
+          python -m lankaweather imerg --budget 700 || echo "IMERG failed (training continues)"
+
       - name: Is the history complete?
         id: check
         run: |

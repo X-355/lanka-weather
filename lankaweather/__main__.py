@@ -9,6 +9,8 @@
   publish-hf   upload model to the Hugging Face model repo
   publish-space upload site/ to a static Hugging Face Space
   gazetteer    refresh OpenStreetMap villages for the place finder (monthly)
+  gauges       NOAA rain gauges in Sri Lanka (independent truth for the backtest)
+  imerg        NASA IMERG satellite rain at the districts (needs EARTHDATA_TOKEN)
   snapshots    shared live data for the site (sky forecast grid, rivers, reservoirs)
   daily        fetch-recent + score + predict + site   (what the daily workflow runs)
 """
@@ -68,6 +70,15 @@ def main(argv=None) -> int:
     elif c == "site":
         from .build_site import run
         run()
+    elif c == "gauges":
+        from . import gauges
+        print(json.dumps(gauges.fetch()))
+    elif c == "imerg":
+        from . import imerg
+        try:
+            print(json.dumps(imerg.fetch(max_requests=int(a.budget or 350))))
+        except PermissionError as e:
+            print(f"IMERG: {e}")
     elif c == "snapshots":
         from .snapshots import run
         print(json.dumps(run()))
@@ -103,6 +114,12 @@ def main(argv=None) -> int:
         if (MODELS / "metadata.json").exists():
             print(predict.score_ledger())
             predict.run(offline=a.offline, force=a.force)
+            # Yesterday's NASA satellite rain, for next-day provisional scores (skips itself without a token).
+            try:
+                from . import imerg
+                print(imerg.fetch(max_requests=60))
+            except Exception as e:
+                print(f"IMERG skipped: {e}")
         else:
             print("no trained model yet — run the 'Train model' workflow once history is complete")
         # Then fill gaps / refresh this year (districts first, then town cells for the backtest).

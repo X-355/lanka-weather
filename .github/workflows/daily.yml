@@ -33,6 +33,8 @@ jobs:
 
       - name: Fetch, score matured forecasts, predict tomorrow, build site data
         run: python -m lankaweather daily --skip-power
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
 
       - id: m
         run: echo "has_model=$([ -f models/metadata.json ] && echo true || echo false)" >> "$GITHUB_OUTPUT"

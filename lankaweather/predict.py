@@ -20,11 +20,34 @@ from .features import SEASON_NAMES, SEASON_OF_MONTH, build, build_points
 from .fetch import fetch_live, fetch_live_places, load_history, load_places
 from .http import Client
 from .metrics import scores
+from . import hybrid, livenwp
 
 log = logging.getLogger(__name__)
 
 LEDGER_COLS = ["issued_at", "issue_date", "target_date", "town", "p_rain", "p_heavy", "p_clim", "p_markov",
-               "model_version", "input_source", "obs_precip", "obs_rain", "obs_heavy", "scored_at"]
+               "model_version", "input_source", "obs_precip", "obs_rain", "obs_heavy", "scored_at",
+               # added Nov 2026: the hybrid is what's published as p_rain when the professional forecasts were
+               # available; p_base is the Weather Lab model alone. ECMWF ensemble = ECMWF's own probability.
+               "method", "p_base", "p_base_heavy", "nwp_ecmwf_ifs025", "nwp_gfs_seamless", "nwp_icon_seamless",
+               "p_ecmwf_ens", "p_ecmwf_ens_heavy", "obs_imerg", "imerg_product"]
+TEXT_COLS = ["issued_at", "issue_date", "target_date", "town", "model_version", "input_source", "scored_at", "method",
+             "imerg_product"]
+
+
+def add_hybrid(df: pd.DataFrame, nwp: pd.DataFrame | None) -> pd.DataFrame:
+    """Keep the model's own probabilities as p_base*, and publish the hybrid where all inputs are present."""
+    df = df.copy()
+    df["p_base"], df["p_base_heavy"], df["method"] = df["p_rain"], df["p_heavy"], "model"
+    spec = hybrid.load_spec()
+    if nwp is None or spec is None or not len(nwp):
+        return df
+    df = df.merge(nwp, on="key", how="left")
+    args = [df.get(c) for c in hybrid.NWP]
+    hr = hybrid.apply(spec["rain"], df["p_base"], *args)
+    hh = hybrid.apply(spec["heavy"], df["p_base_heavy"], *args)
+    ok = ~np.isnan(hr)
+    df.loc[ok, "p_rain"], df.loc[ok, "p_heavy"], df.loc[ok, "method"] = hr[ok], hh[ok], "hybrid"
+    return df
 
 
 def load_models():
@@ -83,6 +106,25 @@ def run(offline: bool = False, force: bool = False) -> dict:
         issue_date = pd.Timestamp(now.date())
         source = "open-meteo-forecast-api"
     meta, today = predict_frame(live, issue_date)
+    cfg_t = cfg["target"]
+    target_ts = today["target_date"].iloc[0]
+    pts = pd.DataFrame([{"key": t.key, "lat": t.lat, "lon": t.lon} for t in towns() if t.key in set(today["town"])])
+    nwp = ens = None
+    if not (offline or synthetic):
+        try:
+            nwp = livenwp.deterministic(Client(budget=500), pts, target_ts)
+        except Exception as e:  # the base model still issues a forecast
+            log.warning("live professional forecasts failed: %s", e)
+        try:
+            ens = livenwp.ensemble(Client(budget=1000), pts, target_ts, cfg_t["rain_mm"], cfg_t["heavy_mm"])
+        except Exception as e:
+            log.warning("ECMWF ensemble failed: %s", e)
+    today = add_hybrid(today.assign(key=today["town"]), nwp)
+    if ens is not None:
+        today = today.merge(ens.drop(columns=["n_members"]), on="key", how="left")
+    for c in ["p_ecmwf_ens", "p_ecmwf_ens_heavy", *hybrid.NWP]:
+        if c not in today:
+            today[c] = np.nan
 
     issued_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     new = pd.DataFrame({
@@ -96,6 +138,12 @@ def run(offline: bool = False, force: bool = False) -> dict:
         "p_markov": today["p_markov"].round(4),
         "model_version": meta["version"],
         "input_source": source,
+        "method": today["method"],
+        "p_base": today["p_base"].round(4),
+        "p_base_heavy": today["p_base_heavy"].round(4),
+        **{c: today[c].round(1) for c in hybrid.NWP},
+        "p_ecmwf_ens": today["p_ecmwf_ens"],
+        "p_ecmwf_ens_heavy": today["p_ecmwf_ens_heavy"],
     })
     append_ledger(new)
 
@@ -113,7 +161,10 @@ def run(offline: bool = False, force: bool = False) -> dict:
             {"town": r.town, "name": names[r.town], "p_rain": round(float(r.p_rain), 3),
              "p_heavy": round(float(r.p_heavy), 4), "p_clim": round(float(r.p_clim), 3),
              "p_clim_heavy": round(float(r.p_clim_heavy), 4), "p_markov": round(float(r.p_markov), 3),
-             "today_precip": None if pd.isna(r.precip) else round(float(r.precip), 1)}
+             "today_precip": None if pd.isna(r.precip) else round(float(r.precip), 1),
+             "method": r.method, "p_base": round(float(r.p_base), 3),
+             "ecmwf_mm": None if pd.isna(r.nwp_ecmwf_ifs025) else round(float(r.nwp_ecmwf_ifs025), 1),
+             "p_ecmwf_ens": None if pd.isna(r.p_ecmwf_ens) else round(float(r.p_ecmwf_ens), 3)}
             for r in today.itertuples()
         ],
     }
@@ -129,11 +180,12 @@ def run(offline: bool = False, force: bool = False) -> dict:
 
 
 def read_ledger() -> pd.DataFrame:
-    text = ["issued_at", "issue_date", "target_date", "town", "model_version", "input_source", "scored_at"]
+    text = TEXT_COLS
     if LEDGER.exists():
         led = pd.read_csv(LEDGER, dtype={c: "object" for c in text})
     else:
         led = pd.DataFrame(columns=LEDGER_COLS)
+    led = led.reindex(columns=LEDGER_COLS)
     for c in LEDGER_COLS:
         if c not in text:
             led[c] = pd.to_numeric(led[c], errors="coerce").astype("float64")
@@ -174,8 +226,23 @@ def score_ledger() -> dict:
         led.at[i, "obs_heavy"] = float(v >= cfg["target"]["heavy_mm"])
         led.at[i, "scored_at"] = now
         n += 1
+    # Provisional: NASA IMERG satellite rain, available the day after (final scores still come from ERA5).
+    m = 0
+    try:
+        from . import imerg
+        im = imerg.truth()
+        if im is not None:
+            look = {(t, d.date().isoformat()): (v, pr) for t, d, v, pr in im[["town", "target_date", "obs_mm", "product"]].itertuples(index=False)}
+            for i in led.index:
+                v = look.get((led.at[i, "town"], led.at[i, "target_date"]))
+                if v is not None and not np.isnan(v[0]):
+                    if pd.isna(led.at[i, "obs_imerg"]) or led.at[i, "imerg_product"] != v[1]:
+                        m += 1
+                    led.at[i, "obs_imerg"], led.at[i, "imerg_product"] = round(v[0], 2), v[1]
+    except Exception as e:
+        log.warning("IMERG provisional scoring failed: %s", e)
     led.to_csv(LEDGER, index=False)
-    return {"scored": n}
+    return {"scored": n, "imerg_updated": m}
 
 
 def ledger_summary() -> dict:
@@ -191,6 +258,23 @@ def ledger_summary() -> dict:
                              for n, c in [("model", "p_rain"), ("markov", "p_markov"), ("climatology", "p_clim")]}
         summary["first_target"] = str(done["target_date"].min())
         summary["last_target"] = str(done["target_date"].max())
+        both = done.dropna(subset=["p_ecmwf_ens", "p_base"])
+        if len(both):
+            summary["vs_ecmwf_ens"] = {n: scores(both["obs_rain"].astype(float), both[c].astype(float), both["p_clim"].astype(float))
+                                       for n, c in [("published", "p_rain"), ("model", "p_base"), ("ecmwf_ens", "p_ecmwf_ens")]}
+    cfg = load_config()
+    prov = led.dropna(subset=["obs_imerg"])
+    if len(prov):
+        y = (prov["obs_imerg"].astype(float) >= cfg["target"]["rain_mm"]).astype(float)
+        ents = [("published", "p_rain"), ("markov", "p_markov"), ("climatology", "p_clim")]
+        if prov["p_ecmwf_ens"].notna().any():
+            ents.append(("ecmwf_ens", "p_ecmwf_ens"))
+        out = {}
+        for n, c in ents:
+            sub = prov[c].notna()
+            out[n] = scores(y[sub], prov.loc[sub, c].astype(float), prov.loc[sub, "p_clim"].astype(float))
+        summary["provisional_imerg"] = {"n": int(len(prov)), "first_target": str(prov["target_date"].min()),
+                                        "last_target": str(prov["target_date"].max()), "scores": out}
     return summary
 
 
@@ -221,8 +305,16 @@ def predict_places(live: pd.DataFrame, issue_date: pd.Timestamp, meta: dict, off
     X = today.reindex(columns=meta["features"])
     today["p_rain"] = rain.predict(X)
     today["p_heavy"] = heavy.predict(X)
+    nwp = None
+    if not offline:
+        try:
+            pts = places.rename(columns={"name": "key"})[["key", "lat", "lon"]]
+            nwp = livenwp.deterministic(Client(budget=1500), pts, today["target_date"].iloc[0])
+        except Exception as e:
+            log.warning("town professional forecasts failed: %s", e)
+    today = add_hybrid(today.assign(key=today["town"]), nwp)
     return [{"name": r.town, "district": r.district, "lat": round(float(r.lat), 4), "lon": round(float(r.lon), 4),
              "elevation": None if pd.isna(r.elevation) else round(float(r.elevation)),
              "p_rain": round(float(r.p_rain), 3), "p_heavy": round(float(r.p_heavy), 4),
-             "today_precip": None if pd.isna(r.precip) else round(float(r.precip), 1)}
+             "today_precip": None if pd.isna(r.precip) else round(float(r.precip), 1), "method": r.method}
             for r in today.sort_values(["district", "town"]).itertuples()]

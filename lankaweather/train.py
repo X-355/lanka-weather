@@ -21,6 +21,7 @@ from .config import CELL_MAP, ERA5_DIR, MODELS, NWP_DIR, REPORTS, load_config, t
 from .features import CATEGORICAL, SEASON_NAMES, SEASON_OF_MONTH, build, build_points, feature_columns
 from .fetch import load_history, load_place_history, load_places, load_power
 from .metrics import reliability, scores
+from . import gauges, hybrid, imerg, verify
 
 log = logging.getLogger(__name__)
 
@@ -168,6 +169,76 @@ def evaluate(test: pd.DataFrame, nwp_models: dict) -> dict:
     return _rnd(rep)
 
 
+# ----------------------------------------------------------------------------- fair comparison, hybrid, truths
+
+def evaluate_extended(test: pd.DataFrame, hist: pd.DataFrame, cfg: dict) -> dict:
+    """Everything that needs the professional forecasts or another truth. See hybrid.py and verify.py."""
+    rain_mm, heavy_mm = cfg["target"]["rain_mm"], cfg["target"]["heavy_mm"]
+    labels = cfg["nwp"]["models"]
+    out = {}
+    # 1. Error bars on the main test (2022+), resampling whole days.
+    out["bootstrap_main"] = verify.bootstrap(test, "y_rain", "p_clim", {"model": "p_rain", "markov": "p_markov"},
+                                             pairs=[("model", "markov")])
+    # 2. Heavy rain on the main test: base model only (the hybrid needs 2024+).
+    out["heavy_main"] = verify.heavy_scorecard(test, "y_heavy", {
+        "model_20": {"col": "p_heavy", "threshold": 0.2, "label": "Weather Lab, warn at ≥ 20%", "probability": True},
+        "model_30": {"col": "p_heavy", "threshold": 0.3, "label": "Weather Lab, warn at ≥ 30%"},
+        "climatology": {"col": "p_clim_heavy", "threshold": 0.2, "label": "Climatology, warn at ≥ 20%"}})
+    # 3. Fair head-to-head with ECMWF (probability vs probability) and the hybrid, on the second half of the
+    #    NWP era (the first half fits the calibration and the hybrid; nothing is fitted on the scored rows).
+    summ, d = hybrid.evaluate(test)
+    if summ is not None:
+        fwd = d.dropna(subset=["p_hybrid"]).copy()
+        for m in labels:
+            fwd[f"yn_{m}"] = (fwd[f"nwp_{m}"] >= rain_mm).astype(float)
+        y, c = fwd["y_rain"], fwd["p_clim"]
+        ent = {"hybrid": ("Hybrid: Weather Lab + ECMWF/GFS/ICON", "probability", "p_hybrid"),
+               "model": ("Weather Lab (LightGBM)", "probability", "p_rain"),
+               "ecmwf_cal": (f"{labels.get('ecmwf_ifs025', 'ECMWF')}, as a calibrated probability", "probability", "p_ecmwf_cal")}
+        for m, lab in labels.items():
+            ent[f"yn_{m}"] = (f"{lab}, yes/no (≥ {rain_mm:g} mm forecast)", "yes/no", f"yn_{m}")
+        ent.update({"markov": ("Markov baseline", "baseline", "p_markov"), "climatology": ("Climatology", "baseline", "p_clim")})
+        out["fair"] = {**summ, "entries": {k: {"label": l, "kind": kd, **scores(y, fwd[col], c)} for k, (l, kd, col) in ent.items()},
+                       "bootstrap": verify.bootstrap(fwd, "y_rain", "p_clim",
+                                                     {"hybrid": "p_hybrid", "model": "p_rain", "ecmwf_cal": "p_ecmwf_cal",
+                                                      "markov": "p_markov"},
+                                                     pairs=[("hybrid", "ecmwf_cal"), ("model", "ecmwf_cal"), ("hybrid", "model")]),
+                       "reliability": {"hybrid": reliability(y, fwd["p_hybrid"]), "ecmwf_cal": reliability(y, fwd["p_ecmwf_cal"])}}
+        out["heavy_fair"] = verify.heavy_scorecard(fwd, "y_heavy", {
+            "ecmwf_50": {"col": "nwp_ecmwf_ifs025", "threshold": heavy_mm, "label": f"ECMWF forecast ≥ {heavy_mm:g} mm"},
+            "ecmwf_cal_30": {"col": "p_ecmwf_cal_heavy", "threshold": 0.3, "label": "ECMWF calibrated, warn at ≥ 30%"},
+            "model_30": {"col": "p_heavy", "threshold": 0.3, "label": "Weather Lab, warn at ≥ 30%"},
+            "hybrid_30": {"col": "p_hybrid_heavy", "threshold": 0.3, "label": "Hybrid, warn at ≥ 30%", "probability": True},
+            "hybrid_20": {"col": "p_hybrid_heavy", "threshold": 0.2, "label": "Hybrid, warn at ≥ 20%"}})
+        out["heavy_fair"]["period"] = summ["test_period"]
+        # out-of-fold columns for the independent truths
+        test = test.merge(d[["town", "target_date", "p_hybrid_oof", "p_ecmwf_cal_oof", "p_hybrid_heavy_oof"]],
+                          on=["town", "target_date"], how="left")
+        test["yn_ecmwf"] = np.where(test["nwp_ecmwf_ifs025"].notna(), (test["nwp_ecmwf_ifs025"] >= rain_mm).astype(float), np.nan)
+    # 4. Independent truths: rain gauges and NASA IMERG.
+    nwp_fc = {"hybrid": "p_hybrid_oof", "model": "p_rain", "ecmwf_cal": "p_ecmwf_cal_oof", "markov": "p_markov"}
+    pairs = [("hybrid", "ecmwf_cal"), ("model", "ecmwf_cal"), ("model", "markov")]
+    try:
+        g, ginfo = gauges.truth(hist)
+    except Exception as e:  # never let a truth source break training
+        log.warning("gauge truth failed: %s", e)
+        g, ginfo = None, {}
+    if g is not None and len(g):
+        out["gauges"] = {"info": ginfo,
+                         "all_years": verify.score_against(test, g, rain_mm, heavy_mm, {"model": "p_rain", "markov": "p_markov"},
+                                                           pairs=[("model", "markov")], label="Rain gauges, all test years"),
+                         "nwp_era": verify.score_against(test, g, rain_mm, heavy_mm, nwp_fc, pairs=pairs,
+                                                         label="Rain gauges, 2024+ (with professional forecasts)") if summ else None}
+    im = imerg.truth()
+    if im is not None and len(im):
+        out["imerg"] = {"products": im["product"].value_counts().to_dict(),
+                        "all_years": verify.score_against(test, im, rain_mm, heavy_mm, {"model": "p_rain", "markov": "p_markov"},
+                                                          pairs=[("model", "markov")], label="NASA IMERG, all test years"),
+                        "nwp_era": verify.score_against(test, im, rain_mm, heavy_mm, nwp_fc, pairs=pairs,
+                                                        label="NASA IMERG, 2024+ (with professional forecasts)") if summ else None}
+    return _rnd(out)
+
+
 # ----------------------------------------------------------------------------- towns (spatial generalisation)
 
 def evaluate_places(hist: pd.DataFrame, models: dict, cols: list, cfg: dict) -> dict | None:
@@ -262,6 +333,8 @@ def run() -> dict:
     if nwp is not None:
         test = test.merge(nwp, on=["town", "target_date"], how="left")
     report = evaluate(test, cfg["nwp"]["models"])
+    report.update(evaluate_extended(test, hist, cfg))
+    prod_hybrid = hybrid.fit_production(test)
     places_rep = evaluate_places(hist, models, cols, cfg)
     if places_rep:
         report["places"] = places_rep
@@ -300,6 +373,7 @@ def run() -> dict:
         "best_iteration": {k: int(m.best_iteration) for k, m in models.items()},
         "production_rounds": prod_rounds,
         "towns": [t.key for t in towns()],
+        "hybrid": prod_hybrid,
     }
     (MODELS / "metadata.json").write_text(json.dumps(meta, indent=2))
     REPORTS.mkdir(exist_ok=True)
@@ -340,6 +414,51 @@ def write_report_md(full: dict) -> None:
         for e in c["entries"].values():
             lines.append(f"| {e['label']} | {e['kind']} | {_f(e.get('brier'))} | {_f(e.get('bss'), True)} | "
                          f"{_f(e.get('accuracy'), True)} | {_f(e.get('csi'))} | {_f(e.get('pod'), True)} | {_f(e.get('far'), True)} |")
+    ci = lambda b, k: f"{_f(b['skill'][k]['bss'], True)} ({_f(b['skill'][k]['lo'], True)} to {_f(b['skill'][k]['hi'], True)})" if b and k in b.get("skill", {}) else "–"
+    bm = m.get("bootstrap_main")
+    if bm:
+        dd = bm["diff"].get("model - markov", {})
+        lines += ["", "### Error bars (95%, resampling whole days)", "",
+                  f"Model skill {ci(bm, 'model')}; Markov {ci(bm, 'markov')}. Model minus Markov: "
+                  f"{_f(dd.get('est'), True)} ({_f(dd.get('lo'), True)} to {_f(dd.get('hi'), True)}), {bm['n_days']:,} days."]
+    fr = m.get("fair")
+    if fr:
+        lines += ["", f"## Fair comparison with professional forecasts ({fr['test_period'][0]} → {fr['test_period'][1]})", "",
+                  f"ECMWF is turned into a probability, and the hybrid is fitted, on {fr['fit_period'][0]} → {fr['fit_period'][1]} only; "
+                  f"every entry is scored on the same {fr['n_test']:,} later district-days.", "",
+                  "| Forecast | Type | Brier ↓ | Skill vs clim (95% range) ↑ | AUC ↑ |", "|---|---|---|---|---|"]
+        b = fr["bootstrap"]
+        for k, e in fr["entries"].items():
+            sk = ci(b, k) if k in b.get("skill", {}) else _f(e.get("bss"), True)
+            lines.append(f"| {e['label']} | {e['kind']} | {_f(e.get('brier'))} | {sk} | {_f(e.get('auc'))} |")
+        for k, v in b.get("diff", {}).items():
+            lines.append(f"\n- {k}: {_f(v['est'], True)} ({_f(v['lo'], True)} to {_f(v['hi'], True)}); better in {100 * v['share_positive']:.0f}% of resamples")
+    for key, title in [("heavy_fair", "Heavy-rain scorecard vs professional forecasts"), ("heavy_main", "Heavy-rain scorecard, all test years")]:
+        hs = m.get(key)
+        if hs:
+            lines += ["", f"## {title} (≥ {meta['targets']['heavy_mm']} mm)", "",
+                      f"{hs['events']} heavy-rain district-days out of {hs['n']:,}.", "",
+                      "| Warning rule | Caught | Missed | False alarms | POD ↑ | FAR ↓ | CSI ↑ | Avg precision ↑ |", "|---|---|---|---|---|---|---|---|"]
+            for e in hs["entries"].values():
+                lines.append(f"| {e['label']} | {e['hits']} | {e['misses']} | {e['false_alarms']} | {_f(e['pod'], True)} | {_f(e['far'], True)} | {_f(e['csi'])} | {_f(e.get('avg_precision'))} |")
+    for key, title in [("gauges", "Against real rain gauges (NOAA GSOD/GHCN)"), ("imerg", "Against NASA IMERG satellite rainfall")]:
+        tr = m.get(key)
+        if not tr:
+            continue
+        lines += ["", f"## {title}", ""]
+        if tr.get("info"):
+            lines.append(f"{tr['info'].get('stations')} gauges in {tr['info'].get('districts')} districts; day shift {tr['info'].get('shift_days')} "
+                         f"(agreement with ERA5 by shift on pre-test years: {tr['info'].get('agreement_by_shift')}).")
+        for part in ("all_years", "nwp_era"):
+            r = tr.get(part)
+            if not r:
+                continue
+            lines += ["", f"**{r['label']}** ({r['period'][0]} → {r['period'][1]}, {r['n']:,} rows; agrees with ERA5 rain/no-rain on "
+                          f"{_f(r.get('agreement_with_era5'), True)}).", "", "| Forecast | Skill vs clim (95% range) ↑ | AUC ↑ |", "|---|---|---|"]
+            for k, e in r["entries"].items():
+                lines.append(f"| {k} | {ci(r['bootstrap'], k)} | {_f(e.get('auc'))} |")
+            for k, v in r["bootstrap"].get("diff", {}).items():
+                lines.append(f"\n- {k}: {_f(v['est'], True)} ({_f(v['lo'], True)} to {_f(v['hi'], True)})")
     h = m["heavy"]
     lines += ["", f"## Heavy rain (≥ {meta['targets']['heavy_mm']} mm) — research only", "",
               f"Base rate {_f(h['model']['base_rate'], True)}. Model Brier skill {_f(h['model'].get('bss'), True)}, "

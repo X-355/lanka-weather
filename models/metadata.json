@@ -1,6 +1,6 @@
 {
   "version": "0.1.0+20261128",
-  "trained_at": "2026-11-28T07:59:15Z",
+  "trained_at": "2026-11-28T08:36:29Z",
   "data_source": "Open-Meteo ERA5 reanalysis",
   "features": [
     "precip",
@@ -155,5 +155,51 @@
     "badulla",
     "monaragala",
     "kegalle"
-  ]
+  ],
+  "hybrid": {
+    "rain": {
+      "inputs": [
+        "logit_p",
+        "log1p_ecmwf",
+        "log1p_gfs",
+        "log1p_icon"
+      ],
+      "coef": [
+        0.563929,
+        1.282541,
+        0.509285,
+        0.363817
+      ],
+      "intercept": -1.992716
+    },
+    "heavy": {
+      "inputs": [
+        "logit_p",
+        "log1p_ecmwf",
+        "log1p_gfs",
+        "log1p_icon"
+      ],
+      "coef": [
+        0.641808,
+        1.063639,
+        0.26627,
+        0.209389
+      ],
+      "intercept": -4.746368
+    },
+    "ecmwf_cal_rain": {
+      "inputs": [
+        "log1p_ecmwf"
+      ],
+      "coef": [
+        2.304899
+      ],
+      "intercept": -2.295129
+    },
+    "fit_period": [
+      "2024-02-05",
+      "2026-11-22"
+    ],
+    "n": 25550
+  }
 }
