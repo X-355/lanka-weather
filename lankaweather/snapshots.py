@@ -102,5 +102,11 @@ def run() -> dict:
             log.error("snapshot %s failed: %s", name, e)
             done[name] = f"failed: {e}"
         time.sleep(2)
+    try:  # the cyclone list too, so a GDACS timeout at night is retried within 3 hours
+        from .build_site import build_cyclones
+        build_cyclones()
+        done["cyclones"] = "ok"
+    except Exception as e:
+        done["cyclones"] = f"failed: {e}"
     log.info("snapshots: %s", done)
     return done

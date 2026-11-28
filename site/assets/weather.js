@@ -355,12 +355,13 @@ function renderRiver(fl, place) {
 function renderCyclones() {
   const c = cyclones;
   if (!c) { $("wx-cyclone").innerHTML = `<p class="muted small">Cyclone check runs nightly; no data yet.</p>`; return; }
-  if (!c.ok) { $("wx-cyclone").innerHTML = `<p class="muted small">The nightly cyclone check couldn't reach GDACS last time.</p>`; return; }
+  const when = t => new Date(t).toLocaleString("en-GB", { timeZone: TZ, dateStyle: "medium", timeStyle: "short" });
+  if (!c.ok && !c.last_ok_at) { $("wx-cyclone").innerHTML = `<p class="muted small">The cyclone check couldn't reach GDACS yet. It retries every 3 hours.</p>`; return; }
   const active = c.events.filter(e => e.ongoing);
   $("wx-cyclone").innerHTML = active.length
     ? active.map(e => `<p style="margin:0 0 6px">${badge(e.alert === "Red" ? "critical" : e.alert === "Orange" ? "serious" : "warning", `${e.alert} alert`)} <b>${e.name}</b>, ${e.severity || ""}. ${e.url ? `<a href="${e.url}" rel="noopener">GDACS report</a>` : ""}</p>`).join("")
     : `<p style="margin:0">${badge("good", "None active")} No tropical cyclones in the region around Sri Lanka in the last two weeks.</p>`;
-  $("wx-cyclone").innerHTML += `<p class="muted small" style="margin:8px 0 0">Checked ${new Date(c.fetched_at).toLocaleString("en-GB", { timeZone: TZ, dateStyle: "medium", timeStyle: "short" })} from <a href="https://www.gdacs.org">GDACS</a>, which compiles agency advisories. Official cyclone warnings come from the Department of Meteorology.</p>`;
+  $("wx-cyclone").innerHTML += `<p class="muted small" style="margin:8px 0 0">${c.ok ? `Checked ${when(c.fetched_at)}` : `Last successful check ${when(c.last_ok_at)}; the latest try (${when(c.fetched_at)}) couldn't reach GDACS and is retried every 3 hours`} from <a href="https://www.gdacs.org">GDACS</a>, which compiles agency advisories. Official cyclone warnings come from the Department of Meteorology.</p>`;
 }
 
 const LOCATE_HELP = {

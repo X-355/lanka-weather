@@ -262,36 +262,54 @@ def run() -> None:
 
 
 def build_cyclones() -> None:
-    """Tropical cyclones near Sri Lanka from GDACS (which aggregates JTWC/NOAA/agency advisories). Best effort."""
+    """Tropical cyclones near Sri Lanka from GDACS (which aggregates JTWC/NOAA/agency advisories). Best effort.
+
+    GDACS sometimes times out. Each run tries three times, waiting longer each time; if every try fails, the
+    last successful list is kept and marked with when it was last checked, instead of being wiped.
+    """
+    import time
     import requests
     from datetime import date, timedelta
 
-    out = {"fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "source": "GDACS", "ok": False, "events": []}
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    path = SITE_DATA / "cyclones.json"
     try:
-        today = date.today()
-        r = requests.get("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH",
-                         params={"eventlist": "TC", "fromdate": (today - timedelta(days=14)).isoformat(),
-                                 "todate": today.isoformat(), "alertlevel": "green;orange;red"}, timeout=60)
-        r.raise_for_status()
-        for f in r.json().get("features", []):
-            p = f.get("properties", {})
-            lon, lat = (f.get("geometry", {}).get("coordinates") or [None, None])[:2]
-            box = f.get("bbox") or [lon, lat, lon, lat]
-            # North Indian Ocean around Sri Lanka: 50-100 E, 10 S - 25 N
-            if box[0] is None or box[2] < 50 or box[0] > 100 or box[3] < -10 or box[1] > 25:
-                continue
-            out["events"].append({
-                "name": p.get("name"), "alert": p.get("alertlevel"), "from": p.get("fromdate"), "to": p.get("todate"),
-                "countries": p.get("country"), "lat": lat, "lon": lon,
-                "severity": (p.get("severitydata") or {}).get("severitytext"),
-                "url": (p.get("url") or {}).get("report"),
-                "ongoing": str(p.get("iscurrent")).lower() == "true",
-            })
-        out["ok"] = True
-    except Exception as e:  # never break the nightly build over this
-        log.warning("GDACS cyclone fetch failed: %s", e)
-        out["error"] = str(e)[:200]
-    _write("cyclones.json", out)
+        prev = json.loads(path.read_text()) if path.exists() else None
+    except ValueError:
+        prev = None
+    today = date.today()
+    last_err = None
+    for attempt, timeout in enumerate((30, 60, 90)):
+        try:
+            r = requests.get("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH",
+                             params={"eventlist": "TC", "fromdate": (today - timedelta(days=14)).isoformat(),
+                                     "todate": today.isoformat(), "alertlevel": "green;orange;red"}, timeout=timeout)
+            r.raise_for_status()
+            events = []
+            for f in r.json().get("features", []):
+                p = f.get("properties", {})
+                lon, lat = (f.get("geometry", {}).get("coordinates") or [None, None])[:2]
+                box = f.get("bbox") or [lon, lat, lon, lat]
+                # North Indian Ocean around Sri Lanka: 50-100 E, 10 S - 25 N
+                if box[0] is None or box[2] < 50 or box[0] > 100 or box[3] < -10 or box[1] > 25:
+                    continue
+                events.append({
+                    "name": p.get("name"), "alert": p.get("alertlevel"), "from": p.get("fromdate"), "to": p.get("todate"),
+                    "countries": p.get("country"), "lat": lat, "lon": lon,
+                    "severity": (p.get("severitydata") or {}).get("severitytext"),
+                    "url": (p.get("url") or {}).get("report"),
+                    "ongoing": str(p.get("iscurrent")).lower() == "true",
+                })
+            _write("cyclones.json", {"fetched_at": now, "last_ok_at": now, "source": "GDACS", "ok": True, "events": events})
+            return
+        except Exception as e:  # never break a build over this
+            last_err = e
+            log.warning("GDACS cyclone fetch failed (try %d): %s", attempt + 1, e)
+            time.sleep(10 * (attempt + 1))
+    prev = prev or {}
+    last_ok = prev.get("last_ok_at") or (prev.get("fetched_at") if prev.get("ok") else None)
+    _write("cyclones.json", {"fetched_at": now, "source": "GDACS", "ok": False, "error": str(last_err)[:200],
+                             "last_ok_at": last_ok, "events": prev.get("events", []) if last_ok else []})
 
 
 def build_places() -> None:
