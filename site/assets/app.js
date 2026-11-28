@@ -1,7 +1,7 @@
 import { bars, districtMap, hbars, reliability, timeline } from "./charts.js?v=dev";
 
 const C = {
-  model: "var(--series-1)", nwp: "var(--series-2)", markov: "var(--series-3)",
+  model: "var(--series-1)", nwp: "var(--series-2)", markov: "var(--series-3)", hybrid: "var(--series-4)",
   clim: "var(--neutral)", year: "var(--series-2)",
 };
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -135,6 +135,15 @@ function renderMap() {
     + `<br><span class="muted">District map: <a href="https://mapsvg.com/maps/sri-lanka">MapSVG</a> via <a href="https://github.com/VictorCazanave/svg-maps">svg-maps</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</span>`;
 }
 
+// Say plainly which method made tonight's numbers. Forecasts issued before the hybrid existed carry no method.
+function methodNote(towns) {
+  if (!towns.some(t => t.method)) return "";
+  const hy = towns.filter(t => t.method === "hybrid").length;
+  if (hy === towns.length) return ` <span class="muted">Method: hybrid, the Weather Lab model corrected with tomorrow's ECMWF, GFS and ICON rain forecasts.</span>`;
+  if (hy === 0) return ` <span class="status"><span class="dot" style="background:var(--warning)"></span><b>Tonight: Weather Lab alone.</b></span> <span class="muted">The professional forecasts the hybrid needs weren't available when this was issued, so these are the model's own probabilities. The record shows which method made each forecast.</span>`;
+  return ` <span class="muted">Method: hybrid for ${hy} of ${towns.length} districts; the rest (marked) are Weather Lab alone because a professional forecast was missing.</span>`;
+}
+
 function renderForecastCards() {
   const f = state.forecast;
   renderMap();
@@ -144,7 +153,7 @@ function renderForecastCards() {
     return;
   }
   $("fc-lede").innerHTML = `Chance of at least ${state.meta.targets.rain_mm} mm of rain on <b>${fmtDate(f.target_date)}</b>, ${f.season}. Issued ${new Date(f.issued_at).toLocaleString("en-GB", { timeZone: "Asia/Colombo", dateStyle: "medium", timeStyle: "short" })} Sri Lanka time.` +
-    (f.towns.some(t => t.method === "hybrid") ? ` <span class="muted">Method: hybrid, the Weather Lab model corrected with tomorrow's ECMWF, GFS and ICON rain forecasts.</span>` : "");
+    methodNote(f.towns);
   const zones = Object.fromEntries(state.meta.towns.map(t => [t.key, t.zone]));
   const info = Object.fromEntries(state.meta.towns.map(t => [t.key, t]));
   const rows = [...f.towns].sort((a, b) => (info[a.town].region + a.name).localeCompare(info[b.town].region + b.name));
@@ -158,6 +167,7 @@ function renderForecastCards() {
         <div class="fill" style="width:${100 * t.p_rain}%"></div><div class="tick" style="left:calc(${100 * t.p_clim}% - 1px)"></div></div>
       <div class="meta">${vs}</div>
       <div class="meta muted">Today: ${t.today_precip == null ? "–" : t.today_precip + " mm"}</div>
+      ${t.method === "model" && f.towns.some(x => x.method === "hybrid") ? `<div class="meta muted">Weather Lab alone (no professional forecast)</div>` : ""}
     </div>`;
   }).join("");
 }
@@ -179,12 +189,13 @@ function renderLedger() {
   const L = state.ledger;
   const s = L?.summary;
   const pv = s?.provisional_imerg;
+  const bm_ = s?.by_method, meth = bm_ ? `<p class="sub small" style="margin:10px 0 0">Made by: ${Object.entries(bm_).map(([k, v]) => `${k === "hybrid" ? "hybrid" : k === "model" ? "Weather Lab alone (professional forecasts missing)" : "Weather Lab alone (before the hybrid)"} ${v.toLocaleString()}`).join(" · ")}.</p>` : "";
   const prov = pv ? `<div class="card" style="margin-top:12px"><b>Next-day check against NASA satellite rain (provisional).</b>
     ${pv.n.toLocaleString()} forecasts, ${pv.first_target} → ${pv.last_target}. Skill vs climatology: published forecast <b>${pct(pv.scores.published?.bss, 1)}</b>,
     Markov baseline ${pct(pv.scores.markov?.bss, 1)}${pv.scores.ecmwf_ens ? `, ECMWF ensemble ${pct(pv.scores.ecmwf_ens.bss, 1)}` : ""}.
     <span class="muted">NASA IMERG is available the day after; the final score uses the reanalysis about six days later.</span></div>` : "";
   if (!s || !s.scored) {
-    $("fc-ledger").innerHTML = `<div class="card"><b>${s?.issued ?? 0}</b> town-forecasts issued so far, <b>${s?.pending ?? 0}</b> waiting for observations. Final scores appear about six days after each forecast${pv ? "; a provisional next-day check is below" : ""}. Until then, the backtest below is the evidence.</div>${prov}`;
+    $("fc-ledger").innerHTML = `<div class="card"><b>${s?.issued ?? 0}</b> town-forecasts issued so far, <b>${s?.pending ?? 0}</b> waiting for observations. Final scores appear about six days after each forecast${pv ? "; a provisional next-day check is below" : ""}. Until then, the backtest below is the evidence.</div>${meth}${prov}`;
     return;
   }
   const a = s.all;
@@ -193,7 +204,7 @@ function renderLedger() {
     <div class="card kpi"><div class="label">Live skill vs climatology</div><div class="value">${pct(a.model.bss, 1)}</div><div class="note">Markov baseline ${pct(a.markov.bss, 1)}</div></div>
     <div class="card kpi"><div class="label">Live Brier score</div><div class="value">${num(a.model.brier)}</div><div class="note">Climatology ${num(a.climatology.brier)}</div></div>
     <div class="card kpi"><div class="label">Last 30 days skill</div><div class="value">${pct(s.last30.model.bss, 1)}</div><div class="note">${s.last30.model.n} town-days</div></div>
-  </div>${s.vs_ecmwf_ens ? `<p class="sub small" style="margin:10px 0 0">Same days, probability against probability: published forecast ${pct(s.vs_ecmwf_ens.published.bss, 1)}, model alone ${pct(s.vs_ecmwf_ens.model.bss, 1)}, ECMWF's 51-member ensemble ${pct(s.vs_ecmwf_ens.ecmwf_ens.bss, 1)} (${s.vs_ecmwf_ens.published.n} district-days).</p>` : ""}${prov}`;
+  </div>${s.vs_ecmwf_ens ? `<p class="sub small" style="margin:10px 0 0">Same days, probability against probability: published forecast ${pct(s.vs_ecmwf_ens.published.bss, 1)}, model alone ${pct(s.vs_ecmwf_ens.model.bss, 1)}, ECMWF's 51-member ensemble ${pct(s.vs_ecmwf_ens.ecmwf_ens.bss, 1)} (${s.vs_ecmwf_ens.published.n} district-days).</p>` : ""}${meth}${prov}`;
 }
 
 const range = c => c ? `${pct(c.lo, 1)} to ${pct(c.hi, 1)}` : "–";
@@ -202,28 +213,55 @@ function renderTruths(M) {
   const el = $("fc-truths");
   if (!el) return;
   const NAMES = { hybrid: "Hybrid (published)", model: "Weather Lab alone", ecmwf_cal: "ECMWF, calibrated probability", markov: "Markov baseline" };
+  const sgn = (x, f) => (x > 0 ? "+" : x < 0 ? "−" : "") + f(Math.abs(x));
+  const fA = x => x.toFixed(3), fP = x => `${(100 * x).toFixed(1)}%`;
+  const PAIR = { "hybrid - ecmwf_cal": ["the hybrid", "ECMWF"], "hybrid - model": ["the hybrid", "Weather Lab alone"],
+                 "model - ecmwf_cal": ["Weather Lab alone", "ECMWF"], "model - markov": ["Weather Lab", "the Markov baseline"] };
+  // A pair is only called "better" when its paired difference's 95% range is entirely on one side of zero.
+  const verdict = (d, f, what) => {
+    const rg = `${sgn(d.est, f)} (95% range ${sgn(d.lo, f)} to ${sgn(d.hi, f)})`;
+    return d.lo > 0 ? `ahead on ${what} by ${rg}` : d.hi < 0 ? `behind on ${what} by ${rg}` : `level on ${what}: ${rg}, a range that includes zero`;
+  };
   const block = (r, src) => {
     if (!r || !r.ranking) return "";
     const a = r.adjusted, R = r.ranking;
     const rows = Object.entries(R.auc).map(([k, v]) => ({ name: NAMES[k] || k, auc: v, adj: a.skill?.[k], hl: k === "hybrid" }));
-    const dHE = R.diff["hybrid - ecmwf_cal"], dME = R.diff["model - ecmwf_cal"], dMM = R.diff["model - markov"];
-    const say = (d, a_, b_) => !d ? "" : d.lo > 0 ? `${a_} ranks rain days better than ${b_}` : d.hi < 0 ? `${b_} ranks rain days better than ${a_}` : `${a_} and ${b_} are level`;
-    const lines = [say(dHE, "the hybrid", "ECMWF"), say(dME, "Weather Lab alone", "ECMWF"), say(dMM, "Weather Lab", "the Markov baseline")].filter(Boolean);
-    return `<h3 style="margin:14px 0 4px;font-size:15px">${r.label}</h3><p class="sub small" style="margin:0 0 6px">${r.period[0]} → ${r.period[1]}: ${r.n.toLocaleString()} ${src}-days on ${r.n_days.toLocaleString()} days in ${r.towns} districts, identical for every forecast. ${src === "gauge" ? "Rain fell at the gauge" : "NASA saw rain"} on ${pct(r.wet_freq_truth)} of them, against ${pct(r.wet_freq_era5)} in ERA5's ~25 km squares.</p>` +
+    const cmp = Object.keys(R.diff).filter(k => PAIR[k]).map(k => {
+      const [x, y] = PAIR[k], ad = a.diff?.[k];
+      return `<li>${x[0].toUpperCase() + x.slice(1)} vs ${y}: ${verdict(R.diff[k], fA, "ranking")}${ad ? `; ${verdict(ad, fP, "adjusted skill")}` : ""}.</li>`;
+    });
+    const adj = Object.values(a.skill || {}).map(v => v.bss), aucs = Object.values(R.auc).map(v => v.auc);
+    const plain = [];
+    if (adj.length && adj.every(v => v < 0)) {
+      plain.push(`<b>No forecast beats the calendar odds ${src === "gauge" ? "at single gauges" : "here"} after adjustment</b> (adjusted skill from ${pct(Math.min(...adj), 0)} to ${pct(Math.max(...adj), 0)}). Every forecast still ranks rain days better than chance (AUC ${num(Math.min(...aucs))} to ${num(Math.max(...aucs))}; 0.5 would be a coin toss). So the likely problem is the adjustment from 25 km squares to single gauges, fitted only on the thin gauge record from ${a.fit_period ? `${a.fit_period[0]} to ${a.fit_period[1]}` : "a few months"}, rather than the forecasts themselves.`);
+    }
+    if (a.skill?.hybrid && a.skill?.model && a.skill.hybrid.bss < a.skill.model.bss) {
+      const d = a.diff?.["hybrid - model"];
+      plain.push(`Here the hybrid scores <b>below Weather Lab alone</b> on adjusted skill (${pct(a.skill.hybrid.bss, 0)} vs ${pct(a.skill.model.bss, 0)}${d ? `; difference ${sgn(d.est, fP)}, 95% range ${sgn(d.lo, fP)} to ${sgn(d.hi, fP)}` : ""}), even though it ranks rain days better.`);
+    }
+    return `<h3 style="margin:14px 0 4px;font-size:15px">${r.label}, ${r.period[0].slice(0, 7)} → ${r.period[1].slice(0, 7)}</h3><p class="sub small" style="margin:0 0 6px">${r.n.toLocaleString()} ${src}-days on ${r.n_days.toLocaleString()} days in ${r.towns} districts, identical for every forecast. ${src === "gauge" ? "Rain fell at the gauge" : "NASA saw rain"} on ${pct(r.wet_freq_truth)} of them, against ${pct(r.wet_freq_era5)} in ERA5's ~25 km squares.</p>` +
       scoreTable(rows, [{ label: "Forecast", get: r => r.name },
         { label: "Ranking (AUC) ↑", num: true, get: r => `<b>${num(r.auc.auc)}</b>`, title: "Chance that a rain day got a higher forecast than a dry day; 0.5 = no better than a coin" },
         { label: "95% range", num: true, get: r => `${num(r.auc.lo)}–${num(r.auc.hi)}` },
-        { label: "Adjusted skill ↑", num: true, get: r => r.adj ? pct(r.adj.bss, 1) : "–", title: `After the same recalibration for every forecast, fitted on ${a.fit_period[0]} → ${a.fit_period[1]}; scored ${a.test_period[0]} → ${a.test_period[1]} against each ${src === "gauge" ? "gauge" : "district"}'s own calendar odds` },
+        { label: "Adjusted skill ↑", num: true, get: r => r.adj ? pct(r.adj.bss, 1) : "–", title: `Same recalibration for every forecast, fitted on ${a.fit_period[0]} → ${a.fit_period[1]}; scored ${a.test_period[0]} → ${a.test_period[1]} against each ${src === "gauge" ? "gauge" : "district"}'s own calendar odds` },
         { label: "95% range", num: true, get: r => r.adj ? range(r.adj) : "–" }]) +
-      (lines.length ? `<p class="sub small" style="margin:8px 0 0"><b>Reading it:</b> ${lines.join("; ")}.</p>` : "");
+      (plain.length ? `<p class="sub small" style="margin:8px 0 0">${plain.join(" ")}</p>` : "") +
+      (cmp.length ? `<p class="sub small" style="margin:8px 0 2px"><b>Head to head, on the same days</b> (each gap is measured pair by pair, resampling whole days):</p><ul class="sub small" style="margin:0;padding-left:20px">${cmp.join("")}</ul>` : "");
+  };
+  // Show the all-days table only when it covers more than the table with the professional forecasts.
+  const both = (t, src) => {
+    if (!t) return "";
+    const ne = t.nwp_era, al = t.all_years;
+    const dup = ne && al && ne.n === al.n && ne.period[0] === al.period[0] && ne.period[1] === al.period[1];
+    return block(ne, src) + (dup ? "" : block(al, src));
   };
   const g = M.gauges, im = M.imerg;
   if (!g && !im) {
     el.innerHTML = `<p class="muted small" style="margin:0">Rain-gauge and NASA satellite checks appear here after the next retrain.</p>`;
     return;
   }
-  el.innerHTML = (g ? `<p class="sub small" style="margin:0"><b>Rain gauges</b> from NOAA's global station archive: ${g.info.stations} Sri Lankan weather stations. A gauge measures one spot, so it sees rain on far fewer days than a 25 km square does, and every forecast here is over-confident about rain at a single gauge. So two fair measures are shown, on identical rows: <b>ranking</b> (does the forecast give higher chances on the days the gauge got rain?) and <b>adjusted skill</b> (every forecast gets the same one-step correction from square to gauge, fitted on earlier days and scored on later ones, against each gauge's own calendar odds). NOAA's Sri Lankan records thin out after early 2024, so the professional-forecast period has far fewer gauge days than the older years.</p>` + block(g.nwp_era, "gauge") + block(g.all_years, "gauge") : "") +
-    (im ? `<p class="sub small" style="margin:${g ? 18 : 0}px 0 0"><b>NASA GPM IMERG</b>: satellite rainfall, calibrated with gauges in its final version. Its days run 05:30–05:30 Sri Lanka time (UTC days), which lowers every score a little but treats all forecasts alike.</p>` + block(im.nwp_era, "satellite") + block(im.all_years, "satellite") : "");
+  el.innerHTML = (g ? `<p class="sub small" style="margin:0"><b>Rain gauges</b> from NOAA's global station archive: ${g.info.stations} Sri Lankan weather stations. A gauge measures one spot, so it sees rain on far fewer days than a 25 km square does, and every forecast here is over-confident about rain at a single gauge. So two fair measures are shown, on identical rows: <b>ranking</b> (does the forecast give higher chances on the days the gauge got rain?) and <b>adjusted skill</b> (every forecast gets the same one-step correction from square to gauge, fitted on earlier days and scored on later ones, against each gauge's own calendar odds). NOAA's Sri Lankan records thin out after early 2024, so the professional-forecast period has far fewer gauge days than the older years.</p>` + both(g, "gauge") : "") +
+    (im ? `<p class="sub small" style="margin:${g ? 18 : 0}px 0 0"><b>NASA GPM IMERG</b>: satellite rainfall, calibrated with gauges in its final version. Its days run 05:30–05:30 Sri Lanka time (UTC days), which lowers every score a little but treats all forecasts alike.</p>` + both(im, "satellite") : "");
 }
 
 function renderScoreboards() {
@@ -252,7 +290,7 @@ function renderScoreboards() {
       { label: "Skill vs climatology ↑", num: true, get: r => r.ci ? `<b>${pct(r.ci.bss, 1)}</b>` : pct(r.bss, 1) },
       { label: "95% range", num: true, get: r => r.ci ? `${pct(r.ci.lo, 1)} to ${pct(r.ci.hi, 1)}` : "<span class='muted'>–</span>" },
       SCORE_COLS[0], SCORE_COLS[3],
-    ]) + `<p class="sub small" style="margin:10px 0 0"><b>What this shows.</b> Weather Lab alone and ECMWF are <b>${dME.lo < 0 && dME.hi > 0 ? "level" : dME.est > 0 ? "apart, Weather Lab ahead" : "apart, ECMWF ahead"}</b>: the difference is ${pct(dME.est, 1)}, with a 95% range of ${pct(dME.lo, 1)} to ${pct(dME.hi, 1)}. The hybrid beats ECMWF by <b>${pct(dHE.est, 1)}</b> (${pct(dHE.lo, 1)} to ${pct(dHE.hi, 1)}). ${state.forecast?.towns?.some(t => t.method === "hybrid") ? "The published forecast is now the hybrid." : "The published forecast switches to the hybrid from the next nightly run."} The truth here is still ERA5, which is itself made by ECMWF. That's why the next table checks everything against rain gauges and NASA's satellite rainfall, which no forecast model has seen.</p>`;
+    ]) + `<p class="sub small" style="margin:10px 0 0"><b>What this shows.</b> Weather Lab alone and ECMWF are <b>${dME.lo < 0 && dME.hi > 0 ? "level" : dME.est > 0 ? "apart, Weather Lab ahead" : "apart, ECMWF ahead"}</b>: the difference is ${pct(dME.est, 1)}, with a 95% range of ${pct(dME.lo, 1)} to ${pct(dME.hi, 1)}. ${dHE.lo > 0 ? `The hybrid beats ECMWF by <b>${pct(dHE.est, 1)}</b>` : dHE.hi < 0 ? `ECMWF beats the hybrid by <b>${pct(-dHE.est, 1)}</b>` : `The hybrid and ECMWF are level (${pct(dHE.est, 1)})`} (95% range ${pct(dHE.lo, 1)} to ${pct(dHE.hi, 1)}). ${state.forecast?.towns?.some(t => t.method === "hybrid") ? "The published forecast is now the hybrid." : "The published forecast switches to the hybrid from the next nightly run."} The truth here is still ERA5, which is itself made by ECMWF. That's why the next table checks everything against rain gauges and NASA's satellite rainfall, which no forecast model has seen.</p>`;
   } else {
     $("fc-nwp-lede").textContent = "Archived day-ahead forecasts from operational weather models are not available yet.";
     $("fc-nwp").innerHTML = "";
@@ -272,21 +310,47 @@ function renderScoreboards() {
       SCORE_COLS[4], SCORE_COLS[5],
     ]);
   }
+  // Charts: the published forecast (hybrid) against ECMWF and Weather Lab alone, on the fair comparison's
+  // later period and identical rows. Falls back to model vs Markov on all test years before the hybrid exists.
+  const FR = M.fair?.reliability, BT = M.by_town_fair, per = M.fair ? `${M.fair.test_period[0]} → ${M.fair.test_period[1]}` : "";
   $("fc-reliability").innerHTML = "";
-  reliability($("fc-reliability"), { series: [
-    { name: "Weather Lab model", color: C.model, points: M.reliability.model },
-    { name: "Markov baseline", color: C.markov, points: M.reliability.markov },
-  ] });
-  const keys = state.meta.towns.map(t => t.key).filter(k => M.by_town[k]);
+  if (FR?.hybrid) {
+    $("fc-reliability-sub").textContent = `Same later days as the fair comparison (${per}), judged against ERA5. Points on the dashed line mean the probabilities can be taken at face value.`;
+    reliability($("fc-reliability"), { series: [
+      { name: "Hybrid (published)", color: C.hybrid, points: FR.hybrid },
+      { name: "ECMWF, calibrated", color: C.nwp, points: FR.ecmwf_cal },
+      { name: "Weather Lab alone", color: C.model, points: FR.model },
+    ] });
+  } else {
+    reliability($("fc-reliability"), { series: [
+      { name: "Weather Lab model", color: C.model, points: M.reliability.model },
+      { name: "Markov baseline", color: C.markov, points: M.reliability.markov },
+    ] });
+  }
   $("fc-towns").innerHTML = "";
-  hbars($("fc-towns"), {
-    categories: keys.map(townName),
-    series: [
-      { name: "Weather Lab model", color: C.model, values: keys.map(k => M.by_town[k].model.bss) },
-      { name: "Markov baseline", color: C.markov, values: keys.map(k => M.by_town[k].markov.bss) },
-    ],
-    fmt: v => `${(100 * v).toFixed(0)}%`,
-  });
+  if (BT) {
+    const keys = state.meta.towns.map(t => t.key).filter(k => BT[k]);
+    $("fc-towns-sub").textContent = `Brier skill vs climatology by district on the fair comparison's later days (${per}); higher is better, 0 = no better than the calendar.`;
+    hbars($("fc-towns"), {
+      categories: keys.map(townName),
+      series: [
+        { name: "Hybrid (published)", color: C.hybrid, values: keys.map(k => BT[k].hybrid.bss) },
+        { name: "ECMWF, calibrated", color: C.nwp, values: keys.map(k => BT[k].ecmwf_cal.bss) },
+        { name: "Weather Lab alone", color: C.model, values: keys.map(k => BT[k].model.bss) },
+      ],
+      fmt: v => `${(100 * v).toFixed(0)}%`,
+    });
+  } else {
+    const keys = state.meta.towns.map(t => t.key).filter(k => M.by_town[k]);
+    hbars($("fc-towns"), {
+      categories: keys.map(townName),
+      series: [
+        { name: "Weather Lab model", color: C.model, values: keys.map(k => M.by_town[k].model.bss) },
+        { name: "Markov baseline", color: C.markov, values: keys.map(k => M.by_town[k].markov.bss) },
+      ],
+      fmt: v => `${(100 * v).toFixed(0)}%`,
+    });
+  }
 }
 
 function setupChecker() {

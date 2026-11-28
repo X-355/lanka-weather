@@ -12,6 +12,7 @@
   --series-1: #257de0;   /* Weather Lab model */
   --series-2: #f47230;   /* ECMWF / NWP / this year */
   --series-3: #00b894;   /* Markov baseline */
+  --series-4: #c2337a;   /* Hybrid (published forecast) — validated with the three above, light and dark, all pairs */
   --neutral: #a9a69c;    /* climatology / normal */
   --neutral-soft: #dcd9cf;
   --good: #0aac23;
@@ -29,7 +30,7 @@
     --bg: #121212; --surface-1: #191919; --surface-2: #222222; --border: #2e2e2e;
     --text-primary: #efefef; --text-secondary: #a8a8a8; --text-tertiary: #7a7a7a;
     --grid: #262626; --axis: #3a3a3a;
-    --series-1: #338ced; --series-2: #e76624; --series-3: #00a888;
+    --series-1: #338ced; --series-2: #e76624; --series-3: #00a888; --series-4: #c2337a; --series-4: #c2337a;
     --neutral: #6f6c64; --neutral-soft: #383838; --accent: #3fbf9c;
   }
 }
@@ -38,7 +39,7 @@
   --bg: #121212; --surface-1: #191919; --surface-2: #222222; --border: #2e2e2e;
   --text-primary: #efefef; --text-secondary: #a8a8a8; --text-tertiary: #7a7a7a;
   --grid: #262626; --axis: #3a3a3a;
-  --series-1: #338ced; --series-2: #e76624; --series-3: #00a888;
+  --series-1: #338ced; --series-2: #e76624; --series-3: #00a888; --series-4: #c2337a;
   --neutral: #6f6c64; --neutral-soft: #383838; --accent: #3fbf9c;
 }
 

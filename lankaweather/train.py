@@ -203,7 +203,11 @@ def evaluate_extended(test: pd.DataFrame, hist: pd.DataFrame, cfg: dict) -> dict
                                                      {"hybrid": "p_hybrid", "model": "p_rain", "ecmwf_cal": "p_ecmwf_cal",
                                                       "markov": "p_markov"},
                                                      pairs=[("hybrid", "ecmwf_cal"), ("model", "ecmwf_cal"), ("hybrid", "model")]),
-                       "reliability": {"hybrid": reliability(y, fwd["p_hybrid"]), "ecmwf_cal": reliability(y, fwd["p_ecmwf_cal"])}}
+                       "reliability": {"hybrid": reliability(y, fwd["p_hybrid"]), "ecmwf_cal": reliability(y, fwd["p_ecmwf_cal"]),
+                                       "model": reliability(y, fwd["p_rain"]), "markov": reliability(y, fwd["p_markov"])}}
+        out["by_town_fair"] = {t: {n: scores(g["y_rain"], g[col], g["p_clim"]) for n, col in
+                                   [("hybrid", "p_hybrid"), ("model", "p_rain"), ("ecmwf_cal", "p_ecmwf_cal"), ("markov", "p_markov")]}
+                               for t, g in fwd.groupby("town")}
         out["heavy_fair"] = verify.heavy_scorecard(fwd, "y_heavy", {
             "ecmwf_50": {"col": "nwp_ecmwf_ifs025", "threshold": heavy_mm, "label": f"ECMWF forecast ≥ {heavy_mm:g} mm"},
             "ecmwf_cal_30": {"col": "p_ecmwf_cal_heavy", "threshold": 0.3, "label": "ECMWF calibrated, warn at ≥ 30%"},
@@ -217,7 +221,7 @@ def evaluate_extended(test: pd.DataFrame, hist: pd.DataFrame, cfg: dict) -> dict
         test["yn_ecmwf"] = np.where(test["nwp_ecmwf_ifs025"].notna(), (test["nwp_ecmwf_ifs025"] >= rain_mm).astype(float), np.nan)
     # 4. Independent truths: rain gauges and NASA IMERG.
     nwp_fc = {"hybrid": "p_hybrid_oof", "model": "p_rain", "ecmwf_cal": "p_ecmwf_cal_oof", "markov": "p_markov"}
-    pairs = [("hybrid", "ecmwf_cal"), ("model", "ecmwf_cal"), ("model", "markov")]
+    pairs = [("hybrid", "ecmwf_cal"), ("hybrid", "model"), ("model", "ecmwf_cal"), ("model", "markov")]
     try:
         g, ginfo = gauges.truth(hist)
     except Exception as e:  # never let a truth source break training
@@ -226,16 +230,16 @@ def evaluate_extended(test: pd.DataFrame, hist: pd.DataFrame, cfg: dict) -> dict
     if g is not None and len(g):
         out["gauges"] = {"info": ginfo,
                          "all_years": verify.score_against(test, g, rain_mm, heavy_mm, {"model": "p_rain", "markov": "p_markov"},
-                                                           pairs=[("model", "markov")], label="Rain gauges, all test years"),
+                                                           pairs=[("model", "markov")], label="Rain gauges: Weather Lab vs Markov, all days with gauge data"),
                          "nwp_era": verify.score_against(test, g, rain_mm, heavy_mm, nwp_fc, pairs=pairs,
-                                                         label="Rain gauges, 2024+ (with professional forecasts)") if summ else None}
+                                                         label="Rain gauges: with the hybrid and ECMWF") if summ else None}
     im = imerg.truth()
     if im is not None and len(im):
         out["imerg"] = {"products": im["product"].value_counts().to_dict(),
                         "all_years": verify.score_against(test, im, rain_mm, heavy_mm, {"model": "p_rain", "markov": "p_markov"},
-                                                          pairs=[("model", "markov")], label="NASA IMERG, all test years"),
+                                                          pairs=[("model", "markov")], label="NASA IMERG: Weather Lab vs Markov, all days with satellite data"),
                         "nwp_era": verify.score_against(test, im, rain_mm, heavy_mm, nwp_fc, pairs=pairs,
-                                                        label="NASA IMERG, 2024+ (with professional forecasts)") if summ else None}
+                                                        label="NASA IMERG: with the hybrid and ECMWF") if summ else None}
     return _rnd(out)
 
 
@@ -453,6 +457,9 @@ def write_report_md(full: dict) -> None:
             r = tr.get(part)
             if not r:
                 continue
+            ne = tr.get("nwp_era")
+            if part == "all_years" and ne and ne["n"] == r["n"] and ne["period"] == r["period"]:
+                continue  # same rows as the table above; nothing new to show
             a = r["adjusted"]
             lines += ["", f"**{r['label']}**: {r['period'][0]} → {r['period'][1]}, {r['n']:,} rows on {r['n_days']:,} days, identical for every "
                           f"forecast. Rain (≥ 1 mm) on {_f(r['wet_freq_truth'], True)} of rows here vs {_f(r['wet_freq_era5'], True)} in ERA5.", "",

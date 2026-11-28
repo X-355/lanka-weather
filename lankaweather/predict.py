@@ -262,6 +262,7 @@ def ledger_summary() -> dict:
         if len(both):
             summary["vs_ecmwf_ens"] = {n: scores(both["obs_rain"].astype(float), both[c].astype(float), both["p_clim"].astype(float))
                                        for n, c in [("published", "p_rain"), ("model", "p_base"), ("ecmwf_ens", "p_ecmwf_ens")]}
+    summary["by_method"] = {str(k): int(v) for k, v in led["method"].fillna("model (before hybrid)").value_counts().items()}
     cfg = load_config()
     prov = led.dropna(subset=["obs_imerg"])
     if len(prov):
