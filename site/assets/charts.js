@@ -202,6 +202,47 @@ export function hbars(container, opts) {
   el("line", { x1: x(0), x2: x(0), y1: 0, y2: ih, stroke: "var(--axis)" }, g);
 }
 
+/** Dot plot: one row per category, one dot per series on a shared axis; a thin line joins the row's dots.
+ *  Compact (≈22 px a row) where grouped bars would be three bars deep. opts: {categories, series, fmt, rowH} */
+export function dotplot(container, opts) {
+  const fmt = opts.fmt || (v => v.toFixed(2));
+  const cats = opts.categories, ser = opts.series, rowH = opts.rowH || 22;
+  const m = { t: 6, r: 16, b: 26, l: 104 };
+  legend(container, ser.map(s => ({ name: s.name, color: s.color })));
+  const holder = document.createElement("div");
+  container.appendChild(holder);
+  const { svg, iw, ih } = frame(holder, m.t + m.b + rowH * cats.length, m);
+  const g = el("g", { transform: `translate(${m.l},${m.t})` }, svg);
+  const all = ser.flatMap(s => s.values).filter(v => v != null);
+  let lo = Math.min(0, ...all), hi = Math.max(0, ...all);
+  const ticks = niceTicks(lo, hi, 5);
+  lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length - 1]);
+  const x = v => ((v - lo) / (hi - lo)) * iw;
+  const gridG = el("g", { class: "grid" }, g);
+  ticks.forEach(t => {
+    el("line", { x1: x(t), x2: x(t), y1: 0, y2: ih }, gridG);
+    el("text", { x: x(t), y: ih + 17, "text-anchor": "middle" }, g).textContent = fmt(t);
+  });
+  el("line", { x1: x(0), x2: x(0), y1: 0, y2: ih, stroke: "var(--axis)" }, g);
+  cats.forEach((c, i) => {
+    const cy = i * rowH + rowH / 2;
+    if (i % 2 === 0) el("rect", { x: -m.l, y: i * rowH, width: iw + m.l + m.r, height: rowH, fill: "var(--surface-2)", opacity: 0.45 }, g);
+    el("text", { x: -10, y: cy + 4, "text-anchor": "end" }, g).textContent = c;
+    const vs = ser.map(s => s.values[i]).filter(v => v != null);
+    if (vs.length > 1) el("line", { x1: x(Math.min(...vs)), x2: x(Math.max(...vs)), y1: cy, y2: cy, stroke: "var(--text-tertiary)", "stroke-width": 1.5, opacity: 0.6 }, g);
+    // draw the first series last, so the headline dot sits on top
+    [...ser].reverse().forEach(s => {
+      const v = s.values[i];
+      if (v == null) return;
+      el("circle", { cx: x(v), cy, r: 5, fill: s.color, stroke: "var(--surface-1)", "stroke-width": 2 }, g);
+    });
+    const hit = el("rect", { x: -m.l, y: i * rowH, width: iw + m.l + m.r, height: rowH, fill: "transparent" }, g);
+    hit.addEventListener("mousemove", e => showTip(e, `<b>${c}</b>` + ser.map(s =>
+      `<div class="row"><span><span class="swatch" style="background:${s.color}"></span>${s.name}</span><b>${s.values[i] == null ? "–" : fmt(s.values[i])}</b></div>`).join("")));
+    hit.addEventListener("mouseleave", hideTip);
+  });
+}
+
 /** Reliability diagram. opts: {series:[{name,color,points:[{mean_p,obs_freq,n}]}]} */
 export function reliability(container, opts) {
   const m = { t: 10, r: 14, b: 40, l: 46 };

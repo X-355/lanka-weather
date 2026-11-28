@@ -1,4 +1,4 @@
-import { bars, districtMap, hbars, reliability, timeline } from "./charts.js?v=dev";
+import { bars, districtMap, dotplot, hbars, reliability, timeline } from "./charts.js?v=dev";
 
 const C = {
   model: "var(--series-1)", nwp: "var(--series-2)", markov: "var(--series-3)", hybrid: "var(--series-4)",
@@ -383,7 +383,7 @@ function renderScoreboards() {
   $("fc-reliability").innerHTML = "";
   if (FR?.hybrid) {
     $("fc-reliability-sub").textContent = `Same later days as the fair comparison (${per}), judged against ERA5. Points on the dashed line mean the probabilities can be taken at face value.`;
-    reliability($("fc-reliability"), { series: [
+    reliability($("fc-reliability"), { height: 590, series: [
       { name: "Hybrid (published)", color: C.hybrid, points: FR.hybrid },
       { name: "ECMWF, calibrated", color: C.nwp, points: FR.ecmwf_cal },
       { name: "Weather Lab alone", color: C.model, points: FR.model },
@@ -396,12 +396,13 @@ function renderScoreboards() {
   }
   $("fc-towns").innerHTML = "";
   if (BT) {
-    const keys = state.meta.towns.map(t => t.key).filter(k => BT[k]);
+    // best first, by the published forecast's skill
+    const keys = state.meta.towns.map(t => t.key).filter(k => BT[k]).sort((a, b) => BT[b].hybrid.bss - BT[a].hybrid.bss);
     const worst = keys.reduce((a, k) => (BT[k].hybrid.bss < BT[a].hybrid.bss ? k : a), keys[0]);
     const w = BT[worst].hybrid;
     $("fc-towns-sub").textContent = `Brier skill vs climatology by district on the fair comparison's later days (${per}); higher is better, 0 = no better than the calendar.` +
       (w.base_rate > 0.85 ? ` ${townName(worst)} is lowest because ERA5 has rain there on ${pct(w.base_rate)} of these days. The calendar odds are already hard to beat; NASA's satellite sees rain there on far fewer days.` : "");
-    hbars($("fc-towns"), {
+    dotplot($("fc-towns"), {
       categories: keys.map(townName),
       series: [
         { name: "Hybrid (published)", color: C.hybrid, values: keys.map(k => BT[k].hybrid.bss) },
@@ -412,7 +413,7 @@ function renderScoreboards() {
     });
   } else {
     const keys = state.meta.towns.map(t => t.key).filter(k => M.by_town[k]);
-    hbars($("fc-towns"), {
+    dotplot($("fc-towns"), {
       categories: keys.map(townName),
       series: [
         { name: "Weather Lab model", color: C.model, values: keys.map(k => M.by_town[k].model.bss) },
