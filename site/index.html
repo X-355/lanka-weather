@@ -19,7 +19,6 @@
       <button role="tab" data-tab="monsoon" aria-selected="false">Monsoon &amp; rainfall</button>
       <button role="tab" data-tab="solar" aria-selected="false">Rooftop solar</button>
       <button role="tab" data-tab="heavy" aria-selected="false">Heavy-rain risk</button>
-      <button role="tab" data-tab="about" aria-selected="false">Method</button>
     </nav>
     <button class="theme-btn" id="theme" title="Toggle dark mode" aria-label="Toggle dark mode">◐ Theme</button>
   </div>
@@ -220,13 +219,14 @@
 
   <!-- ======================================================= ABOUT -->
   <section id="about">
-    <h1>How this works</h1>
+    <p class="small" style="margin:0 0 8px"><a href="#forecast">← Back to the forecast</a></p>
+    <h1>How the forecasts are made and tested</h1>
     <div id="about-body" class="card"></div>
   </section>
 </main>
 
 <footer><div class="wrap">
-  <span id="foot-model"></span>
+  <span><a href="#about" id="foot-method"><b>How the forecasts are made and tested →</b></a> · <span id="foot-model"></span></span>
   <span>Data: <a href="https://open-meteo.com" rel="noopener">Open-Meteo</a> (ERA5, archived forecasts, CC BY 4.0) · <a href="https://power.larc.nasa.gov" rel="noopener">NASA POWER</a> · Towns: <a href="https://www.geonames.org" rel="noopener">GeoNames</a> (CC BY 4.0), <a href="https://github.com/madurapa/sri-lanka-provinces-districts-cities" rel="noopener">Sri Lanka cities dataset</a> (MIT), <a href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap contributors</a> (ODbL), GN divisions: <a href="https://data.humdata.org/dataset/cod-ab-lka" rel="noopener">Survey Department of Sri Lanka / OCHA via HDX</a> (CC BY-IGO) · Satellite: <a href="https://view.eumetsat.int" rel="noopener">EUMETSAT</a>, <a href="https://earthdata.nasa.gov/gibs" rel="noopener">NASA GIBS</a> · Air quality: <a href="https://atmosphere.copernicus.eu" rel="noopener">Copernicus CAMS</a> · Rivers: <a href="https://global-flood.emergency.copernicus.eu" rel="noopener">GloFAS</a> · Cyclones: <a href="https://www.gdacs.org" rel="noopener">GDACS</a> · Code: <a href="https://github.com/X-355/lanka-weather" rel="noopener">github.com/X-355/lanka-weather</a></span>
 </div></footer>
 
