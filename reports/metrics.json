@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "0.1.0+20261128",
-    "trained_at": "2026-11-28T05:22:00Z",
+    "trained_at": "2026-11-28T06:40:57Z",
     "data_source": "Open-Meteo ERA5 reanalysis",
     "features": [
       "precip",
@@ -1899,64 +1899,64 @@
         "2021-12-31"
       ],
       "unseen_cells": {
-        "n_towns": 37,
-        "n_cells": 19,
-        "n_days": 33953,
+        "n_towns": 53,
+        "n_cells": 29,
+        "n_days": 51823,
         "model": {
-          "n": 33953,
-          "base_rate": 0.552,
-          "brier": 0.1425,
-          "bss": 0.2909,
-          "log_loss": 0.4391,
-          "auc": 0.8761,
-          "avg_precision": 0.9008,
-          "accuracy": 0.7932,
-          "pod": 0.8223,
-          "far": 0.1932,
-          "csi": 0.6871,
-          "freq_bias": 1.0192
+          "n": 51823,
+          "base_rate": 0.5567,
+          "brier": 0.1441,
+          "bss": 0.2758,
+          "log_loss": 0.4436,
+          "auc": 0.8732,
+          "avg_precision": 0.8995,
+          "accuracy": 0.7905,
+          "pod": 0.8242,
+          "far": 0.1957,
+          "csi": 0.6865,
+          "freq_bias": 1.0248
         },
         "markov": {
-          "n": 33953,
-          "base_rate": 0.552,
-          "brier": 0.1633,
-          "bss": 0.1873,
-          "log_loss": 0.4999,
-          "auc": 0.834,
-          "avg_precision": 0.8573,
-          "accuracy": 0.7737,
-          "pod": 0.7898,
-          "far": 0.2019,
-          "csi": 0.6583,
-          "freq_bias": 0.9896
+          "n": 51823,
+          "base_rate": 0.5567,
+          "brier": 0.1632,
+          "bss": 0.1801,
+          "log_loss": 0.4996,
+          "auc": 0.8342,
+          "avg_precision": 0.8595,
+          "accuracy": 0.7727,
+          "pod": 0.7897,
+          "far": 0.2005,
+          "csi": 0.6592,
+          "freq_bias": 0.9877
         },
         "climatology": {
-          "n": 33953,
-          "base_rate": 0.552,
-          "brier": 0.2009,
+          "n": 51823,
+          "base_rate": 0.5567,
+          "brier": 0.199,
           "bss": 0.0,
-          "log_loss": 0.5845,
-          "auc": 0.7558,
-          "avg_precision": 0.7948,
-          "accuracy": 0.6874,
-          "pod": 0.6358,
-          "far": 0.2412,
-          "csi": 0.5289,
-          "freq_bias": 0.838
+          "log_loss": 0.5805,
+          "auc": 0.7604,
+          "avg_precision": 0.8017,
+          "accuracy": 0.692,
+          "pod": 0.6555,
+          "far": 0.2416,
+          "csi": 0.5423,
+          "freq_bias": 0.8644
         },
         "heavy": {
-          "n": 33953,
-          "base_rate": 0.0093,
-          "brier": 0.0085,
-          "bss": 0.0719,
-          "log_loss": 0.0392,
-          "auc": 0.9139,
-          "avg_precision": 0.1631,
-          "accuracy": 0.9894,
-          "pod": 0.1388,
-          "far": 0.6667,
-          "csi": 0.1086,
-          "freq_bias": 0.4164
+          "n": 51823,
+          "base_rate": 0.01,
+          "brier": 0.009,
+          "bss": 0.0762,
+          "log_loss": 0.0405,
+          "auc": 0.9223,
+          "avg_precision": 0.188,
+          "accuracy": 0.9891,
+          "pod": 0.1371,
+          "far": 0.6263,
+          "csi": 0.1115,
+          "freq_bias": 0.3668
         }
       },
       "district_cells": {
@@ -2252,6 +2252,17 @@
           "unseen_cell": true,
           "shares_cell_with": null
         },
+        "Cheddikulam": {
+          "district": "vavuniya",
+          "bss": 0.263,
+          "auc": 0.8497,
+          "markov_bss": 0.1506,
+          "brier": 0.1537,
+          "n": 1787,
+          "base_rate": 0.4113,
+          "unseen_cell": true,
+          "shares_cell_with": null
+        },
         "Chenkalady": {
           "district": "batticaloa",
           "bss": 0.3808,
@@ -2263,6 +2274,17 @@
           "unseen_cell": false,
           "shares_cell_with": "batticaloa"
         },
+        "Chilaw": {
+          "district": "puttalam",
+          "bss": 0.2443,
+          "auc": 0.902,
+          "markov_bss": 0.1469,
+          "brier": 0.1062,
+          "n": 1787,
+          "base_rate": 0.728,
+          "unseen_cell": true,
+          "shares_cell_with": null
+        },
         "Colombo": {
           "district": "colombo",
           "bss": 0.263,
@@ -2273,6 +2295,17 @@
           "base_rate": 0.7694,
           "unseen_cell": false,
           "shares_cell_with": "colombo"
+        },
+        "Dambulla": {
+          "district": "matale",
+          "bss": 0.2628,
+          "auc": 0.8229,
+          "markov_bss": 0.1629,
+          "brier": 0.1695,
+          "n": 1787,
+          "base_rate": 0.5949,
+          "unseen_cell": true,
+          "shares_cell_with": null
         },
         "Dehiattakandiya": {
           "district": "ampara",
@@ -2406,6 +2439,17 @@
           "unseen_cell": false,
           "shares_cell_with": "batticaloa"
         },
+        "Galewela": {
+          "district": "matale",
+          "bss": 0.2513,
+          "auc": 0.8269,
+          "markov_bss": 0.1661,
+          "brier": 0.1717,
+          "n": 1787,
+          "base_rate": 0.5741,
+          "unseen_cell": true,
+          "shares_cell_with": null
+        },
         "Galle": {
           "district": "galle",
           "bss": 0.2658,
@@ -2469,6 +2513,17 @@
           "brier": 0.1451,
           "n": 1787,
           "base_rate": 0.5719,
+          "unseen_cell": true,
+          "shares_cell_with": null
+        },
+        "Hatton": {
+          "district": "nuwara_eliya",
+          "bss": 0.174,
+          "auc": 0.8625,
+          "markov_bss": 0.1155,
+          "brier": 0.0888,
+          "n": 1787,
+          "base_rate": 0.8691,
           "unseen_cell": true,
           "shares_cell_with": null
         },
@@ -2758,6 +2813,17 @@
           "unseen_cell": false,
           "shares_cell_with": "colombo"
         },
+        "Kuliyapitiya": {
+          "district": "kurunegala",
+          "bss": 0.2548,
+          "auc": 0.9052,
+          "markov_bss": 0.1469,
+          "brier": 0.1047,
+          "n": 1787,
+          "base_rate": 0.728,
+          "unseen_cell": true,
+          "shares_cell_with": null
+        },
         "Kurunegala": {
           "district": "kurunegala",
           "bss": 0.2422,
@@ -2768,6 +2834,17 @@
           "base_rate": 0.6732,
           "unseen_cell": false,
           "shares_cell_with": "kurunegala"
+        },
+        "Madhu": {
+          "district": "mannar",
+          "bss": 0.2679,
+          "auc": 0.8505,
+          "markov_bss": 0.1506,
+          "brier": 0.1526,
+          "n": 1787,
+          "base_rate": 0.4113,
+          "unseen_cell": true,
+          "shares_cell_with": null
         },
         "Maharagama": {
           "district": "colombo",
@@ -2791,6 +2868,17 @@
           "unseen_cell": true,
           "shares_cell_with": null
         },
+        "Mallavi": {
+          "district": "mullaitivu",
+          "bss": 0.2778,
+          "auc": 0.85,
+          "markov_bss": 0.1622,
+          "brier": 0.1544,
+          "n": 1787,
+          "base_rate": 0.4259,
+          "unseen_cell": true,
+          "shares_cell_with": null
+        },
         "Mannar": {
           "district": "mannar",
           "bss": 0.3211,
@@ -2801,6 +2889,17 @@
           "base_rate": 0.4158,
           "unseen_cell": false,
           "shares_cell_with": "mannar"
+        },
+        "Marawila": {
+          "district": "puttalam",
+          "bss": 0.2444,
+          "auc": 0.902,
+          "markov_bss": 0.1469,
+          "brier": 0.1062,
+          "n": 1787,
+          "base_rate": 0.728,
+          "unseen_cell": true,
+          "shares_cell_with": null
         },
         "Maskeliya": {
           "district": "nuwara_eliya",
@@ -2945,6 +3044,17 @@
           "unseen_cell": false,
           "shares_cell_with": "colombo"
         },
+        "Murunkan": {
+          "district": "mannar",
+          "bss": 0.323,
+          "auc": 0.8714,
+          "markov_bss": 0.1777,
+          "brier": 0.1422,
+          "n": 1787,
+          "base_rate": 0.4236,
+          "unseen_cell": true,
+          "shares_cell_with": null
+        },
         "Mutur": {
           "district": "trincomalee",
           "bss": 0.3328,
@@ -2978,6 +3088,28 @@
           "unseen_cell": false,
           "shares_cell_with": "kurunegala"
         },
+        "Naula": {
+          "district": "matale",
+          "bss": 0.2628,
+          "auc": 0.8229,
+          "markov_bss": 0.1629,
+          "brier": 0.1695,
+          "n": 1787,
+          "base_rate": 0.5949,
+          "unseen_cell": true,
+          "shares_cell_with": null
+        },
+        "Nawalapitiya": {
+          "district": "kandy",
+          "bss": 0.101,
+          "auc": 0.8567,
+          "markov_bss": 0.1155,
+          "brier": 0.0966,
+          "n": 1787,
+          "base_rate": 0.8691,
+          "unseen_cell": true,
+          "shares_cell_with": null
+        },
         "Negombo": {
           "district": "gampaha",
           "bss": 0.2831,
@@ -2988,6 +3120,17 @@
           "base_rate": 0.7543,
           "unseen_cell": false,
           "shares_cell_with": "gampaha"
+        },
+        "Nikaweratiya": {
+          "district": "kurunegala",
+          "bss": 0.2299,
+          "auc": 0.8614,
+          "markov_bss": 0.1309,
+          "brier": 0.1418,
+          "n": 1787,
+          "base_rate": 0.6463,
+          "unseen_cell": true,
+          "shares_cell_with": null
         },
         "Nittambuwa": {
           "district": "gampaha",
@@ -3154,6 +3297,17 @@
           "unseen_cell": false,
           "shares_cell_with": "polonnaruwa"
         },
+        "Poonakary": {
+          "district": "kilinochchi",
+          "bss": 0.2667,
+          "auc": 0.8509,
+          "markov_bss": 0.1622,
+          "brier": 0.1568,
+          "n": 1787,
+          "base_rate": 0.4259,
+          "unseen_cell": true,
+          "shares_cell_with": null
+        },
         "Pottuvil": {
           "district": "ampara",
           "bss": 0.2985,
@@ -3220,6 +3374,17 @@
           "unseen_cell": false,
           "shares_cell_with": "ratnapura"
         },
+        "Rattota": {
+          "district": "matale",
+          "bss": 0.2323,
+          "auc": 0.8312,
+          "markov_bss": 0.2059,
+          "brier": 0.1723,
+          "n": 1787,
+          "base_rate": 0.5579,
+          "unseen_cell": true,
+          "shares_cell_with": null
+        },
         "Ruwanwella": {
           "district": "kegalle",
           "bss": 0.1305,
@@ -3252,6 +3417,17 @@
           "base_rate": 0.7543,
           "unseen_cell": false,
           "shares_cell_with": "gampaha"
+        },
+        "Sigiriya": {
+          "district": "matale",
+          "bss": 0.1998,
+          "auc": 0.8497,
+          "markov_bss": 0.2043,
+          "brier": 0.1649,
+          "n": 1787,
+          "base_rate": 0.4242,
+          "unseen_cell": true,
+          "shares_cell_with": null
         },
         "Sri Jayawardenepura Kotte": {
           "district": "colombo",
@@ -3530,7 +3706,7 @@
         }
       },
       "coverage": {
-        "towns_scored": 137,
+        "towns_scored": 153,
         "towns_total": 166
       }
     }
