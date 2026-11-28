@@ -256,6 +256,20 @@ def build_places() -> None:
             o = pd.read_csv(osm, dtype=str, keep_default_na=False)
             items += [[r.name, r.name_si, r.name_ta, r.district, "", round(float(r.lat), 4), round(float(r.lon), 4), "o"]
                       for r in o.itertuples()]
+        gn = ROOT / "config" / "gn_divisions.csv"
+        if gn.exists():  # official Grama Niladhari divisions; skip ones that duplicate a named town within 3 km
+            import math, re
+            key = lambda n: re.sub(r"[^a-z0-9]", "", n.lower())
+            near = {}
+            for i in items:
+                near.setdefault(key(i[0]), []).append((i[5], i[6]))
+            km = lambda a, b: math.hypot((a[0] - b[0]) * 111, (a[1] - b[1]) * 111 * math.cos(math.radians(a[0])))
+            g = pd.read_csv(gn, dtype=str, keep_default_na=False)
+            for r in g.itertuples():
+                lat, lon = round(float(r.lat), 4), round(float(r.lon), 4)
+                if any(km((lat, lon), q) <= 3 for q in near.get(key(r.name), [])):
+                    continue
+                items.append([r.name, r.name_si, r.name_ta, r.district, "", lat, lon, "g"])
         have = {(i[0].lower().replace("-", " "), i[3]) for i in items}
         if pl is not None:  # forecast towns that the gazetteer lacks
             items += [[r.name, "", "", r.district, "", round(float(r.lat), 4), round(float(r.lon), 4)]

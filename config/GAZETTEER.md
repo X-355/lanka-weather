@@ -16,3 +16,17 @@ Source: [madurapa/sri-lanka-provinces-districts-cities](https://github.com/madur
      different place with the same name.
 
 The 166 towns in `places.csv` (which get the nightly model forecast and the backtest) are listed in the place finder too.
+
+## Grama Niladhari divisions — `config/gn_divisions.csv` (monthly)
+
+Sri Lanka's ~14,000 GN divisions from the official administrative boundaries (COD-AB, Survey Department of
+Sri Lanka and OCHA, [HDX](https://data.humdata.org/dataset/cod-ab-lka), CC BY-IGO). Each division is placed at
+a point guaranteed to lie inside it, filed under its official district, with Sinhala and Tamil names where the
+dataset has them. A division is left out of the finder when a postal town or OpenStreetMap place with the same
+name lies within 3 km.
+
+## OpenStreetMap places — `config/osm_places.csv` (monthly)
+
+Named city/town/suburb/village/hamlet/neighbourhood points from OpenStreetMap (© OpenStreetMap contributors,
+ODbL) via the Overpass API, district by point-in-polygon against `config/districts.geojson`; places outside
+Sri Lanka and duplicates of postal towns within 3 km are dropped.

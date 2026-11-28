@@ -75,8 +75,12 @@ def main(argv=None) -> int:
         publish_space()
     elif c == "gazetteer":
         from .build_site import build_places
-        from .gazetteer import refresh
-        print(refresh())
+        from .gazetteer import refresh, refresh_gn
+        for step in (refresh_gn, refresh):  # each is independent; a busy server shouldn't block the other
+            try:
+                print(step())
+            except Exception as e:
+                logging.getLogger("gazetteer").warning("%s failed: %s", step.__name__, e)
         build_places()
     elif c == "check":
         # exit 0 when every town has history through the training/validation split, else 3

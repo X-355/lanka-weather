@@ -82,7 +82,7 @@ function placeList(gaz, townList) {
   for (const r of rows) seen[`${r[0]}|${r[3]}`] = (seen[`${r[0]}|${r[3]}`] || 0) + 1;
   const ps = rows.map(([name, si, ta, district, postcode, lat, lon, src]) => {
     const dup = seen[`${name}|${district}`] > 1;
-    return { id: `g:${name}|${district}|${postcode}|${lat}`, name, lat, lon, district, osm: src === "o", si, ta,
+    return { id: `g:${name}|${district}|${postcode}|${lat}`, name, lat, lon, district, osm: src === "o" || src === "g", gn: src === "g", si, ta,
              label: `${name}${dup ? ` (${postcode || lat.toFixed(2) + "°N"})` : ""} — ${title(district)} District`, alt: [si, ta].filter(Boolean).join(" · ") };
   });
   // A postal/OSM entry for a district capital itself (same name, within 3 km) would just duplicate it.
@@ -129,7 +129,7 @@ function showSuggestions(list) {
   sugg = list; sel = list.length ? 0 : -1;
   const box = $("wx-suggest");
   box.innerHTML = list.map((p, i) => `<button type="button" role="option" data-i="${i}" aria-selected="${i === sel}">
-    <span>${p.name}</span> <span class="muted small">${title(p.district)} District${p.alt ? " · " + p.alt : ""}${p.osm ? " · village" : ""}</span></button>`).join("")
+    <span>${p.name}</span> <span class="muted small">${title(p.district)} District${p.alt ? " · " + p.alt : ""}${p.gn ? " · GN division" : p.osm ? " · village" : ""}</span></button>`).join("")
     || ($("wx-place").value.trim() ? `<div class="muted small" style="padding:8px 10px">No match. Try another spelling, or use your location.</div>` : "");
   box.style.display = box.innerHTML ? "" : "none";
 }
