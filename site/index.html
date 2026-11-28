@@ -17,6 +17,7 @@
       <button role="tab" data-tab="weather" aria-selected="false">Weather</button>
       <button role="tab" data-tab="live" aria-selected="false">Live sky</button>
       <button role="tab" data-tab="rivers" aria-selected="false">Rivers &amp; reservoirs</button>
+      <button role="tab" data-tab="quakes" aria-selected="false">Earthquakes &amp; tsunami</button>
       <button role="tab" data-tab="monsoon" aria-selected="false">Monsoon &amp; rainfall</button>
       <button role="tab" data-tab="solar" aria-selected="false">Rooftop solar</button>
       <button role="tab" data-tab="heavy" aria-selected="false">Heavy-rain risk</button>
@@ -35,6 +36,7 @@
 <div class="wrap"><div id="banner"></div></div>
 
 <main class="wrap">
+  <div id="quake-banner"></div>
   <!-- ======================================================= FORECAST -->
   <section id="forecast" class="active">
     <h1>Will it rain tomorrow?</h1>
@@ -177,6 +179,37 @@
     <div class="card" id="rv-res"></div>
   </section>
 
+  <!-- ======================================================= EARTHQUAKES & TSUNAMI -->
+  <section id="quakes">
+    <h1>Earthquakes &amp; tsunami</h1>
+    <p class="lede">Live earthquakes around Sri Lanka and the Indian Ocean, and what to do about tsunamis. This page watches earthquakes; it does not issue tsunami warnings.</p>
+    <div class="notice" style="border-left-color:var(--critical)"><b>Official tsunami warnings for Sri Lanka</b> come from the
+      <a href="https://www.meteo.gov.lk" rel="noopener">Department of Meteorology</a> (National Tsunami Warning Centre) and the
+      <a href="https://www.dmc.gov.lk" rel="noopener">Disaster Management Centre</a>. Emergency hotline: <b>117</b>.
+      Regional bulletins: <a href="https://tsunami.incois.gov.in" rel="noopener">INCOIS (India)</a>, one of the Indian Ocean's tsunami service providers.</div>
+    <div class="card" style="margin-top:12px">
+      <h2 style="margin-top:0">Natural warning signs: act without waiting</h2>
+      <p style="margin:0 0 8px">If you are at the coast and any one of these happens, move away from the sea to high ground or inland straight away. A nearby tsunami can arrive within minutes, before any official warning.</p>
+      <ul style="margin:0">
+        <li><b>Feel</b> a strong earthquake, or one that lasts a long time.</li>
+        <li><b>See</b> the sea suddenly fall back (exposing the sea floor) or rise.</li>
+        <li><b>Hear</b> a loud roar from the sea.</li>
+      </ul>
+      <p class="sub small" style="margin:8px 0 0">Stay away from the coast until officials say it's safe; tsunamis come in several waves. Guidance: <a href="https://itic.ioc-unesco.org" rel="noopener">International Tsunami Information Centre (UNESCO/IOC)</a>.</p>
+    </div>
+    <div id="eq-check" style="margin-top:12px"></div>
+    <p class="sub small" id="eq-status" style="margin-top:8px">Loading earthquakes from USGS…</p>
+    <div class="card" style="padding:0;overflow:hidden"><div id="eq-map" style="height:520px;background:var(--surface-2)"></div>
+      <div class="legend" style="padding:8px 12px;margin:0">
+        <span><svg width="12" height="12" style="margin-right:6px"><circle cx="6" cy="6" r="5" fill="var(--critical)"/></svg>Last 24 hours</span>
+        <span><svg width="12" height="12" style="margin-right:6px"><circle cx="6" cy="6" r="5" fill="var(--warning)"/></svg>1–3 days ago</span>
+        <span><svg width="12" height="12" style="margin-right:6px"><circle cx="6" cy="6" r="5" fill="var(--neutral)"/></svg>Earlier this week</span>
+        <span>Bigger circle = bigger magnitude · dashed boxes = tsunami source zones for Sri Lanka</span></div></div>
+    <h2>This week's earthquakes</h2>
+    <p class="sub">Magnitude 4.5 and above across the region, plus smaller ones within 600 km of Sri Lanka. Highlighted rows are large shallow earthquakes in a tsunami source zone (magnitude 6.5+, under 100 km deep): when one happens, check the official bulletin. Magnitudes and locations from automatic solutions can be revised.</p>
+    <div class="card" id="eq-list"></div>
+  </section>
+
   <!-- ======================================================= MONSOON -->
   <section id="monsoon">
     <h1>Monsoon &amp; rainfall dashboard</h1>
@@ -269,7 +302,7 @@
 
 <footer><div class="wrap">
   <span><a href="#about" id="foot-method"><b>How the forecasts are made and tested →</b></a> · <span id="foot-model"></span></span>
-  <span>Data: <a href="https://open-meteo.com" rel="noopener">Open-Meteo</a> (ERA5, archived forecasts, CC BY 4.0) · <a href="https://power.larc.nasa.gov" rel="noopener">NASA POWER</a> · Towns: <a href="https://www.geonames.org" rel="noopener">GeoNames</a> (CC BY 4.0), <a href="https://github.com/madurapa/sri-lanka-provinces-districts-cities" rel="noopener">Sri Lanka cities dataset</a> (MIT), <a href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap contributors</a> (ODbL), GN divisions: <a href="https://data.humdata.org/dataset/cod-ab-lka" rel="noopener">Survey Department of Sri Lanka / OCHA via HDX</a> (CC BY-IGO) · Satellite: <a href="https://view.eumetsat.int" rel="noopener">EUMETSAT</a>, <a href="https://earthdata.nasa.gov/gibs" rel="noopener">NASA GIBS</a> · Air quality: <a href="https://atmosphere.copernicus.eu" rel="noopener">Copernicus CAMS</a> · Rivers: <a href="https://global-flood.emergency.copernicus.eu" rel="noopener">GloFAS</a> (official levels: <a href="https://rivernet.lk" rel="noopener">rivernet.lk</a>) · Cyclones: <a href="https://www.gdacs.org" rel="noopener">GDACS</a> · Code: <a href="https://github.com/X-355/lanka-weather" rel="noopener">github.com/X-355/lanka-weather</a></span>
+  <span>Data: <a href="https://open-meteo.com" rel="noopener">Open-Meteo</a> (ERA5, archived forecasts, CC BY 4.0) · <a href="https://power.larc.nasa.gov" rel="noopener">NASA POWER</a> · Towns: <a href="https://www.geonames.org" rel="noopener">GeoNames</a> (CC BY 4.0), <a href="https://github.com/madurapa/sri-lanka-provinces-districts-cities" rel="noopener">Sri Lanka cities dataset</a> (MIT), <a href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap contributors</a> (ODbL), GN divisions: <a href="https://data.humdata.org/dataset/cod-ab-lka" rel="noopener">Survey Department of Sri Lanka / OCHA via HDX</a> (CC BY-IGO) · Satellite: <a href="https://view.eumetsat.int" rel="noopener">EUMETSAT</a>, <a href="https://earthdata.nasa.gov/gibs" rel="noopener">NASA GIBS</a> · Air quality: <a href="https://atmosphere.copernicus.eu" rel="noopener">Copernicus CAMS</a> · Rivers: <a href="https://global-flood.emergency.copernicus.eu" rel="noopener">GloFAS</a> (official levels: <a href="https://rivernet.lk" rel="noopener">rivernet.lk</a>) · Cyclones: <a href="https://www.gdacs.org" rel="noopener">GDACS</a> · Earthquakes: <a href="https://earthquake.usgs.gov" rel="noopener">USGS</a> · Code: <a href="https://github.com/X-355/lanka-weather" rel="noopener">github.com/X-355/lanka-weather</a></span>
 </div></footer>
 
 <script type="module" src="assets/app.js?v=dev"></script>

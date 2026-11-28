@@ -272,3 +272,5 @@ input.timeline { accent-color: var(--series-1);
 .card.fill-table { display: flex; flex-direction: column; }
 .card.fill-table > div { flex: 1 1 auto; display: flex; flex-direction: column; }
 .card.fill-table table { flex: 1 1 auto; height: 100%; }
+
+.quake-alert { border-left-color: var(--critical) !important; background: color-mix(in oklab, var(--critical) 10%, var(--surface-1)); margin: 12px 0; }

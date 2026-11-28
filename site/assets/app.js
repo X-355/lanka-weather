@@ -728,6 +728,24 @@ renderers.rivers = async () => {
   renderRivers();
 };
 
+// ------------------------------------------------------------------ earthquakes & tsunami (loaded on first visit)
+renderers.quakes = async () => {
+  const { renderQuakes } = await import("./quakes.js?v=dev");
+  await renderQuakes();
+};
+
+// On every page: if a large shallow earthquake in a tsunami source zone happened in the last 24 h, say so at
+// the top and point to the official bulletin. Rechecked every 5 minutes. (Not a warning; see quakes.js.)
+async function quakeBanner() {
+  try {
+    const Q = await import("./quakes.js?v=dev");
+    const j = await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson", { cache: "no-cache" }).then(r => r.json());
+    $("quake-banner").innerHTML = Q.checkBanner(Q.needsCheck(Q.parse(j.features)));
+  } catch (e) { /* the Earthquakes tab shows its own status */ }
+}
+quakeBanner();
+setInterval(() => { if (!document.hidden) quakeBanner(); }, 5 * 60e3);
+
 // ------------------------------------------------------------------ live sky (loaded on first visit)
 renderers.live = async () => {
   const { renderLiveSky } = await import("./livesky.js?v=dev");
