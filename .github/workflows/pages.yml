@@ -5,7 +5,11 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["site/**"]
+    paths: ["site/**", "lankaweather/snapshots.py", "config/rivers.json"]
+  # Refresh the shared live data (sky forecast grid, rivers, reservoirs) every 3 hours.
+  # Times avoid the nightly forecast window (17:00–18:30 UTC), which needs the API quota.
+  schedule:
+    - cron: "40 1-22/3 * * *"
 
 permissions:
   contents: read
@@ -24,6 +28,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { ref: main }   # pick up the commit the calling workflow just pushed
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Fetch shared live data (never fails the build; the site falls back to live calls)
+        run: |
+          pip install -q requests pyyaml
+          python -m lankaweather snapshots || true
+          ls -la site/data/live || true
       - name: Stamp asset URLs with this commit (so browsers never mix old and new code)
         run: sed -i "s/?v=dev/?v=${GITHUB_SHA::8}/g" site/index.html site/assets/*.js
       - uses: actions/configure-pages@v5

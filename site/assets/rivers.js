@@ -5,6 +5,7 @@
 // This is NOT an official warning service: official river levels are on rivernet.lk (Irrigation Department),
 // and spill-gate openings are announced by the Irrigation Department and the Mahaweli Authority.
 import { bars } from "./charts.js?v=dev";
+import { snapshot } from "./snapshot.js?v=dev";
 
 const FLOOD = "https://flood-api.open-meteo.com/v1/flood";
 const OM = "https://api.open-meteo.com/v1/forecast";
@@ -80,15 +81,23 @@ function reservoirStatus(past, next) {
 const qs = p => new URLSearchParams(p).toString();
 const getJSON = (base, p) => fetch(`${base}?${qs(p)}`, { signal: AbortSignal.timeout(20000) }).then(r => r.ok ? r.json() : Promise.reject(r.status));
 
+let source = "";
 async function loadRivers() {
-  const j = await getJSON(FLOOD, {
-    latitude: STATIONS.map(s => s.lat).join(","), longitude: STATIONS.map(s => s.lon).join(","),
-    daily: "river_discharge,river_discharge_mean,river_discharge_p75,river_discharge_max", past_days: 7, forecast_days: 10,
-  });
-  const arr = Array.isArray(j) ? j : [j];
+  // Prefer the shared file (one fetch for everyone); fall back to asking the flood service directly.
+  let list;
+  const snap = await snapshot("rivers");
+  if (snap) { list = snap.stations; source = snap.generated; }
+  else {
+    const j = await getJSON(FLOOD, {
+      latitude: STATIONS.map(s => s.lat).join(","), longitude: STATIONS.map(s => s.lon).join(","),
+      daily: "river_discharge,river_discharge_mean,river_discharge_p75,river_discharge_max", past_days: 7, forecast_days: 10,
+    });
+    const arr = Array.isArray(j) ? j : [j];
+    list = STATIONS.map((s, k) => ({ ...s, daily: arr[k].daily }));
+  }
   const t = today();
-  return STATIONS.map((s, k) => {
-    const d = arr[k].daily, i0 = Math.max(0, d.time.indexOf(t));
+  return list.map(s => {
+    const d = s.daily, i0 = Math.max(0, d.time.indexOf(t));
     let pi = i0;
     for (let i = i0; i < d.time.length; i++) if ((d.river_discharge[i] ?? -1) > (d.river_discharge[pi] ?? -1)) pi = i;
     const peak = d.river_discharge[pi];
@@ -99,19 +108,27 @@ async function loadRivers() {
 }
 
 async function loadReservoirs() {
-  const pts = RESERVOIRS.flatMap((r, k) => r.catch.map(c => [k, ...c]));
-  const j = await getJSON(OM, { latitude: pts.map(p => p[1]).join(","), longitude: pts.map(p => p[2]).join(","),
-    daily: "precipitation_sum", past_days: 3, forecast_days: 4, timezone: "Asia/Colombo" });
-  const arr = Array.isArray(j) ? j : [j];
-  const sums = RESERVOIRS.map(() => ({ past: [], next: [] }));
-  arr.forEach((loc, i) => {
-    const k = pts[i][0], p = loc.daily.precipitation_sum, t = loc.daily.time.indexOf(today());
+  let list = RESERVOIRS, daily; // daily: [{k, time, precipitation_sum}]
+  const snap = await snapshot("reservoirs");
+  if (snap) {
+    list = snap.reservoirs;
+    daily = list.flatMap((r, k) => r.points.map(p => ({ k, ...p })));
+  } else {
+    const pts = RESERVOIRS.flatMap((r, k) => r.catch.map(c => [k, ...c]));
+    const j = await getJSON(OM, { latitude: pts.map(p => p[1]).join(","), longitude: pts.map(p => p[2]).join(","),
+      daily: "precipitation_sum", past_days: 3, forecast_days: 4, timezone: "Asia/Colombo" });
+    const arr = Array.isArray(j) ? j : [j];
+    daily = arr.map((loc, i) => ({ k: pts[i][0], ...loc.daily }));
+  }
+  const sums = list.map(() => ({ past: [], next: [] }));
+  daily.forEach(dd => {
+    const k = dd.k, p = dd.precipitation_sum, t = dd.time.indexOf(today());
     const at = t < 0 ? 3 : t;
     sums[k].past.push(p.slice(at - 3, at).reduce((a, v) => a + (v || 0), 0));
     sums[k].next.push(p.slice(at, at + 3).reduce((a, v) => a + (v || 0), 0));
   });
   const avg = a => a.reduce((s, v) => s + v, 0) / a.length;
-  return RESERVOIRS.map((r, k) => { const past = avg(sums[k].past), next = avg(sums[k].next); return { ...r, past, next, status: reservoirStatus(past, next) }; });
+  return list.map((r, k) => { const past = avg(sums[k].past), next = avg(sums[k].next); return { ...r, past, next, status: reservoirStatus(past, next) }; });
 }
 
 const cssVar = v => getComputedStyle(document.documentElement).getPropertyValue(v.slice(4, -1)).trim() || "#888";
@@ -192,7 +209,8 @@ export async function renderRivers() {
   const [rv, rs] = await Promise.allSettled([loadRivers(), loadReservoirs()]);
   rivers = rv.status === "fulfilled" ? rv.value : [];
   reservoirs = rs.status === "fulfilled" ? rs.value : [];
-  $("rv-status").textContent = rivers.length || reservoirs.length ? "" : "Couldn't reach the river and rain services. Try again in a minute.";
+  $("rv-status").textContent = !(rivers.length || reservoirs.length) ? "Couldn't reach the river and rain services. Try again in a minute."
+    : source ? `Data updated ${new Date(source).toLocaleString("en-GB", { timeZone: "Asia/Colombo", weekday: "short", hour: "2-digit", minute: "2-digit" })} Sri Lanka time (refreshed every 3 hours; the river model itself updates once a day).` : "";
   if (!rivers.length) $("rv-rivers").innerHTML = `<p class="muted small">River data unavailable right now.</p>`;
   if (!reservoirs.length) $("rv-res").innerHTML = `<p class="muted small">Reservoir rain data unavailable right now.</p>`;
   drawMap();

@@ -4,6 +4,7 @@
 //   NASA GIBS WMTS — GPM IMERG Early 30-min precipitation (≈5 h behind, but better calibrated)
 //   Open-Meteo Forecast — next 12 hours of model cloud cover and rain on a 0.3° grid ("future" frames)
 import { DISTRICTS, VIEWBOX } from "./sri-lanka-districts.js?v=dev";
+import { snapshot } from "./snapshot.js?v=dev";
 
 const EUM = "https://view.eumetsat.int/geoserver";
 const GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best";
@@ -31,7 +32,7 @@ function svgToLatLng(x, y) {
 }
 
 const FC_HOURS = 12;
-const FC_GRID = { lat0: 4.9, lat1: 10.9, lon0: 78.4, lon1: 83.2, step: 0.3 };
+const FC_GRID = { lat0: 4.9, lat1: 10.9, lon0: 78.4, lon1: 83.2, step: 0.4 }; // must match lankaweather/snapshots.py
 
 // frames: [{ t: Date, fc: bool, layers: [Leaflet layers] }] — past satellite frames, then forecast hours.
 let map, L, state, ui = {}, frames = [], idx = 0, timer = null, base = "enhanced", rain = "none", tint = true, future = true, built = false;
@@ -155,6 +156,13 @@ function rainColour(mm) {
 
 async function loadForecast() {
   if (fcCache && Date.now() - fcCache.at < 30 * 60e3) return fcCache;
+  // Prefer the shared grid published every 3 hours (one small file for everyone, instead of ~200 calls per visitor).
+  const snap = await snapshot("skygrid");
+  if (snap) {
+    fcCache = { at: Date.now(), lats: snap.lats, lons: snap.lons, times: snap.times.map(t => new Date(t)),
+      P: (h, k) => snap.precip[h][k], C: (h, k) => snap.cloud[h][k] };
+    return fcCache;
+  }
   const G = FC_GRID, lats = [], lons = [];
   for (let la = G.lat0; la <= G.lat1 + 1e-9; la += G.step) lats.push(+la.toFixed(3));
   for (let lo = G.lon0; lo <= G.lon1 + 1e-9; lo += G.step) lons.push(+lo.toFixed(3));
@@ -164,7 +172,8 @@ async function loadForecast() {
   const j = await fetch(`https://api.open-meteo.com/v1/forecast?${q}`, { signal: AbortSignal.timeout(25000) }).then(r => r.ok ? r.json() : Promise.reject(r.status));
   const arr = Array.isArray(j) ? j : [j];
   const times = arr[0].hourly.time.map(t => new Date(t + "Z"));
-  fcCache = { at: Date.now(), lats, lons, times, arr };
+  fcCache = { at: Date.now(), lats, lons, times,
+    P: (h, k) => arr[k].hourly.precipitation[h] ?? 0, C: (h, k) => arr[k].hourly.cloud_cover[h] ?? 0 };
   return fcCache;
 }
 
@@ -172,12 +181,12 @@ function forecastLayer(fc, h) {
   const W = fc.lons.length, H = fc.lats.length, c = document.createElement("canvas");
   c.width = W; c.height = H;
   const ctx = c.getContext("2d"), im = ctx.createImageData(W, H);
-  fc.arr.forEach((loc, k) => {
+  for (let k = 0; k < W * H; k++) {
     const row = Math.floor(k / W), col = k % W, y = H - 1 - row, o = (y * W + col) * 4;
-    const mm = loc.hourly.precipitation[h] ?? 0, cc = loc.hourly.cloud_cover[h] ?? 0, rc = rainColour(mm);
+    const mm = fc.P(h, k) ?? 0, cc = fc.C(h, k) ?? 0, rc = rainColour(mm);
     if (rc) im.data.set([...rc, 215], o);
     else im.data.set([235, 240, 248, cc < 30 ? 0 : Math.round(((cc - 30) / 70) * 115)], o);
-  });
+  }
   ctx.putImageData(im, 0, 0);
   // Scale up smoothly, then fade the edges so the forecast blends into the map instead of ending in a hard box.
   const K = 12, big = document.createElement("canvas");
@@ -260,7 +269,7 @@ async function rebuild(keepPlaying = true) {
     try {
       const fc = await loadForecast();
       fc.times.forEach((t, h) => {
-        if (t <= Date.now() + 20 * 60e3) return; // the satellite covers "now"; forecast starts at the next full hour
+        if (t <= Date.now() + 20 * 60e3 || t > Date.now() + (FC_HOURS + 0.5) * 3600e3) return; // next 12 hours only
         frames.push({ t, fc: true, layers: [forecastLayer(fc, h).addTo(map)] });
       });
     } catch (e) { /* forecast frames are optional */ }

@@ -9,6 +9,7 @@
   publish-hf   upload model to the Hugging Face model repo
   publish-space upload site/ to a static Hugging Face Space
   gazetteer    refresh OpenStreetMap villages for the place finder (monthly)
+  snapshots    shared live data for the site (sky forecast grid, rivers, reservoirs)
   daily        fetch-recent + score + predict + site   (what the daily workflow runs)
 """
 from __future__ import annotations
@@ -67,6 +68,9 @@ def main(argv=None) -> int:
     elif c == "site":
         from .build_site import run
         run()
+    elif c == "snapshots":
+        from .snapshots import run
+        print(json.dumps(run()))
     elif c == "publish-hf":
         from .publish_hf import publish_model
         publish_model()
