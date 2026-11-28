@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "0.1.0+20261128",
-    "trained_at": "2026-11-28T08:36:29Z",
+    "trained_at": "2026-11-28T08:45:11Z",
     "data_source": "Open-Meteo ERA5 reanalysis",
     "features": [
       "precip",
@@ -2089,7 +2089,7 @@
           "bss": 0.2713,
           "log_loss": 0.4099,
           "auc": 0.9005,
-          "avg_precision": 0.9191,
+          "avg_precision": 0.919,
           "accuracy": 0.8152,
           "pod": 0.8962,
           "far": 0.1992,
@@ -2484,6 +2484,173 @@
         "2026-11-22"
       ]
     },
+    "gauges": {
+      "info": {
+        "stations": 20,
+        "districts": 17,
+        "shift_days": 1,
+        "agreement_by_shift": {
+          "0": 0.673,
+          "1": 0.687
+        }
+      },
+      "all_years": {
+        "label": "Rain gauges, all test years",
+        "period": [
+          "2022-01-01",
+          "2026-11-09"
+        ],
+        "n": 15898,
+        "towns": 17,
+        "agreement_with_era5": 0.65,
+        "entries": {
+          "model": {
+            "n": 15898,
+            "base_rate": 0.3704,
+            "brier": 0.295,
+            "bss": -0.4289,
+            "auc": 0.7598,
+            "pod": 0.8886,
+            "far": 0.5142,
+            "csi": 0.4579
+          },
+          "markov": {
+            "n": 15898,
+            "base_rate": 0.3704,
+            "brier": 0.2812,
+            "bss": -0.3622,
+            "auc": 0.7101,
+            "pod": 0.868,
+            "far": 0.5209,
+            "csi": 0.4466
+          }
+        },
+        "bootstrap": {
+          "n_days": 1253,
+          "n": 15898,
+          "B": 1000,
+          "skill": {
+            "model": {
+              "bss": -0.4289,
+              "lo": -0.4983,
+              "hi": -0.3579
+            },
+            "markov": {
+              "bss": -0.3622,
+              "lo": -0.4223,
+              "hi": -0.301
+            }
+          },
+          "diff": {
+            "model - markov": {
+              "est": -0.0668,
+              "lo": -0.0898,
+              "hi": -0.0413,
+              "share_positive": 0.0
+            }
+          }
+        }
+      },
+      "nwp_era": {
+        "label": "Rain gauges, 2024+ (with professional forecasts)",
+        "period": [
+          "2022-01-01",
+          "2026-11-09"
+        ],
+        "n": 15898,
+        "towns": 17,
+        "agreement_with_era5": 0.65,
+        "entries": {
+          "hybrid": {
+            "n": 2138,
+            "base_rate": 0.4256,
+            "brier": 0.35,
+            "bss": -0.3672,
+            "auc": 0.6518,
+            "pod": 0.8802,
+            "far": 0.4984,
+            "csi": 0.4695
+          },
+          "model": {
+            "n": 15898,
+            "base_rate": 0.3704,
+            "brier": 0.295,
+            "bss": -0.4289,
+            "auc": 0.7598,
+            "pod": 0.8886,
+            "far": 0.5142,
+            "csi": 0.4579
+          },
+          "ecmwf_cal": {
+            "n": 2138,
+            "base_rate": 0.4256,
+            "brier": 0.3282,
+            "bss": -0.2823,
+            "auc": 0.6477,
+            "pod": 0.8429,
+            "far": 0.5013,
+            "csi": 0.4563
+          },
+          "markov": {
+            "n": 15898,
+            "base_rate": 0.3704,
+            "brier": 0.2812,
+            "bss": -0.3622,
+            "auc": 0.7101,
+            "pod": 0.868,
+            "far": 0.5209,
+            "csi": 0.4466
+          }
+        },
+        "bootstrap": {
+          "n_days": 501,
+          "n": 2138,
+          "B": 1000,
+          "skill": {
+            "hybrid": {
+              "bss": -0.3672,
+              "lo": -0.4952,
+              "hi": -0.2474
+            },
+            "model": {
+              "bss": -0.4355,
+              "lo": -0.573,
+              "hi": -0.3103
+            },
+            "ecmwf_cal": {
+              "bss": -0.2823,
+              "lo": -0.3994,
+              "hi": -0.173
+            },
+            "markov": {
+              "bss": -0.3769,
+              "lo": -0.4987,
+              "hi": -0.2585
+            }
+          },
+          "diff": {
+            "hybrid - ecmwf_cal": {
+              "est": -0.0849,
+              "lo": -0.1231,
+              "hi": -0.0528,
+              "share_positive": 0.0
+            },
+            "model - ecmwf_cal": {
+              "est": -0.1532,
+              "lo": -0.2236,
+              "hi": -0.0892,
+              "share_positive": 0.0
+            },
+            "model - markov": {
+              "est": -0.0586,
+              "lo": -0.0992,
+              "hi": -0.0235,
+              "share_positive": 0.0
+            }
+          }
+        }
+      }
+    },
     "places": {
       "period": [
         "2022-01-01",
@@ -2494,64 +2661,64 @@
         "2021-12-31"
       ],
       "unseen_cells": {
-        "n_towns": 64,
-        "n_cells": 39,
-        "n_days": 69693,
+        "n_towns": 66,
+        "n_cells": 41,
+        "n_days": 73267,
         "model": {
-          "n": 69693,
-          "base_rate": 0.5697,
-          "brier": 0.1433,
-          "bss": 0.273,
-          "log_loss": 0.4407,
-          "auc": 0.8747,
-          "avg_precision": 0.9053,
-          "accuracy": 0.7916,
-          "pod": 0.8408,
-          "far": 0.1972,
-          "csi": 0.6969,
-          "freq_bias": 1.0472
+          "n": 73267,
+          "base_rate": 0.5638,
+          "brier": 0.1438,
+          "bss": 0.2739,
+          "log_loss": 0.4423,
+          "auc": 0.8741,
+          "avg_precision": 0.9029,
+          "accuracy": 0.791,
+          "pod": 0.8364,
+          "far": 0.1985,
+          "csi": 0.6929,
+          "freq_bias": 1.0436
         },
         "markov": {
-          "n": 69693,
-          "base_rate": 0.5697,
-          "brier": 0.1616,
-          "bss": 0.1797,
-          "log_loss": 0.495,
-          "auc": 0.8358,
-          "avg_precision": 0.8673,
-          "accuracy": 0.7755,
-          "pod": 0.7981,
-          "far": 0.194,
-          "csi": 0.6694,
-          "freq_bias": 0.9902
+          "n": 73267,
+          "base_rate": 0.5638,
+          "brier": 0.1624,
+          "bss": 0.18,
+          "log_loss": 0.497,
+          "auc": 0.8348,
+          "avg_precision": 0.8643,
+          "accuracy": 0.7745,
+          "pod": 0.7949,
+          "far": 0.1969,
+          "csi": 0.6653,
+          "freq_bias": 0.9898
         },
         "climatology": {
-          "n": 69693,
-          "base_rate": 0.5697,
-          "brier": 0.197,
+          "n": 73267,
+          "base_rate": 0.5638,
+          "brier": 0.198,
           "bss": 0.0,
-          "log_loss": 0.5752,
-          "auc": 0.7629,
-          "avg_precision": 0.8127,
-          "accuracy": 0.6945,
-          "pod": 0.6762,
-          "far": 0.239,
-          "csi": 0.5577,
-          "freq_bias": 0.8886
+          "log_loss": 0.5776,
+          "auc": 0.7611,
+          "avg_precision": 0.8081,
+          "accuracy": 0.6936,
+          "pod": 0.6679,
+          "far": 0.2404,
+          "csi": 0.5513,
+          "freq_bias": 0.8792
         },
         "heavy": {
-          "n": 69693,
-          "base_rate": 0.01,
-          "brier": 0.009,
-          "bss": 0.0752,
-          "log_loss": 0.0404,
-          "auc": 0.9224,
-          "avg_precision": 0.1783,
-          "accuracy": 0.9888,
-          "pod": 0.1347,
-          "far": 0.6544,
-          "csi": 0.1073,
-          "freq_bias": 0.3897
+          "n": 73267,
+          "base_rate": 0.0099,
+          "brier": 0.0088,
+          "bss": 0.0775,
+          "log_loss": 0.0397,
+          "auc": 0.9238,
+          "avg_precision": 0.1824,
+          "accuracy": 0.989,
+          "pod": 0.1371,
+          "far": 0.6477,
+          "csi": 0.1095,
+          "freq_bias": 0.3892
         }
       },
       "district_cells": {
@@ -3793,6 +3960,17 @@
           "unseen_cell": true,
           "shares_cell_with": null
         },
+        "Nedunkeni": {
+          "district": "vavuniya",
+          "bss": 0.3151,
+          "auc": 0.8648,
+          "markov_bss": 0.2012,
+          "brier": 0.1461,
+          "n": 1787,
+          "base_rate": 0.432,
+          "unseen_cell": true,
+          "shares_cell_with": null
+        },
         "Negombo": {
           "district": "gampaha",
           "bss": 0.2831,
@@ -3847,6 +4025,17 @@
           "base_rate": 0.3878,
           "unseen_cell": false,
           "shares_cell_with": "mullaitivu"
+        },
+        "Omanthai": {
+          "district": "vavuniya",
+          "bss": 0.2679,
+          "auc": 0.8405,
+          "markov_bss": 0.1674,
+          "brier": 0.1614,
+          "n": 1787,
+          "base_rate": 0.4633,
+          "unseen_cell": true,
+          "shares_cell_with": null
         },
         "Padaviya": {
           "district": "anuradhapura",
@@ -4422,7 +4611,7 @@
         }
       },
       "coverage": {
-        "towns_scored": 164,
+        "towns_scored": 166,
         "towns_total": 166
       }
     }

@@ -74,6 +74,34 @@ ECMWF is turned into a probability, and the hybrid is fitted, on 2024-02-05 → 
 | Weather Lab, warn at ≥ 30% | 38 | 450 | 35 | 7.8% | 47.9% | 0.073 | 0.212 |
 | Climatology, warn at ≥ 20% | 0 | 488 | 0 | 0.0% | – | 0.000 | 0.055 |
 
+## Against real rain gauges (NOAA GSOD/GHCN)
+
+20 gauges in 17 districts; day shift 1 (agreement with ERA5 by shift on pre-test years: {'0': 0.673, '1': 0.687}).
+
+**Rain gauges, all test years** (2022-01-01 → 2026-11-09, 15,898 rows; agrees with ERA5 rain/no-rain on 65.0%).
+
+| Forecast | Skill vs clim (95% range) ↑ | AUC ↑ |
+|---|---|---|
+| model | -42.9% (-49.8% to -35.8%) | 0.760 |
+| markov | -36.2% (-42.2% to -30.1%) | 0.710 |
+
+- model - markov: -6.7% (-9.0% to -4.1%)
+
+**Rain gauges, 2024+ (with professional forecasts)** (2022-01-01 → 2026-11-09, 15,898 rows; agrees with ERA5 rain/no-rain on 65.0%).
+
+| Forecast | Skill vs clim (95% range) ↑ | AUC ↑ |
+|---|---|---|
+| hybrid | -36.7% (-49.5% to -24.7%) | 0.652 |
+| model | -43.5% (-57.3% to -31.0%) | 0.760 |
+| ecmwf_cal | -28.2% (-39.9% to -17.3%) | 0.648 |
+| markov | -37.7% (-49.9% to -25.9%) | 0.710 |
+
+- hybrid - ecmwf_cal: -8.5% (-12.3% to -5.3%)
+
+- model - ecmwf_cal: -15.3% (-22.4% to -8.9%)
+
+- model - markov: -5.9% (-9.9% to -2.4%)
+
 ## Heavy rain (≥ 50.0 mm) — research only
 
 Base rate 1.1%. Model Brier skill 9.4%, AUC 0.930, average precision 0.212 (climatology AP 0.055).
@@ -119,13 +147,13 @@ Base rate 1.1%. Model Brier skill 9.4%, AUC 0.930, average precision 0.212 (clim
 
 ## Towns the model never trained on (2022-01-01 → 2026-11-22)
 
-64 towns in 39 ERA5 cells that contain no district point; each cell counted once (69,693 cell-days). Baselines from each town's own 2014–2021 data. Coverage: 164 of 166 towns scored.
+66 towns in 41 ERA5 cells that contain no district point; each cell counted once (73,267 cell-days). Baselines from each town's own 2014–2021 data. Coverage: 166 of 166 towns scored.
 
 | Forecast | Brier ↓ | Skill vs climatology ↑ | AUC ↑ |
 |---|---|---|---|
-| model | 0.143 | 27.3% | 0.875 |
-| markov | 0.162 | 18.0% | 0.836 |
-| climatology | 0.197 | 0.0% | 0.763 |
+| model | 0.144 | 27.4% | 0.874 |
+| markov | 0.162 | 18.0% | 0.835 |
+| climatology | 0.198 | 0.0% | 0.761 |
 
 Towns sharing a district point's cell (100 towns, 25 cells): model skill 30.3%, Markov 18.7%.
 

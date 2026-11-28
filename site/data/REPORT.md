@@ -27,6 +27,81 @@ Same rows for every entry. NWP forecasts are day-ahead runs, scored as yes/no (�
 | Climatology | baseline | 0.178 | 0.0% | 73.5% | 0.622 | 75.9% | 22.5% |
 | Persistence | baseline | 0.210 | -17.6% | 79.0% | 0.692 | 81.9% | 18.3% |
 
+### Error bars (95%, resampling whole days)
+
+Model skill 29.8% (27.4% to 32.1%); Markov 18.7% (16.7% to 20.5%). Model minus Markov: 11.1% (9.9% to 12.3%), 1,787 days.
+
+## Fair comparison with professional forecasts (2025-06-30 → 2026-11-22)
+
+ECMWF is turned into a probability, and the hybrid is fitted, on 2024-02-05 → 2025-06-29 only; every entry is scored on the same 12,775 later district-days.
+
+| Forecast | Type | Brier ↓ | Skill vs clim (95% range) ↑ | AUC ↑ |
+|---|---|---|---|---|
+| Hybrid: Weather Lab + ECMWF/GFS/ICON | probability | 0.100 | 43.5% (39.7% to 47.1%) | 0.937 |
+| Weather Lab (LightGBM) | probability | 0.128 | 27.7% (23.2% to 32.3%) | 0.898 |
+| ECMWF IFS 0.25°, as a calibrated probability | probability | 0.129 | 27.1% (22.1% to 32.0%) | 0.900 |
+| ECMWF IFS 0.25°, yes/no (≥ 1 mm forecast) | yes/no | 0.196 | -10.0% | 0.786 |
+| NCEP GFS, yes/no (≥ 1 mm forecast) | yes/no | 0.212 | -19.4% | 0.790 |
+| DWD ICON, yes/no (≥ 1 mm forecast) | yes/no | 0.235 | -32.1% | 0.779 |
+| Markov baseline | baseline | 0.147 | 17.2% (13.4% to 20.9%) | 0.863 |
+| Climatology | baseline | 0.178 | 0.0% | 0.807 |
+
+- hybrid - ecmwf_cal: 16.3% (13.5% to 19.2%); better in 100% of resamples
+
+- model - ecmwf_cal: 0.6% (-4.5% to 5.6%); better in 60% of resamples
+
+- hybrid - model: 15.8% (12.7% to 19.1%); better in 100% of resamples
+
+## Heavy-rain scorecard vs professional forecasts (≥ 50.0 mm)
+
+185 heavy-rain district-days out of 12,775.
+
+| Warning rule | Caught | Missed | False alarms | POD ↑ | FAR ↓ | CSI ↑ | Avg precision ↑ |
+|---|---|---|---|---|---|---|---|
+| ECMWF forecast ≥ 50 mm | 63 | 122 | 61 | 34.1% | 49.2% | 0.256 | 0.386 |
+| ECMWF calibrated, warn at ≥ 30% | 53 | 132 | 28 | 28.6% | 34.6% | 0.249 | 0.385 |
+| Weather Lab, warn at ≥ 30% | 22 | 163 | 16 | 11.9% | 42.1% | 0.109 | 0.313 |
+| Hybrid, warn at ≥ 30% | 70 | 115 | 63 | 37.8% | 47.4% | 0.282 | 0.490 |
+| Hybrid, warn at ≥ 20% | 85 | 100 | 138 | 45.9% | 61.9% | 0.263 | 0.490 |
+
+## Heavy-rain scorecard, all test years (≥ 50.0 mm)
+
+488 heavy-rain district-days out of 44,675.
+
+| Warning rule | Caught | Missed | False alarms | POD ↑ | FAR ↓ | CSI ↑ | Avg precision ↑ |
+|---|---|---|---|---|---|---|---|
+| Weather Lab, warn at ≥ 20% | 84 | 404 | 145 | 17.2% | 63.3% | 0.133 | 0.212 |
+| Weather Lab, warn at ≥ 30% | 38 | 450 | 35 | 7.8% | 47.9% | 0.073 | 0.212 |
+| Climatology, warn at ≥ 20% | 0 | 488 | 0 | 0.0% | – | 0.000 | 0.055 |
+
+## Against real rain gauges (NOAA GSOD/GHCN)
+
+20 gauges in 17 districts; day shift 1 (agreement with ERA5 by shift on pre-test years: {'0': 0.673, '1': 0.687}).
+
+**Rain gauges, all test years** (2022-01-01 → 2026-11-09, 15,898 rows; agrees with ERA5 rain/no-rain on 65.0%).
+
+| Forecast | Skill vs clim (95% range) ↑ | AUC ↑ |
+|---|---|---|
+| model | -42.9% (-49.8% to -35.8%) | 0.760 |
+| markov | -36.2% (-42.2% to -30.1%) | 0.710 |
+
+- model - markov: -6.7% (-9.0% to -4.1%)
+
+**Rain gauges, 2024+ (with professional forecasts)** (2022-01-01 → 2026-11-09, 15,898 rows; agrees with ERA5 rain/no-rain on 65.0%).
+
+| Forecast | Skill vs clim (95% range) ↑ | AUC ↑ |
+|---|---|---|
+| hybrid | -36.7% (-49.5% to -24.7%) | 0.652 |
+| model | -43.5% (-57.3% to -31.0%) | 0.760 |
+| ecmwf_cal | -28.2% (-39.9% to -17.3%) | 0.648 |
+| markov | -37.7% (-49.9% to -25.9%) | 0.710 |
+
+- hybrid - ecmwf_cal: -8.5% (-12.3% to -5.3%)
+
+- model - ecmwf_cal: -15.3% (-22.4% to -8.9%)
+
+- model - markov: -5.9% (-9.9% to -2.4%)
+
 ## Heavy rain (≥ 50.0 mm) — research only
 
 Base rate 1.1%. Model Brier skill 9.4%, AUC 0.930, average precision 0.212 (climatology AP 0.055).
@@ -72,13 +147,13 @@ Base rate 1.1%. Model Brier skill 9.4%, AUC 0.930, average precision 0.212 (clim
 
 ## Towns the model never trained on (2022-01-01 → 2026-11-22)
 
-64 towns in 39 ERA5 cells that contain no district point; each cell counted once (69,693 cell-days). Baselines from each town's own 2014–2021 data. Coverage: 164 of 166 towns scored.
+66 towns in 41 ERA5 cells that contain no district point; each cell counted once (73,267 cell-days). Baselines from each town's own 2014–2021 data. Coverage: 166 of 166 towns scored.
 
 | Forecast | Brier ↓ | Skill vs climatology ↑ | AUC ↑ |
 |---|---|---|---|
-| model | 0.143 | 27.3% | 0.875 |
-| markov | 0.162 | 18.0% | 0.836 |
-| climatology | 0.197 | 0.0% | 0.763 |
+| model | 0.144 | 27.4% | 0.874 |
+| markov | 0.162 | 18.0% | 0.835 |
+| climatology | 0.198 | 0.0% | 0.761 |
 
 Towns sharing a district point's cell (100 towns, 25 cells): model skill 30.3%, Markov 18.7%.
 
