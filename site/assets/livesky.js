@@ -31,7 +31,7 @@ function svgToLatLng(x, y) {
 }
 
 const FC_HOURS = 12;
-const FC_GRID = { lat0: 5.5, lat1: 10.3, lon0: 79.0, lon1: 82.6, step: 0.3 };
+const FC_GRID = { lat0: 4.9, lat1: 10.9, lon0: 78.4, lon1: 83.2, step: 0.3 };
 
 // frames: [{ t: Date, fc: bool, layers: [Leaflet layers] }] — past satellite frames, then forecast hours.
 let map, L, state, ui = {}, frames = [], idx = 0, timer = null, base = "enhanced", rain = "none", tint = true, future = true, built = false;
@@ -171,12 +171,24 @@ function forecastLayer(fc, h) {
   fc.arr.forEach((loc, k) => {
     const row = Math.floor(k / W), col = k % W, y = H - 1 - row, o = (y * W + col) * 4;
     const mm = loc.hourly.precipitation[h] ?? 0, cc = loc.hourly.cloud_cover[h] ?? 0, rc = rainColour(mm);
-    if (rc) im.data.set([...rc, 220], o);
-    else im.data.set([235, 240, 248, Math.round((cc / 100) * 150)], o);
+    if (rc) im.data.set([...rc, 215], o);
+    else im.data.set([235, 240, 248, cc < 30 ? 0 : Math.round(((cc - 30) / 70) * 115)], o);
   });
   ctx.putImageData(im, 0, 0);
+  // Scale up smoothly, then fade the edges so the forecast blends into the map instead of ending in a hard box.
+  const K = 12, big = document.createElement("canvas");
+  big.width = W * K; big.height = H * K;
+  const g = big.getContext("2d");
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+  g.drawImage(c, 0, 0, big.width, big.height);
+  g.globalCompositeOperation = "destination-in";
+  for (const horiz of [true, false]) {
+    const len = horiz ? big.width : big.height, gr = horiz ? g.createLinearGradient(0, 0, len, 0) : g.createLinearGradient(0, 0, 0, len);
+    gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(0.14, "rgba(0,0,0,1)"); gr.addColorStop(0.86, "rgba(0,0,0,1)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, big.width, big.height);
+  }
   const s = FC_GRID.step / 2;
-  const l = L.imageOverlay(c.toDataURL(), [[fc.lats[0] - s, fc.lons[0] - s], [fc.lats.at(-1) + s, fc.lons.at(-1) + s]],
+  const l = L.imageOverlay(big.toDataURL(), [[fc.lats[0] - s, fc.lons[0] - s], [fc.lats.at(-1) + s, fc.lons.at(-1) + s]],
     { opacity: 0, pane: "forecast", className: "fc-smooth", attribution: "Forecast: Open-Meteo" });
   l.maxOpacity = 0.85;
   return l;
