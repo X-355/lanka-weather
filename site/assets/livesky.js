@@ -114,13 +114,17 @@ function enhancedLayer(time, opacity) {
       tile.width = tile.height = 256;
       const b = this._tileCoordsToBounds(coords);
       const sw = L.CRS.EPSG3857.project(b.getSouthWest()), ne = L.CRS.EPSG3857.project(b.getNorthEast());
+      // Ask for about one pixel per satellite pixel (~4 km over Sri Lanka) and let the browser smooth the upscale;
+      // asking for more makes the server repeat pixels, which shows up as hard square blocks.
+      const px = Math.max(24, Math.min(256, Math.round((ne.x - sw.x) / 1000 / 4)));
       const url = `${EUM}/wms?service=WMS&version=1.3.0&request=GetMap&layers=msg_iodc:ir108&styles=&format=image/png&transparent=true` +
-        `&crs=EPSG:3857&bbox=${sw.x},${sw.y},${ne.x},${ne.y}&width=256&height=256&time=${iso(time)}`;
+        `&crs=EPSG:3857&bbox=${sw.x},${sw.y},${ne.x},${ne.y}&width=${px}&height=${px}&time=${iso(time)}`;
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
         const ctx = tile.getContext("2d", { willReadFrequently: true });
-        ctx.drawImage(img, 0, 0);
+        ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, 256, 256);
         const im = ctx.getImageData(0, 0, 256, 256), d = im.data;
         for (let i = 0; i < d.length; i += 4) {
           if (!d[i + 3]) continue;
