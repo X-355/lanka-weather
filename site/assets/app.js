@@ -45,7 +45,7 @@ function setupTabs() {
   const syncSwitch = () => {
     const d = isDark();
     $("theme").setAttribute("aria-checked", d);
-    $("theme").querySelector(".thumb").textContent = d ? "🌙" : "☀️";
+    $("theme").title = d ? "Switch to light mode" : "Switch to dark mode";
   };
   syncSwitch();
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncSwitch);
