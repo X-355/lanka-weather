@@ -423,6 +423,12 @@ renderers.heavy = () => {
   }
 };
 
+// ------------------------------------------------------------------ weather (loaded on first visit)
+renderers.weather = async () => {
+  const { renderWeather } = await import("./weather.js?v=dev");
+  renderWeather(state);
+};
+
 // ------------------------------------------------------------------ live sky (loaded on first visit)
 renderers.live = async () => {
   const { renderLiveSky } = await import("./livesky.js?v=dev");

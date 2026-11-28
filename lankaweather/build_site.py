@@ -199,6 +199,40 @@ def run() -> None:
     build_climate(hist)
     build_solar(hist)
     build_heavy(hist)
+    build_cyclones()
     if (REPORTS / "REPORT.md").exists():
         shutil.copy(REPORTS / "REPORT.md", SITE_DATA / "REPORT.md")
     log.info("site data written to %s", SITE_DATA)
+
+
+def build_cyclones() -> None:
+    """Tropical cyclones near Sri Lanka from GDACS (which aggregates JTWC/NOAA/agency advisories). Best effort."""
+    import requests
+    from datetime import date, timedelta
+
+    out = {"fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "source": "GDACS", "ok": False, "events": []}
+    try:
+        today = date.today()
+        r = requests.get("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH",
+                         params={"eventlist": "TC", "fromdate": (today - timedelta(days=14)).isoformat(),
+                                 "todate": today.isoformat(), "alertlevel": "green;orange;red"}, timeout=60)
+        r.raise_for_status()
+        for f in r.json().get("features", []):
+            p = f.get("properties", {})
+            lon, lat = (f.get("geometry", {}).get("coordinates") or [None, None])[:2]
+            box = f.get("bbox") or [lon, lat, lon, lat]
+            # North Indian Ocean around Sri Lanka: 50-100 E, 10 S - 25 N
+            if box[0] is None or box[2] < 50 or box[0] > 100 or box[3] < -10 or box[1] > 25:
+                continue
+            out["events"].append({
+                "name": p.get("name"), "alert": p.get("alertlevel"), "from": p.get("fromdate"), "to": p.get("todate"),
+                "countries": p.get("country"), "lat": lat, "lon": lon,
+                "severity": (p.get("severitydata") or {}).get("severitytext"),
+                "url": (p.get("url") or {}).get("report"),
+                "ongoing": str(p.get("iscurrent")).lower() == "true",
+            })
+        out["ok"] = True
+    except Exception as e:  # never break the nightly build over this
+        log.warning("GDACS cyclone fetch failed: %s", e)
+        out["error"] = str(e)[:200]
+    _write("cyclones.json", out)
