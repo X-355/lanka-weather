@@ -177,7 +177,7 @@ function select(s) {
     ${s.official ? `<p class="small" style="margin:0 0 8px">Official water-level thresholds at this gauge: alert ${s.official.alert} ${s.official.unit}, minor flood ${s.official.minor} ${s.official.unit}, major flood ${s.official.major} ${s.official.unit}. The current reading is on <a href="https://rivernet.lk" rel="noopener">rivernet.lk</a>.</p>` : ""}
     <div id="rv-chart"></div>
     <p class="muted small" style="margin:8px 0 0">Modelled river flow (Copernicus GloFAS, ~5 km grid), not the gauge reading.${s.regulated ? " This river is controlled by reservoirs, which the model doesn't simulate, so treat it as a rough guide." : ""}</p>`;
-  bars($("rv-chart"), { categories: d.time.map(t => t.slice(5)), height: 220, min: 0, fmt: v => r0(v), yTitle: "m³/s",
+  bars($("rv-chart"), { categories: d.time.map(t => t.slice(5)), height: 360, min: 0, fmt: v => r0(v), yTitle: "m³/s",
     tipTitle: i => fmtD(d.time[i]) + (i < s.i0 ? " (past)" : i === s.i0 ? " (today)" : " (forecast)"),
     series: [{ name: "Flow (past week + 10-day forecast)", color: "var(--series-1)", values: d.river_discharge },
              { name: "Long-term average", color: "var(--neutral)", kind: "line", values: d.river_discharge_mean },

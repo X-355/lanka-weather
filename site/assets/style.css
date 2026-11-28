@@ -210,3 +210,42 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: s
 input.timeline { accent-color: var(--series-1);
   background: linear-gradient(90deg, transparent calc(var(--now, 100%) - 1px), var(--text-tertiary) calc(var(--now, 100%) - 1px), var(--text-tertiary) calc(var(--now, 100%) + 1px), transparent calc(var(--now, 100%) + 1px)); }
 .fc-smooth { image-rendering: auto; }
+
+/* Forecast: all districts as one aligned ranked chart (replaces the grid of boxes) */
+.rank-row { display: grid; grid-template-columns: minmax(96px, 1.1fr) minmax(80px, 2fr) 48px 72px 72px; align-items: center;
+  gap: 12px; width: 100%; min-height: 30px; padding: 0 8px; margin: 0; border: 0; border-radius: 6px; background: none;
+  font: inherit; font-size: 13px; color: var(--text-primary); text-align: left; cursor: pointer; }
+.rank-row:hover { background: var(--surface-2); }
+.rank-row.sel { background: color-mix(in oklab, var(--series-1) 14%, transparent); }
+.rank-row:focus-visible { outline: 2px solid var(--series-1); outline-offset: -2px; }
+.rank-row .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-row .num { text-align: right; font-variant-numeric: tabular-nums; }
+.rank-row .pc { font-weight: 620; }
+.rank-row .vs, .rank-row .td { color: var(--text-secondary); }
+.rank-row .vs.up { color: var(--text-primary); }
+.rank-row .track { position: relative; height: 10px; border-radius: 5px; background: var(--surface-2); }
+.rank-row .fill { position: absolute; inset: 0 auto 0 0; border-radius: 5px; background: var(--series-1); max-width: 100%; }
+.rank-row .tick { position: absolute; top: -3px; bottom: -3px; width: 2px; border-radius: 1px; background: var(--text-primary); opacity: .7; }
+.rank-head { cursor: default; min-height: 24px; font-size: 12px; color: var(--text-tertiary); border-bottom: 1px solid var(--border); border-radius: 0; margin-bottom: 4px; }
+.rank-head:hover { background: none; }
+.rank-group { font-size: 12px; font-weight: 600; color: var(--text-secondary); padding: 10px 8px 2px; }
+@media (max-width: 640px) {
+  .rank-row { grid-template-columns: 88px 1fr 40px 56px; gap: 8px; padding: 0 4px; }
+  .rank-row .td, .rank-head span:last-child { display: none; }
+}
+
+/* Map + side panel pairs: same height. The side panel scrolls inside when its content is longer. */
+.grid.map-layout { align-items: stretch; }
+.grid.map-layout > .panel-fill { position: relative; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.panel-fill .table-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+@media (min-width: 900px) {
+  /* the panel never makes the row taller than the map; long town lists scroll */
+  .grid.map-layout > .panel-fill { height: 0; min-height: 100%; }
+}
+/* the ranked chart: two columns of rows on wide screens, one below that */
+.rank-cols { display: grid; grid-template-columns: 1fr; gap: 0 40px; align-items: start; }
+.rank-head.second { display: none; }
+@media (min-width: 1100px) {
+  .rank-cols { grid-template-columns: 1fr 1fr; }
+  .rank-head.second { display: grid; }
+}

@@ -70,6 +70,12 @@ let selectedDistrict = null;
 
 function renderDistrictPanel() {
   const panel = $("district-panel"), f = state.forecast;
+  let auto = false;
+  if (!selectedDistrict && f?.towns?.length) {
+    // open on the district with the highest chance, so the panel is never an empty box
+    selectedDistrict = [...f.towns].sort((a, b) => b.p_rain - a.p_rain)[0].town;
+    auto = true;
+  }
   if (!selectedDistrict) {
     panel.innerHTML = `<p class="sub" style="margin:0"><b>Click a district on the map</b> to see the forecast for the towns inside it.</p>`;
     return;
@@ -93,7 +99,7 @@ function renderDistrictPanel() {
     return `<span title="Brier skill vs this town's own climatology, test years. Markov baseline ${pct(k.markov_bss, 0)}. AUC ${num(k.auc, 2)}. ${note}.">${pct(k.bss, 0)}</span>`;
   };
   panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
-      <h2 style="margin:0">${t.name} District</h2><span class="muted small">${t.region} Province · ${t.zone} zone · normal for the date ${pct(d.p_clim)}</span></div>
+      <h2 style="margin:0">${t.name} District${auto ? ` <span class="muted small" style="font-weight:450">highest chance tomorrow · click any district to switch</span>` : ""}</h2><span class="muted small">${t.region} Province · ${t.zone} zone · normal for the date ${pct(d.p_clim)}</span></div>
     <div class="table-scroll" style="margin-top:8px">${scoreTable(rows, [
       { label: "Town", get: r => r.name },
       { label: `Rain ≥ ${thr.rain_mm} mm`, num: true, get: r => `<span class="swatch" style="background:color-mix(in oklab, var(--series-1) ${Math.round(10 + 80 * r.p_rain)}%, var(--surface-1))"></span>${pct(r.p_rain)}` },
@@ -129,7 +135,7 @@ function renderMap() {
     }
   }
   districtMap($("fc-map"), { areas, labelNudge: NUDGE, selected: selectedDistrict,
-    onClick: key => { selectedDistrict = key; renderMap(); renderDistrictPanel(); $("district-panel").scrollIntoView({ behavior: "smooth", block: "nearest" }); } });
+    onClick: key => { selectedDistrict = key; renderMap(); renderDistrictPanel(); renderRank(); $("district-panel").scrollIntoView({ behavior: "smooth", block: "nearest" }); } });
   $("map-note").innerHTML = (mapMode === "rain" ? "Darker blue = higher chance of rain tomorrow. " : "Heavy-rain status, research only. ")
     + (missing ? `Hatched: no forecast yet for ${missing} districts. ` : "")
     + `<br><span class="muted">District map: <a href="https://mapsvg.com/maps/sri-lanka">MapSVG</a> via <a href="https://github.com/VictorCazanave/svg-maps">svg-maps</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</span>`;
@@ -154,23 +160,65 @@ function renderForecastCards() {
   }
   $("fc-lede").innerHTML = `Chance of at least ${state.meta.targets.rain_mm} mm of rain on <b>${fmtDate(f.target_date)}</b>, ${f.season}. Issued ${new Date(f.issued_at).toLocaleString("en-GB", { timeZone: "Asia/Colombo", dateStyle: "medium", timeStyle: "short" })} Sri Lanka time.` +
     methodNote(f.towns);
-  const zones = Object.fromEntries(state.meta.towns.map(t => [t.key, t.zone]));
-  const info = Object.fromEntries(state.meta.towns.map(t => [t.key, t]));
-  const rows = [...f.towns].sort((a, b) => (info[a.town].region + a.name).localeCompare(info[b.town].region + b.name));
-  $("fc-cards").innerHTML = rows.map(t => {
-    const diff = t.p_rain - t.p_clim;
-    const vs = Math.abs(diff) < 0.08 ? "about normal for the date" : diff > 0 ? `wetter than normal (${pct(t.p_clim)})` : `drier than normal (${pct(t.p_clim)})`;
-    return `<div class="card town-card">
-      <div class="name">${t.name}</div><div class="zone">${info[t.town].region} · ${zones[t.town]} zone</div>
-      <div class="big">${pct(t.p_rain)}</div>
-      <div class="meter" role="img" aria-label="${pct(t.p_rain)} chance; normal ${pct(t.p_clim)}">
-        <div class="fill" style="width:${100 * t.p_rain}%"></div><div class="tick" style="left:calc(${100 * t.p_clim}% - 1px)"></div></div>
-      <div class="meta">${vs}</div>
-      <div class="meta muted">Today: ${t.today_precip == null ? "–" : t.today_precip + " mm"}</div>
-      ${t.method === "model" && f.towns.some(x => x.method === "hybrid") ? `<div class="meta muted">Weather Lab alone (no professional forecast)</div>` : ""}
-    </div>`;
-  }).join("");
+  renderRank();
 }
+
+// One aligned row per district: bar = chance tomorrow, tick = normal for the date. Follows the map's
+// Rain / Heavy switch; click a row to open that district's towns, like clicking the map.
+let rankSort = "chance";
+function renderRank() {
+  const f = state.forecast;
+  if (!f) return;
+  const heavy = mapMode === "heavy", info = Object.fromEntries(state.meta.towns.map(t => [t.key, t]));
+  const val = t => heavy ? t.p_heavy : t.p_rain, norm = t => heavy ? t.p_clim_heavy : t.p_clim;
+  const rows = [...f.towns].sort(rankSort === "name" ? (a, b) => a.name.localeCompare(b.name)
+    : rankSort === "province" ? (a, b) => (info[a.town].region + a.name).localeCompare(info[b.town].region + b.name)
+    : (a, b) => val(b) - val(a));
+  const top = heavy ? Math.max(0.05, ...rows.map(t => Math.max(val(t), norm(t)))) : 1;  // heavy chances are small: own scale
+  const thr = state.meta.targets;
+  $("fc-rank-title").textContent = `All ${rows.length} districts, ${heavy ? `chance of ≥ ${thr.heavy_mm} mm` : `chance of rain`}`;
+  const head = second => `<div class="rank-row rank-head${second ? " second" : ""}" aria-hidden="true"><span>District</span><span>${heavy ? `Chance ≥ ${thr.heavy_mm} mm` : `Chance ≥ ${thr.rain_mm} mm`}</span><span class="num">Chance</span><span class="num">vs normal</span><span class="num">Rain today</span></div>`;
+  const rowHTML = t => {
+    const v = val(t), n = norm(t), d = v - n;
+    const st = heavy ? heavyStatus(t.p_heavy, t.p_clim_heavy) : null;
+    const vs = heavy ? `${d >= 0 ? "+" : "−"}${(100 * Math.abs(d)).toFixed(1)}` : `${Math.abs(d) < 0.005 ? "±" : d > 0 ? "+" : "−"}${Math.round(100 * Math.abs(d))}`;
+    return `<button class="rank-row${selectedDistrict === t.town ? " sel" : ""}" data-k="${t.town}" role="listitem"
+      aria-label="${t.name}: ${pct(v, heavy ? 1 : 0)} chance, normal ${pct(n, heavy ? 1 : 0)}">
+      <span class="nm">${t.name}${t.method === "model" && f.towns.some(x => x.method === "hybrid") ? ' <span class="muted" title="Weather Lab alone: no professional forecast">*</span>' : ""}</span>
+      <span class="track"><span class="fill" style="width:${(100 * v) / top}%;${st ? `background:${st.color}` : ""}"></span><span class="tick" style="left:calc(${(100 * n) / top}% - 1px)"></span></span>
+      <span class="num pc">${pct(v, heavy ? 1 : 0)}</span>
+      <span class="num vs ${d > (heavy ? 0.005 : 0.08) ? "up" : d < -(heavy ? 0.005 : 0.08) ? "down" : ""}">${vs} pts</span>
+      <span class="num td">${t.today_precip == null ? "–" : `${t.today_precip} mm`}</span></button>`;
+  };
+  // Two columns on wide screens, each with its own header; province labels repeat at the top of the second.
+  const half = Math.ceil(rows.length / 2);
+  const col = (part, second) => {
+    let last = second && rankSort === "province" ? null : "";
+    return head(second) + part.map((t, k) => {
+      const region = info[t.town].region;
+      let g = "";
+      if (rankSort === "province" && region !== last) {
+        g = `<div class="rank-group">${region} Province${second && k === 0 && info[rows[half - 1].town].region === region ? " (continued)" : ""}</div>`;
+        last = region;
+      }
+      return g + rowHTML(t);
+    }).join("");
+  };
+  $("fc-rank").innerHTML = `<div class="rank-cols"><div>${col(rows.slice(0, half), false)}</div><div>${col(rows.slice(half), true)}</div></div>`;
+  $("fc-rank").querySelectorAll(".rank-row[data-k]").forEach(b => b.addEventListener("click", () => {
+    selectedDistrict = b.dataset.k; renderMap(); renderDistrictPanel(); renderRank();
+    $("district-panel").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }));
+  $("fc-rank-note").innerHTML = `Bar: the forecast's chance for tomorrow${heavy ? ", on its own scale because heavy-rain chances are small" : ""}. Tick: what's normal for this date. “vs normal” is the difference in percentage points.` +
+    (f.towns.some(t => t.method === "model") && f.towns.some(t => t.method === "hybrid") ? " * Weather Lab alone: the professional forecast was missing." : "");
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("#fc-sort button");
+  if (!b) return;
+  rankSort = b.dataset.s;
+  document.querySelectorAll("#fc-sort button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  renderRank();
+});
 
 function scoreTable(rows, cols) {
   return `<table class="data"><thead><tr>${cols.map(c => `<th class="${c.num ? "num" : ""}" title="${c.title || ""}">${c.label}</th>`).join("")}</tr></thead>
@@ -631,7 +679,7 @@ renderers.about = () => {
     const m = e.target.dataset.m; if (!m) return;
     mapMode = m;
     [...$("map-mode").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.m === m));
-    renderMap();
+    renderMap(); renderRank();
   });
   setupTabs();
 })();

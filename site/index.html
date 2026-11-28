@@ -46,12 +46,16 @@
         <div id="fc-map"></div>
         <p class="sub small" id="map-note" style="margin:6px 0 0"></p>
       </div>
-      <div>
-        <div class="card" id="district-panel" style="margin-bottom:12px"></div>
-        <div class="grid towns" id="fc-cards"></div>
-      </div>
+      <div class="card panel-fill" id="district-panel"></div>
     </div>
-    <p class="sub small" style="margin-top:10px">The bar shows the model's chance of ≥ 1 mm rain. The dark tick is what's normal for this date (climatology).</p>
+    <div class="card" id="fc-rank-card" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+        <h2 style="margin:0" id="fc-rank-title">All districts</h2>
+        <div class="seg" id="fc-sort"><button data-s="chance" aria-pressed="true">By chance</button><button data-s="name" aria-pressed="false">A–Z</button><button data-s="province" aria-pressed="false">By province</button></div>
+      </div>
+      <div id="fc-rank" role="list"></div>
+      <p class="sub small" id="fc-rank-note" style="margin:8px 0 0"></p>
+    </div>
 
     <h2>Live track record</h2>
     <p class="sub">Each night's forecast is saved before the day happens and can't be changed afterwards. About six days later it's scored against the reanalysis rainfall.</p>
