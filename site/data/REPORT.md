@@ -78,7 +78,24 @@ ECMWF is turned into a probability, and the hybrid is fitted, on 2024-02-05 → 
 
 20 gauges in 17 districts; day shift 1 (agreement with ERA5 by shift on pre-test years: {'0': 0.673, '1': 0.687}).
 
-**Rain gauges: with the hybrid and ECMWF**: 2024-02-14 → 2026-11-09, 2,138 rows on 501 days, identical for every forecast. Rain (≥ 1 mm) on 42.6% of rows here vs 75.6% in ERA5.
+**Rain gauges: strict test, later days only**: 2025-07-02 → 2026-11-09, 466 rows on 184 days, identical for every forecast. Rain (≥ 1 mm) on 24.0% of rows here vs 73.0% in ERA5.
+
+| Forecast | Ranking AUC (95% range) ↑ | Adjusted skill, 2026-08 → 2026-11 (95% range) ↑ |
+|---|---|---|
+| hybrid | 0.589 (0.515–0.656) | 24.0% (14.9% to 33.6%) |
+| model | 0.546 (0.471–0.609) | 25.1% (14.5% to 35.7%) |
+| ecmwf_cal | 0.615 (0.542–0.688) | 23.4% (14.9% to 32.3%) |
+| markov | 0.534 (0.468–0.592) | 26.4% (14.9% to 37.9%) |
+
+- hybrid - ecmwf_cal: AUC -0.027 (-0.054 to -0.002); adjusted skill 0.6% (-2.1% to 3.2%)
+
+- hybrid - model: AUC +0.043 (+0.018 to +0.070); adjusted skill -1.1% (-3.6% to 1.7%)
+
+- model - ecmwf_cal: AUC -0.069 (-0.115 to -0.026); adjusted skill 1.7% (-2.9% to 6.0%)
+
+- model - markov: AUC +0.011 (-0.039 to +0.056); adjusted skill -1.3% (-3.2% to 0.6%)
+
+**Rain gauges: with the hybrid and ECMWF, out-of-fold**: 2024-02-14 → 2026-11-09, 2,138 rows on 501 days, identical for every forecast. Rain (≥ 1 mm) on 42.6% of rows here vs 75.6% in ERA5.
 
 | Forecast | Ranking AUC (95% range) ↑ | Adjusted skill, 2025-04 → 2026-11 (95% range) ↑ |
 |---|---|---|
@@ -107,7 +124,24 @@ ECMWF is turned into a probability, and the hybrid is fitted, on 2024-02-05 → 
 ## Against NASA IMERG satellite rainfall
 
 
-**NASA IMERG: with the hybrid and ECMWF**: 2024-02-05 → 2026-11-22, 25,550 rows on 1,022 days, identical for every forecast. Rain (≥ 1 mm) on 46.0% of rows here vs 57.5% in ERA5.
+**NASA IMERG: strict test, later days only**: 2025-06-30 → 2026-11-22, 12,775 rows on 511 days, identical for every forecast. Rain (≥ 1 mm) on 47.6% of rows here vs 56.6% in ERA5.
+
+| Forecast | Ranking AUC (95% range) ↑ | Adjusted skill, 2026-03 → 2026-11 (95% range) ↑ |
+|---|---|---|
+| hybrid | 0.847 (0.832–0.863) | 28.6% (22.9% to 34.2%) |
+| model | 0.788 (0.768–0.807) | 15.0% (8.5% to 20.8%) |
+| ecmwf_cal | 0.830 (0.815–0.846) | 23.4% (17.3% to 29.5%) |
+| markov | 0.739 (0.722–0.758) | 5.8% (-0.4% to 11.6%) |
+
+- hybrid - ecmwf_cal: AUC +0.017 (+0.011 to +0.023); adjusted skill 5.2% (3.3% to 7.1%)
+
+- hybrid - model: AUC +0.059 (+0.049 to +0.070); adjusted skill 13.6% (11.4% to 16.0%)
+
+- model - ecmwf_cal: AUC -0.042 (-0.057 to -0.029); adjusted skill -8.4% (-12.2% to -4.8%)
+
+- model - markov: AUC +0.049 (+0.039 to +0.058); adjusted skill 9.2% (6.9% to 11.4%)
+
+**NASA IMERG: with the hybrid and ECMWF, out-of-fold**: 2024-02-05 → 2026-11-22, 25,550 rows on 1,022 days, identical for every forecast. Rain (≥ 1 mm) on 46.0% of rows here vs 57.5% in ERA5.
 
 | Forecast | Ranking AUC (95% range) ↑ | Adjusted skill, 2025-06 → 2026-11 (95% range) ↑ |
 |---|---|---|
