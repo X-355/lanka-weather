@@ -175,7 +175,7 @@ def refresh_gn() -> dict:
                     f.write(chunk)
         with zipfile.ZipFile(zpath) as z:
             names = z.namelist()
-            adm4 = [n for n in names if re.search(r"adm4.*\.shp$", n, re.I)]
+            adm4 = [n for n in names if re.search(r"adm(in)?_?4[^/]*\.shp$", n, re.I)]
             if not adm4:
                 raise RuntimeError(f"no admin-4 shapefile in {res['name']}: {names[:20]}")
             stem = adm4[0][:-4]

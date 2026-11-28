@@ -28,7 +28,7 @@ jobs:
         run: |
           git config user.name "lanka-weather-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add config/osm_places.csv config/gn_divisions.csv site/data/gazetteer.json
+          git add config/*.csv site/data/gazetteer.json
           git diff --cached --quiet && exit 0
           git commit -m "gazetteer: GN divisions + OpenStreetMap places $(date -u +%F)"
           for i in 1 2 3; do git pull --rebase && git push && break; sleep 10; done
