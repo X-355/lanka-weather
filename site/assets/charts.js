@@ -280,6 +280,7 @@ import { DISTRICTS, VIEWBOX } from "./sri-lanka-districts.js?v=dev";
  * District choropleth. opts: {areas: {key: {fill, label, tip, muted}}, labelNudge: {key: [dx, dy]}}
  */
 export function districtMap(container, opts) {
+  if (!container) return;
   container.innerHTML = "";
   const wrap = document.createElement("div");
   wrap.className = "chart";

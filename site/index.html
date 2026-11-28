@@ -127,9 +127,9 @@
     <p class="lede">Clouds and rain over Sri Lanka from the Meteosat satellite over the Indian Ocean: the last three hours, updated every 15 minutes (each picture arrives about 25–40 minutes after it's taken), then the next 12 hours from a forecast model. The page checks for new pictures every 5 minutes.</p>
     <div class="controls">
       <label>Imagery <div class="seg" id="ls-base">
-        <button data-v="enhanced" aria-pressed="true">Storm clouds</button><button data-v="ir" aria-pressed="false">Clouds (grey)</button><button data-v="natural" aria-pressed="false">True colour (day)</button><button data-v="none" aria-pressed="false">Off</button></div></label>
+        <button data-v="enhanced" aria-pressed="true">Storm clouds</button><button data-v="ir" aria-pressed="false">Grey</button><button data-v="natural" aria-pressed="false" title="Daytime only">True colour</button><button data-v="none" aria-pressed="false">Off</button></div></label>
       <label>Rain <div class="seg" id="ls-rain">
-        <button data-v="eum" aria-pressed="false">Satellite, 15 min</button><button data-v="imerg" aria-pressed="false">NASA IMERG (~5 h late)</button><button data-v="none" aria-pressed="true">Off</button></div></label>
+        <button data-v="eum" aria-pressed="false" title="EUMETSAT estimate, every 15 minutes">Satellite</button><button data-v="imerg" aria-pressed="false" title="NASA IMERG, published about 5 hours late">NASA (5 h late)</button><button data-v="none" aria-pressed="true">Off</button></div></label>
       <label class="check"><input type="checkbox" id="ls-future" checked> Next 12 hours (forecast)</label>
       <label class="check"><input type="checkbox" id="ls-tint" checked> Shade districts by tomorrow's forecast</label>
     </div>

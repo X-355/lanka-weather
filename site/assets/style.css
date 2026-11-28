@@ -132,7 +132,11 @@ select, input[type="number"], input[type="date"], input.text { font: inherit; fo
 .seg { height: 36px; }
 .seg button { height: 100%; }
 .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-.seg button { border: 0; background: var(--surface-1); color: var(--text-secondary); font: inherit; font-size: 13px; padding: 0 12px; cursor: pointer; }
+.seg button { border: 0; background: var(--surface-1); color: var(--text-secondary); font: inherit; font-size: 13px; padding: 0 12px; cursor: pointer; white-space: nowrap; flex: 0 0 auto; }
+.seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.seg::-webkit-scrollbar { display: none; }
+.controls .check input { width: 18px; height: 18px; margin: 0; accent-color: var(--series-1); flex: none; }
+input.timeline { height: 28px; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--text-primary); font-weight: 560; }
 
 .chart { position: relative; width: 100%; }
@@ -178,7 +182,8 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: s
   .controls.form { grid-template-columns: repeat(2, 1fr); }
   .chips { grid-template-columns: repeat(2, 1fr); }
   .controls > label { flex: 1 1 140px; }
-  .controls > label select, .controls > label input { width: 100%; }
+  .controls > label select, .controls > label input:not([type="checkbox"]):not([type="radio"]) { width: 100%; }
+  .controls > label.check { flex: 1 1 100%; height: auto; min-height: 32px; }
   h1 { font-size: 23px; }
 }
 
