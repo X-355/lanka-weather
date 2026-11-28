@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "0.1.0+20261128",
-    "trained_at": "2026-11-28T09:00:36Z",
+    "trained_at": "2026-11-28T09:20:18Z",
     "data_source": "Open-Meteo ERA5 reanalysis",
     "features": [
       "precip",
@@ -2699,31 +2699,31 @@
         "n": 10000,
         "n_days": 400,
         "towns": 25,
-        "wet_freq_truth": 0.481,
+        "wet_freq_truth": 0.496,
         "wet_freq_era5": 0.567,
         "mean_forecast": {
           "model": 0.589,
           "markov": 0.578
         },
-        "agreement_with_era5": 0.599,
+        "agreement_with_era5": 0.767,
         "ranking": {
           "auc": {
             "model": {
-              "auc": 0.5928,
-              "lo": 0.5633,
-              "hi": 0.6197
+              "auc": 0.8106,
+              "lo": 0.787,
+              "hi": 0.8313
             },
             "markov": {
-              "auc": 0.52,
-              "lo": 0.4963,
-              "hi": 0.5453
+              "auc": 0.7676,
+              "lo": 0.7458,
+              "hi": 0.7874
             }
           },
           "diff": {
             "model - markov": {
-              "est": 0.0728,
-              "lo": 0.0613,
-              "hi": 0.0843,
+              "est": 0.043,
+              "lo": 0.032,
+              "hi": 0.0539,
               "share_positive": 1.0
             }
           }
@@ -2742,22 +2742,22 @@
           "B": 1000,
           "skill": {
             "model": {
-              "bss": 0.2947,
-              "lo": 0.2726,
-              "hi": 0.3146
+              "bss": 0.2239,
+              "lo": 0.1636,
+              "hi": 0.2785
             },
             "markov": {
-              "bss": 0.2824,
-              "lo": 0.2588,
-              "hi": 0.3023
+              "bss": 0.123,
+              "lo": 0.0736,
+              "hi": 0.1681
             }
           },
           "diff": {
             "model - markov": {
-              "est": 0.0124,
-              "lo": -0.001,
-              "hi": 0.0262,
-              "share_positive": 0.965
+              "est": 0.1008,
+              "lo": 0.0765,
+              "hi": 0.1255,
+              "share_positive": 1.0
             }
           }
         }
@@ -2771,7 +2771,7 @@
         "n": 10000,
         "n_days": 400,
         "towns": 25,
-        "wet_freq_truth": 0.481,
+        "wet_freq_truth": 0.496,
         "wet_freq_era5": 0.567,
         "mean_forecast": {
           "hybrid": 0.601,
@@ -2779,47 +2779,47 @@
           "ecmwf_cal": 0.626,
           "markov": 0.578
         },
-        "agreement_with_era5": 0.599,
+        "agreement_with_era5": 0.767,
         "ranking": {
           "auc": {
             "hybrid": {
-              "auc": 0.6347,
-              "lo": 0.6058,
-              "hi": 0.6617
+              "auc": 0.8715,
+              "lo": 0.8548,
+              "hi": 0.8859
             },
             "model": {
-              "auc": 0.5928,
-              "lo": 0.5633,
-              "hi": 0.6197
+              "auc": 0.8106,
+              "lo": 0.787,
+              "hi": 0.8313
             },
             "ecmwf_cal": {
-              "auc": 0.6382,
-              "lo": 0.6131,
-              "hi": 0.6656
+              "auc": 0.8511,
+              "lo": 0.8329,
+              "hi": 0.8682
             },
             "markov": {
-              "auc": 0.52,
-              "lo": 0.4963,
-              "hi": 0.5453
+              "auc": 0.7676,
+              "lo": 0.7458,
+              "hi": 0.7874
             }
           },
           "diff": {
             "hybrid - ecmwf_cal": {
-              "est": -0.0035,
-              "lo": -0.0116,
-              "hi": 0.0045,
-              "share_positive": 0.216
+              "est": 0.0204,
+              "lo": 0.013,
+              "hi": 0.0272,
+              "share_positive": 1.0
             },
             "model - ecmwf_cal": {
-              "est": -0.0454,
-              "lo": -0.0631,
-              "hi": -0.0283,
+              "est": -0.0405,
+              "lo": -0.0574,
+              "hi": -0.025,
               "share_positive": 0.0
             },
             "model - markov": {
-              "est": 0.0728,
-              "lo": 0.0613,
-              "hi": 0.0843,
+              "est": 0.043,
+              "lo": 0.032,
+              "hi": 0.0539,
               "share_positive": 1.0
             }
           }
@@ -2838,44 +2838,44 @@
           "B": 1000,
           "skill": {
             "hybrid": {
-              "bss": 0.2804,
-              "lo": 0.2542,
-              "hi": 0.3027
+              "bss": 0.3596,
+              "lo": 0.3041,
+              "hi": 0.4122
             },
             "model": {
-              "bss": 0.2947,
-              "lo": 0.2726,
-              "hi": 0.3146
+              "bss": 0.2239,
+              "lo": 0.1636,
+              "hi": 0.2785
             },
             "ecmwf_cal": {
-              "bss": 0.288,
-              "lo": 0.2614,
-              "hi": 0.3113
+              "bss": 0.2962,
+              "lo": 0.2341,
+              "hi": 0.3499
             },
             "markov": {
-              "bss": 0.2824,
-              "lo": 0.2588,
-              "hi": 0.3023
+              "bss": 0.123,
+              "lo": 0.0736,
+              "hi": 0.1681
             }
           },
           "diff": {
             "hybrid - ecmwf_cal": {
-              "est": -0.0076,
-              "lo": -0.016,
-              "hi": 0.0013,
-              "share_positive": 0.054
+              "est": 0.0635,
+              "lo": 0.0397,
+              "hi": 0.0877,
+              "share_positive": 1.0
             },
             "model - ecmwf_cal": {
-              "est": 0.0068,
-              "lo": -0.0105,
-              "hi": 0.0242,
-              "share_positive": 0.764
+              "est": -0.0723,
+              "lo": -0.1161,
+              "hi": -0.0279,
+              "share_positive": 0.0
             },
             "model - markov": {
-              "est": 0.0124,
-              "lo": -0.001,
-              "hi": 0.0262,
-              "share_positive": 0.965
+              "est": 0.1008,
+              "lo": 0.0765,
+              "hi": 0.1255,
+              "share_positive": 1.0
             }
           }
         }
