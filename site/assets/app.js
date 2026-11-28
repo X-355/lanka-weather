@@ -265,7 +265,7 @@ function renderLedger() {
     <div class="card kpi"><div class="label">Forecasts scored</div><div class="value">${s.scored.toLocaleString()}</div><div class="note">${s.first_target} → ${s.last_target}; ${s.pending} pending</div></div>
     <div class="card kpi"><div class="label">Live skill vs climatology</div><div class="value">${pct(a.model.bss, 1)}</div><div class="note">Markov baseline ${pct(a.markov.bss, 1)}</div></div>
     <div class="card kpi"><div class="label">Live Brier score</div><div class="value">${num(a.model.brier)}</div><div class="note">Climatology ${num(a.climatology.brier)}</div></div>
-    <div class="card kpi"><div class="label">Last 30 days skill</div><div class="value">${pct(s.last30.model.bss, 1)}</div><div class="note">${s.last30.model.n} town-days</div></div>
+    <div class="card kpi"><div class="label">Last 30 days skill</div><div class="value">${pct(s.last30.model.bss, 1)}</div><div class="note">${s.last30.model.n} district-days</div></div>
   </div><div class="card ledger-box" style="margin-top:12px">${s.vs_ecmwf_ens ? `<p class="sub small" style="margin-top:0">Same days, probability against probability: published forecast ${pct(s.vs_ecmwf_ens.published.bss, 1)}, model alone ${pct(s.vs_ecmwf_ens.model.bss, 1)}, ECMWF's 51-member ensemble ${pct(s.vs_ecmwf_ens.ecmwf_ens.bss, 1)} (${s.vs_ecmwf_ens.published.n} district-days).</p>` : ""}${meth}${rule}</div>${prov}`;
 }
 
@@ -335,7 +335,7 @@ function renderScoreboards() {
   const M = state.metrics?.metrics;
   if (!M) { $("fc-scoreboard").innerHTML = "<p class='muted'>No evaluation yet.</p>"; return; }
   const sp = state.meta.model.split;
-  $("fc-test-lede").innerHTML = `The model was trained on ${sp.train[0].slice(0, 4)}–${sp.train[1].slice(0, 4)} and tuned on ${sp.valid[0].slice(0, 4)}–${sp.valid[1].slice(0, 4)}. It never saw <b>${sp.test[0]} → ${sp.test[1]}</b> (${M.rain.model.n.toLocaleString()} town-days). Every forecast below is scored on exactly those days.`;
+  $("fc-test-lede").innerHTML = `The model was trained on ${sp.train[0].slice(0, 4)}–${sp.train[1].slice(0, 4)} and tuned on ${sp.valid[0].slice(0, 4)}–${sp.valid[1].slice(0, 4)}. It never saw <b>${sp.test[0]} → ${sp.test[1]}</b> (${M.rain.model.n.toLocaleString()} district-days). Every forecast below is scored on exactly those days.`;
   const names = { model: "Weather Lab model", markov: "Markov chain (yesterday + season)", climatology: "Climatology (calendar odds)", persistence: "Persistence (tomorrow = today)" };
   const rows = Object.entries(M.rain).map(([k, v]) => ({ ...v, name: names[k] || k, hl: k === "model" }));
   $("fc-scoreboard").innerHTML = scoreTable(rows, [{ label: "Forecast", get: r => r.name }, ...SCORE_COLS]);
@@ -368,7 +368,7 @@ function renderScoreboards() {
     $("fc-nwp-lede").textContent = "Archived day-ahead forecasts from operational weather models are not available yet.";
     $("fc-nwp").innerHTML = "";
   } else if (c) {
-    $("fc-nwp-lede").innerHTML = `Day-ahead runs of operational weather models (Open-Meteo archive of forecasts issued ~24 h ahead), ${c.period[0]} → ${c.period[1]}, on the same ${c.n.toLocaleString()} town-days. NWP gives rain amounts, not probabilities, so it is scored as yes/no (≥ 1 mm forecast). Brier punishes yes/no forecasts hard, so compare CSI, POD and FAR as well. <b>Caveat:</b> the "truth" here is ERA5, the same dataset our model learned from, so it has a home advantage the professional models don't. Treat this comparison as indicative until it's repeated against rain gauges.`;
+    $("fc-nwp-lede").innerHTML = `Day-ahead runs of operational weather models (Open-Meteo archive of forecasts issued ~24 h ahead), ${c.period[0]} → ${c.period[1]}, on the same ${c.n.toLocaleString()} district-days. NWP gives rain amounts, not probabilities, so it is scored as yes/no (≥ 1 mm forecast). Brier punishes yes/no forecasts hard, so compare CSI, POD and FAR as well. <b>Caveat:</b> the "truth" here is ERA5, the same dataset our model learned from, so it has a home advantage the professional models don't. Treat this comparison as indicative until it's repeated against rain gauges.`;
     const rows2 = Object.entries(c.entries).map(([k, v]) => ({ ...v, hl: k === "model" }));
     $("fc-nwp").innerHTML = scoreTable(rows2, [
       { label: "Forecast", get: r => r.label }, { label: "Type", get: r => `<span class="muted">${r.kind}</span>` },
@@ -599,7 +599,7 @@ function setupHeavy() {
 renderers.heavy = () => {
   const H = state.heavy, f = state.forecast, thr = state.meta.targets.heavy_mm;
   if (f) {
-    $("hv-lede").innerHTML = `Model chance of ≥ ${thr} mm on <b>${fmtDate(f.target_date)}</b>, compared with the calendar odds for that date. In ERA5, a ${thr} mm day is rare. Even the wettest towns see only a few a year.`;
+    $("hv-lede").innerHTML = `Model chance of ≥ ${thr} mm on <b>${fmtDate(f.target_date)}</b>, compared with the calendar odds for that date. In ERA5, a ${thr} mm day is rare. Even the wettest districts see only a few a year.`;
     const rows = [...f.towns].sort((a, b) => b.p_heavy - a.p_heavy);
     $("hv-table").innerHTML = scoreTable(rows, [
       { label: "District", get: r => r.name },
@@ -625,7 +625,7 @@ renderers.heavy = () => {
     : "<p class='muted small'>Appears after the next retrain.</p>";
   const M = state.metrics?.metrics?.heavy;
   if (M) {
-    $("hv-skill").innerHTML = `On the unseen test years, heavy-rain days were <b>${pct(M.model.base_rate, 1)}</b> of town-days. The model's average precision is <b>${num(M.model.avg_precision)}</b>, against <b>${num(M.climatology.avg_precision)}</b> for calendar odds. AUC is ${num(M.model.auc)}, and Brier skill vs climatology is ${pct(M.model.bss, 1)}. Read these as "somewhat better than the calendar", not as a warning system. The status labels are fixed probability thresholds, not calibrated alerts.`;
+    $("hv-skill").innerHTML = `On the unseen test years, heavy-rain days were <b>${pct(M.model.base_rate, 1)}</b> of district-days. The model's average precision is <b>${num(M.model.avg_precision)}</b>, against <b>${num(M.climatology.avg_precision)}</b> for calendar odds. AUC is ${num(M.model.auc)}, and Brier skill vs climatology is ${pct(M.model.bss, 1)}. Read these as "somewhat better than the calendar", not as a warning system. The status labels are fixed probability thresholds, not calibrated alerts.`;
   }
   if (H) {
     const t = H.towns[$("hv-town").value];
@@ -663,7 +663,7 @@ renderers.about = () => {
   const m = state.meta, sp = m.model.split || {};
   const imp = state.metrics?.importance?.slice(0, 8) ?? [];
   $("about-body").innerHTML = `
-  <p><b>What it predicts.</b> For each town, the probability that tomorrow (local calendar day) gets at least ${m.targets.rain_mm} mm of rain. A second model estimates the chance of ≥ ${m.targets.heavy_mm} mm, for research only.</p>
+  <p><b>What it predicts.</b> For each of the 25 districts (and the towns inside them), the probability that tomorrow (local calendar day) gets at least ${m.targets.rain_mm} mm of rain. A second model estimates the chance of ≥ ${m.targets.heavy_mm} mm, for research only.</p>
   <p><b>Model.</b> One LightGBM gradient-boosted tree model shared by all ${m.towns.length} district capitals. It uses today's and recent weather at the town: rain over the last 1–30 days, humidity, pressure and its change, cloud, temperature range, wind direction. It also uses today's rain across the whole island, the season and the town's geography. Every input is known by the evening of the forecast day. A unit test checks that changing the future never changes a feature.</p>
   <p><b>Honest testing.</b> The data is split by date, never shuffled. Train: ${sp.train?.join(" → ") ?? "–"}. Validation, used only to decide when to stop training: ${sp.valid?.join(" → ") ?? "–"}. Test, never touched during development: ${sp.test?.join(" → ") ?? "–"}. Every forecast, including the baselines and professional models, is scored on the same rows.</p>
   <p><b>The live model learns from everything, including the test years.</b> Holding recent years back is only how the scores above are measured honestly: a model can't be graded on days it has already seen. Once testing is done, the model that makes the daily forecasts is retrained on all the data, ${sp.train?.[0] ?? "1980"} up to ${sp.test?.[1] ?? "the latest day"}. This happens again every month, so each new month of weather is added. The live ledger then checks that model against what actually happens, day by day.</p>

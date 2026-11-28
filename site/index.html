@@ -87,9 +87,9 @@
     </div>
 
     <h2>Check any day in the test period</h2>
-    <p class="sub">Pick a town and a date to see what each forecast said and what happened.</p>
+    <p class="sub">Pick a district and a date to see what each forecast said and what happened.</p>
     <div class="controls">
-      <label>Town <select id="ck-town"></select></label>
+      <label>District <select id="ck-town"></select></label>
       <label>Date <input type="date" id="ck-date"></label>
     </div>
     <div class="card" id="ck-result"></div>
@@ -182,9 +182,9 @@
   <!-- ======================================================= MONSOON -->
   <section id="monsoon">
     <h1>Monsoon &amp; rainfall dashboard</h1>
-    <p class="lede">Monthly and seasonal rainfall at each town compared with its normal, from ERA5 reanalysis.</p>
+    <p class="lede">Monthly and seasonal rainfall in each district compared with its normal, from ERA5 reanalysis.</p>
     <div class="controls">
-      <label>Town <select id="mo-town"></select></label>
+      <label>District <select id="mo-town"></select></label>
       <label>Compare year <select id="mo-year"></select></label>
     </div>
     <div class="grid kpis" id="mo-kpis"></div>
@@ -212,7 +212,7 @@
     <h1>Rooftop solar estimator</h1>
     <p class="lede">A rough yearly and monthly output estimate for a rooftop system, from satellite-derived sunlight records. Use it to get a feel for the numbers. A proper site survey should come first.</p>
     <div class="controls form">
-      <label>Town <select id="so-town"></select></label>
+      <label>District <select id="so-town"></select></label>
       <label>System size (kWp) <input type="number" id="so-kwp" value="5" min="0.5" max="100" step="0.5"></label>
       <label>Roof faces
         <select id="so-orient">
@@ -251,7 +251,7 @@
     <div class="grid two">
       <div class="card">
         <h2 style="margin-top:0">When do heavy-rain days happen?</h2>
-        <div class="controls" style="margin:6px 0"><label>Town <select id="hv-town"></select></label></div>
+        <div class="controls" style="margin:6px 0"><label>District <select id="hv-town"></select></label></div>
         <div id="hv-months"></div>
       </div>
       <div class="card">
