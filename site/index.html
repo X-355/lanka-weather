@@ -39,7 +39,7 @@
   <div id="quake-banner"></div>
   <!-- ======================================================= FORECAST -->
   <section id="forecast" class="active">
-    <h1>Will it rain tomorrow?</h1>
+    <h1 id="fc-h1">Will it rain tomorrow?</h1>
     <p class="lede" id="fc-lede">Loading…</p>
     <div class="grid map-layout">
       <div class="card">
@@ -267,7 +267,8 @@
       <p class="sub" id="so-sub"></p>
       <div id="so-chart"></div>
     </div>
-    <p class="sub small" style="margin-top:12px">Output ≈ kWp × daily sunlight (kWh/m²) × performance ratio × orientation × shading. Tariffs and net-metering rules change, so enter the rate you're actually paid or charged. Cost and payback ignore financing, panel degradation (~0.5%/yr) and inverter replacement.</p>
+    <p class="sub small" id="so-rate-note" style="margin-top:12px"></p>
+    <p class="sub small" style="margin-top:6px">Output ≈ kWp × daily sunlight (kWh/m²) × performance ratio × orientation × shading. Tariffs and net-metering rules change, so enter the rate you're actually paid or charged. Cost and payback ignore financing, panel degradation (~0.5%/yr) and inverter replacement.</p>
   </section>
 
   <!-- ======================================================= HEAVY -->

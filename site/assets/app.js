@@ -10,6 +10,15 @@ const DAYS_IN = [31, 28.25, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 const pct = (x, d = 0) => (x == null ? "–" : `${(100 * x).toFixed(d)}%`);
 const num = (x, d = 3) => (x == null ? "–" : x.toFixed(d));
 const fmtDate = s => new Date(s + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+// Day words follow the clock in Sri Lanka, not the time the forecast was issued: after midnight the forecast
+// day is "today" and the issue day's rain is "yesterday's".
+const slISO = (off = 0) => new Date(Date.now() + off * 864e5).toLocaleDateString("en-CA", { timeZone: "Asia/Colombo" });
+const shiftISO = (iso, k) => { const d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + k); return d.toISOString().slice(0, 10); };
+const wkd = iso => new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+const relDay = iso => iso === slISO(0) ? "today" : iso === slISO(1) ? "tomorrow" : iso === slISO(-1) ? "yesterday" : null;
+const forDay = () => { const t = state.forecast?.target_date; return t ? (relDay(t) ?? `on ${wkd(t)}`) : "tomorrow"; };
+// Rain on the day the forecast was made (the day before the target), named by weekday so it never goes stale.
+const obsLabel = () => { const t = state.forecast?.target_date; return t ? `${new Date(shiftISO(t, -1) + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short" })}'s rain` : "Rain today"; };
 const $ = id => document.getElementById(id);
 
 async function get(name) {
@@ -95,6 +104,13 @@ function townBundle(district) {
 let mapMode = "rain";
 let selectedDistrict = null;
 
+// The published forecast is the hybrid; its backtest exists for district points (fair period), so show it here.
+function hybridNote(k) {
+  const bt = state.metrics?.metrics?.by_town_fair?.[k], F = state.metrics?.metrics?.fair;
+  if (!bt?.hybrid || !bt?.model) return "";
+  const per = F?.test_period ? ` (${F.test_period[0].slice(0, 7)} → ${F.test_period[1].slice(0, 7)})` : "";
+  return ` <b>Published forecast = hybrid.</b> At the ${townName(k)} district point over the same later period${per}, the hybrid scored <b>${pct(bt.hybrid.bss, 0)}</b> and Weather Lab alone ${pct(bt.model.bss, 0)}, so the town numbers above are likely on the low side for what's published.`;
+}
 function renderDistrictPanel() {
   const panel = $("district-panel"), f = state.forecast;
   let auto = false;
@@ -126,17 +142,17 @@ function renderDistrictPanel() {
     return `<span title="Brier skill vs this town's own climatology, test years. Markov baseline ${pct(k.markov_bss, 0)}. AUC ${num(k.auc, 2)}. ${note}.">${pct(k.bss, 0)}</span>`;
   };
   panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
-      <h2 style="margin:0">${t.name} District${auto ? ` <span class="muted small" style="font-weight:450">highest chance tomorrow · click any district to switch</span>` : ""}</h2><span class="muted small">${t.region} Province · ${t.zone} zone · normal for the date ${pct(d.p_clim)}</span></div>
+      <h2 style="margin:0">${t.name} District${auto ? ` <span class="muted small" style="font-weight:450">highest chance ${forDay()} · click any district to switch</span>` : ""}</h2><span class="muted small">${t.region} Province · ${t.zone} zone · normal for the date ${pct(d.p_clim)}</span></div>
     <div class="table-scroll" style="margin-top:8px">${scoreTable(rows, [
       { label: "Town", get: r => r.name },
       { label: `Rain ≥ ${thr.rain_mm} mm`, num: true, get: r => `<span class="swatch" style="background:color-mix(in oklab, var(--series-1) ${Math.round(10 + 80 * r.p_rain)}%, var(--surface-1))"></span>${pct(r.p_rain)}` },
       { label: `Heavy ≥ ${thr.heavy_mm} mm`, num: true, get: r => pct(r.p_heavy, 1) },
-      { label: "Rain today", num: true, get: r => r.today_precip == null ? "–" : `${r.today_precip} mm` },
+      { label: obsLabel(), num: true, get: r => r.today_precip == null ? "–" : `${r.today_precip} mm` },
       { label: "Elevation", num: true, get: r => r.elevation == null ? "–" : `${r.elevation} m` },
-      { label: "Tested skill", num: true, get: skillCell, title: "Backtest skill vs climatology on 2022→ test years" },
+      { label: "Tested skill, Weather Lab alone", num: true, get: skillCell, title: "Backtest skill vs climatology on 2022→ test years, Weather Lab model without the professional forecasts" },
     ])}</div>
     <p class="sub small" style="margin:8px 0 0">${places.length ? (Object.keys(state.placesBacktest).length
-        ? "Town forecasts use the same model, fed with each town's own weather. <b>Tested skill</b> is the town's backtest on the test years: how much better than the town's own calendar odds (hover for detail). Most towns are places the model never trained on. Towns close together often share weather data, so similar numbers are expected."
+        ? "Town forecasts use the same model, fed with each town's own weather. <b>Tested skill</b> is the town's backtest on the test years: how much better than the town's own calendar odds (hover for detail). It is Weather Lab alone: the professional forecasts that feed the hybrid were only collected for the district points, so towns can't be backtested as hybrid yet. Most towns are places the model never trained on. Towns close together often share weather data, so similar numbers are expected." + hybridNote(selectedDistrict)
         : "Town forecasts use the same model, fed with each town's own weather. Their backtest is still downloading (“not yet”); the published scores are for the district points. Towns close together often share weather data, so similar numbers are expected.") : "No town list for this district yet."}</p>
     <div id="dp-recent" class="dp-recent"></div>`;
   // Spare height under the town table: the district's rain over the last 30 days (hidden when there's no room).
@@ -177,7 +193,7 @@ function renderMap() {
   }
   districtMap($("fc-map"), { areas, labelNudge: NUDGE, selected: selectedDistrict,
     onClick: key => { selectedDistrict = key; renderMap(); renderDistrictPanel(); renderRank(); $("district-panel").scrollIntoView({ behavior: "smooth", block: "nearest" }); } });
-  $("map-note").innerHTML = (mapMode === "rain" ? "Darker blue = higher chance of rain tomorrow. " : "Heavy-rain status, research only. ")
+  $("map-note").innerHTML = (mapMode === "rain" ? `Darker blue = higher chance of rain ${forDay()}. ` : "Heavy-rain status, research only. ")
     + (missing ? `Hatched: no forecast yet for ${missing} districts. ` : "")
     + `<br><span class="muted">District map: <a href="https://mapsvg.com/maps/sri-lanka">MapSVG</a> via <a href="https://github.com/VictorCazanave/svg-maps">svg-maps</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</span>`;
 }
@@ -209,6 +225,8 @@ function renderForecastCards() {
     $("fc-lede").textContent = "No forecast has been issued yet. The daily job publishes one each evening.";
     return;
   }
+  const rel = relDay(f.target_date);
+  $("fc-h1").textContent = `Will it rain ${rel ?? "on " + wkd(f.target_date)}?`;
   $("fc-lede").innerHTML = `Chance of at least ${state.meta.targets.rain_mm} mm of rain on <b>${fmtDate(f.target_date)}</b>, ${f.season}. Issued ${new Date(f.issued_at).toLocaleString("en-GB", { timeZone: "Asia/Colombo", dateStyle: "medium", timeStyle: "short" })} Sri Lanka time.` +
     methodNote(f.towns) + runNote(f);
   renderRank();
@@ -228,7 +246,7 @@ function renderRank() {
   const top = heavy ? Math.max(0.05, ...rows.map(t => Math.max(val(t), norm(t)))) : 1;  // heavy chances are small: own scale
   const thr = state.meta.targets;
   $("fc-rank-title").textContent = `All ${rows.length} districts, ${heavy ? `chance of ≥ ${thr.heavy_mm} mm` : `chance of rain`}`;
-  const head = second => `<div class="rank-row rank-head${second ? " second" : ""}" aria-hidden="true"><span>District</span><span>${heavy ? `Chance ≥ ${thr.heavy_mm} mm` : `Chance ≥ ${thr.rain_mm} mm`}</span><span class="num">Chance</span><span class="num">vs normal</span><span class="num">Rain today</span></div>`;
+  const head = second => `<div class="rank-row rank-head${second ? " second" : ""}" aria-hidden="true"><span>District</span><span>${heavy ? `Chance ≥ ${thr.heavy_mm} mm` : `Chance ≥ ${thr.rain_mm} mm`}</span><span class="num">Chance</span><span class="num">vs normal</span><span class="num">${obsLabel()}</span></div>`;
   const rowHTML = t => {
     const v = val(t), n = norm(t), d = v - n;
     const st = heavy ? heavyStatus(t.p_heavy, t.p_clim_heavy) : null;
@@ -260,7 +278,7 @@ function renderRank() {
     selectedDistrict = b.dataset.k; renderMap(); renderDistrictPanel(); renderRank();
     $("district-panel").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }));
-  $("fc-rank-note").innerHTML = `Bar: the forecast's chance for tomorrow${heavy ? ", on its own scale because heavy-rain chances are small" : ""}. Tick: what's normal for this date. “vs normal” is the difference in percentage points.` +
+  $("fc-rank-note").innerHTML = `Bar: the forecast's chance for ${wkd(f.target_date)}${heavy ? ", on its own scale because heavy-rain chances are small" : ""}. Tick: what's normal for this date. “vs normal” is the difference in percentage points.` +
     (f.towns.some(t => t.method === "model") && f.towns.some(t => t.method === "hybrid") ? " * Weather Lab alone: the professional forecast was missing." : "");
 }
 document.addEventListener("click", e => {
@@ -526,6 +544,8 @@ function renderChecker() {
 }
 
 renderers.forecast = () => { renderForecastCards(); renderLedger(); renderScoreboards(); renderChecker(); };
+// Pages left open past midnight: redraw the day words ("tomorrow" becomes "today") when the date changes.
+{ let day = slISO(0); setInterval(() => { if (slISO(0) !== day) { day = slISO(0); if (state.forecast) { renderForecastCards(); renderMap(); renderDistrictPanel(); } } }, 60e3); }
 
 // ------------------------------------------------------------------ monsoon
 const SEASON_ORDER = ["NEM", "FIM", "SWM", "SIM"];
@@ -619,6 +639,9 @@ function setupSolar() {
   $("so-pr").value = s.performance_ratio;
   $("so-tariff").value = s.default_tariff_lkr;
   $("so-cost").value = s.default_cost_lkr_per_kwp;
+  const expired = s.tariff_valid_until && slISO(0) > s.tariff_valid_until;
+  $("so-rate-note").innerHTML = `<b>Default rate: LKR ${s.default_tariff_lkr}/kWh</b>, the ${s.tariff_source ? `<a href="${s.tariff_url}" rel="noopener">${s.tariff_source}</a>` : "assumed rate"}${expired ? ` <b>(this period has ended; check <a href="https://www.pucsl.gov.lk" rel="noopener">pucsl.gov.lk</a> for the current rate)</b>` : ""}.
+    New systems are paid this for what they export; net metering is closed to new systems, and a solar-plus-battery system is paid a different rate. Power you use yourself is worth your own bill rate instead, which for many homes is higher, so change the value if most of your solar is used at home. The cost per kWp (LKR ${s.default_cost_lkr_per_kwp.toLocaleString()}) is a rough assumption; use your installer's quote.`;
   ["so-town", "so-kwp", "so-orient", "so-shade", "so-pr", "so-tariff", "so-cost"].forEach(id => $(id).addEventListener("input", () => renderers.solar()));
 }
 
@@ -653,7 +676,8 @@ function heavyStatus(p, clim) {
   if (p >= 0.25) return { label: "High", color: "var(--critical)", icon: "▲▲" };
   if (p >= 0.10 || ratio >= 4) return { label: "Elevated", color: "var(--serious)", icon: "▲" };
   if (ratio >= 2) return { label: "Above normal", color: "var(--warning)", icon: "△" };
-  return { label: "Typical", color: "var(--good)", icon: "" };
+  if (clim > 0 && ratio < 0.5) return { label: "Lower than usual", color: "var(--neutral)", icon: "▽" };
+  return { label: "Near normal", color: "var(--good)", icon: "" };
 }
 
 function setupHeavy() {
@@ -677,14 +701,27 @@ renderers.heavy = () => {
     ]);
   }
   const HS = state.metrics?.metrics?.heavy_fair, HM = state.metrics?.metrics?.heavy_main;
-  const card = (h, title) => !h ? "" : `<h3 style="margin:12px 0 4px;font-size:15px">${title}</h3><p class="sub small" style="margin:0 0 6px">${h.events} heavy-rain district-days out of ${h.n.toLocaleString()}${h.period ? `, ${h.period[0]} → ${h.period[1]}` : ""}.</p>` +
-    scoreTable(Object.values(h.entries).map(e => ({ ...e, hl: /Hybrid, warn at ≥ 30/.test(e.label) })), [
+  const rng = a => a ? `<div class="muted small">${a[0].toFixed(2)}–${a[1].toFixed(2)}</div>` : "";
+  const rngP = a => a ? `<div class="muted small">${pct(a[0])}–${pct(a[1])}</div>` : "";
+  const card = (h, title) => { if (!h) return ""; const BS = h.bootstrap?.entries || {};
+    return `<h3 style="margin:12px 0 4px;font-size:15px">${title}</h3><p class="sub small" style="margin:0 0 6px">${h.events} heavy-rain district-days out of ${h.n.toLocaleString()}${h.period ? `, ${h.period[0]} → ${h.period[1]}` : ""}${h.bootstrap ? ". Small grey numbers: 95% range from resampling whole days" : ""}.</p>` +
+    scoreTable(Object.entries(h.entries).map(([k, e]) => ({ ...e, bs: BS[k], hl: /Hybrid, warn at ≥ 30/.test(e.label) })), [
       { label: "Warning rule", get: r => r.label },
       { label: "Caught", num: true, get: r => r.hits }, { label: "Missed", num: true, get: r => r.misses },
       { label: "False alarms", num: true, get: r => r.false_alarms },
-      { label: "Caught %", num: true, get: r => pct(r.pod), title: "Probability of detection" },
+      { label: "Caught %", num: true, get: r => pct(r.pod) + rngP(r.bs?.pod_range), title: "Probability of detection" },
       { label: "False-alarm %", num: true, get: r => pct(r.far), title: "Share of warnings that were wrong" },
-      { label: "CSI ↑", num: true, get: r => num(r.csi), title: "Hits / (hits + misses + false alarms)" }]);
+      { label: "CSI ↑", num: true, get: r => num(r.csi) + rng(r.bs?.csi_range), title: "Hits / (hits + misses + false alarms)" }]) + heavyVerdict(h); };
+  // Plain verdict on the head-to-head: "ahead" only when the 95% range of the paired difference excludes 0.
+  const heavyVerdict = h => {
+    const v = h.bootstrap?.entries?.hybrid_30?.vs_ref, v20 = h.bootstrap?.entries?.hybrid_20?.vs_ref;
+    if (!v) return "";
+    const sig = r => r[0] > 0 ? "ahead" : r[1] < 0 ? "behind" : "level";
+    const csi = sig(v.csi_diff_range);
+    return `<p class="sub" style="margin:8px 0 0"><b>Is the hybrid better than ECMWF at heavy rain? ${csi === "ahead" ? "Yes, clearly." : csi === "behind" ? "No, it's behind." : "Not proven yet."}</b>
+      Warning at 30%, the hybrid's CSI is ${v.csi_diff >= 0 ? "+" : ""}${v.csi_diff.toFixed(3)} against ECMWF's ≥ 50 mm forecast, but the 95% range of that gap is ${v.csi_diff_range[0].toFixed(3)} to +${v.csi_diff_range[1].toFixed(3)}, which includes zero${csi === "level" ? `: with only ${h.events} heavy-rain district-days, bunched into a few stormy days, call them level for now` : ""}.
+      ${v20 ? `Warning at 20%, the hybrid catches ${pct(v20.pod_diff)} more heavy days (range ${pct(v20.pod_diff_range[0])} to ${pct(v20.pod_diff_range[1])}${v20.pod_diff_range[0] > 0 ? ", a clear gain" : ""}) for a similar CSI, at the cost of more false alarms.` : ""}</p>`;
+  };
   if ($("hv-scorecard")) $("hv-scorecard").innerHTML = (HS || HM)
     ? card(HS, "Against ECMWF, same days") + card(HM, "Weather Lab alone, all test years") +
       `<p class="sub small" style="margin:10px 0 0">Heavy days are rare (about 1 in 70 district-days), so accuracy and Brier score look good even for a forecast that misses most floods. These counts are the honest measure. The thresholds were fixed in advance, not tuned on these days.</p>`

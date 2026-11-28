@@ -83,6 +83,42 @@ def heavy_scorecard(df: pd.DataFrame, ycol: str, entries: dict[str, dict]) -> di
     return out
 
 
+def bootstrap_scorecard(df: pd.DataFrame, ycol: str, entries: dict[str, dict], ref: str, B: int = 1000, seed: int = 3) -> dict:
+    """Day-block 95% ranges for heavy-rain POD and CSI, and for each entry's CSI/POD minus the reference entry's.
+
+    Resamples whole days (all districts on a day together), because heavy rain hits many districts at once and
+    the 185 events are far from independent. Same rows for every entry: days where any entry is missing drop out.
+    """
+    d = df.dropna(subset=[ycol] + [e["col"] for e in entries.values() if e["col"] in df])
+    y = d[ycol].to_numpy(bool)
+    uniq, inv = np.unique(d["target_date"].to_numpy(), return_inverse=True)
+    nd = len(uniq)
+    cnt = {}
+    for name, e in entries.items():
+        if e["col"] not in d:
+            continue
+        w = d[e["col"]].to_numpy(float) >= e["threshold"]
+        cnt[name] = np.stack([np.bincount(inv, (w & y).astype(float), nd), np.bincount(inv, (~w & y).astype(float), nd),
+                              np.bincount(inv, (w & ~y).astype(float), nd)])  # hits, misses, false alarms per day
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, nd, (B, nd))
+    def scores(c):
+        h, m, f = (c[:, idx].sum(axis=2))
+        with np.errstate(invalid="ignore", divide="ignore"):
+            return h / (h + m), h / (h + m + f)
+    S = {n: scores(c) for n, c in cnt.items()}
+    q = lambda a: [round(float(np.nanpercentile(a, 2.5)), 3), round(float(np.nanpercentile(a, 97.5)), 3)]
+    out = {"B": B, "n_days": int(nd), "events": int(y.sum()), "ref": ref, "entries": {}}
+    for n, (pod, csi) in S.items():
+        r = {"pod_range": q(pod), "csi_range": q(csi)}
+        if n != ref and ref in S:
+            dc, dp = csi - S[ref][1], pod - S[ref][0]
+            r["vs_ref"] = {"csi_diff": round(float(np.nanmean(dc)), 3), "csi_diff_range": q(dc), "csi_share_positive": round(float(np.nanmean(dc > 0)), 3),
+                           "pod_diff": round(float(np.nanmean(dp)), 3), "pod_diff_range": q(dp)}
+        out["entries"][n] = r
+    return out
+
+
 def bootstrap_auc(d: pd.DataFrame, ycol: str, forecasts: dict[str, str], pairs=(), B: int = 500, seed: int = 1) -> dict:
     """AUC (how well a forecast ranks rain days above dry days) with day-block 95% intervals, same rows for all."""
     days = d["target_date"].to_numpy()

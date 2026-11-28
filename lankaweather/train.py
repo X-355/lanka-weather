@@ -171,6 +171,15 @@ def evaluate(test: pd.DataFrame, nwp_models: dict) -> dict:
 
 # ----------------------------------------------------------------------------- fair comparison, hybrid, truths
 
+def HEAVY_FAIR_ENTRIES(heavy_mm: float) -> dict:
+    return {
+        "ecmwf_50": {"col": "nwp_ecmwf_ifs025", "threshold": heavy_mm, "label": f"ECMWF forecast ≥ {heavy_mm:g} mm"},
+        "ecmwf_cal_30": {"col": "p_ecmwf_cal_heavy", "threshold": 0.3, "label": "ECMWF calibrated, warn at ≥ 30%"},
+        "model_30": {"col": "p_heavy", "threshold": 0.3, "label": "Weather Lab, warn at ≥ 30%"},
+        "hybrid_30": {"col": "p_hybrid_heavy", "threshold": 0.3, "label": "Hybrid, warn at ≥ 30%", "probability": True},
+        "hybrid_20": {"col": "p_hybrid_heavy", "threshold": 0.2, "label": "Hybrid, warn at ≥ 20%"}}
+
+
 def evaluate_extended(test: pd.DataFrame, hist: pd.DataFrame, cfg: dict) -> dict:
     """Everything that needs the professional forecasts or another truth. See hybrid.py and verify.py."""
     rain_mm, heavy_mm = cfg["target"]["rain_mm"], cfg["target"]["heavy_mm"]
@@ -208,13 +217,9 @@ def evaluate_extended(test: pd.DataFrame, hist: pd.DataFrame, cfg: dict) -> dict
         out["by_town_fair"] = {t: {n: scores(g["y_rain"], g[col], g["p_clim"]) for n, col in
                                    [("hybrid", "p_hybrid"), ("model", "p_rain"), ("ecmwf_cal", "p_ecmwf_cal"), ("markov", "p_markov")]}
                                for t, g in fwd.groupby("town")}
-        out["heavy_fair"] = verify.heavy_scorecard(fwd, "y_heavy", {
-            "ecmwf_50": {"col": "nwp_ecmwf_ifs025", "threshold": heavy_mm, "label": f"ECMWF forecast ≥ {heavy_mm:g} mm"},
-            "ecmwf_cal_30": {"col": "p_ecmwf_cal_heavy", "threshold": 0.3, "label": "ECMWF calibrated, warn at ≥ 30%"},
-            "model_30": {"col": "p_heavy", "threshold": 0.3, "label": "Weather Lab, warn at ≥ 30%"},
-            "hybrid_30": {"col": "p_hybrid_heavy", "threshold": 0.3, "label": "Hybrid, warn at ≥ 30%", "probability": True},
-            "hybrid_20": {"col": "p_hybrid_heavy", "threshold": 0.2, "label": "Hybrid, warn at ≥ 20%"}})
+        out["heavy_fair"] = verify.heavy_scorecard(fwd, "y_heavy", HEAVY_FAIR_ENTRIES(heavy_mm))
         out["heavy_fair"]["period"] = summ["test_period"]
+        out["heavy_fair"]["bootstrap"] = verify.bootstrap_scorecard(fwd, "y_heavy", HEAVY_FAIR_ENTRIES(heavy_mm), ref="ecmwf_50")
         # out-of-fold columns for the independent truths
         test = test.merge(d[["town", "target_date", "p_hybrid_oof", "p_ecmwf_cal_oof", "p_hybrid_heavy_oof"]],
                           on=["town", "target_date"], how="left")

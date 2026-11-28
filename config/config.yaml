@@ -69,7 +69,12 @@ nwp:
 
 solar:
   performance_ratio: 0.78     # inverter, wiring, soiling, temperature losses (typical rooftop 0.75–0.80)
-  default_tariff_lkr: 37.0    # LKR per kWh avoided — user-editable on the site
+  # PUCSL feed-in tariff for NEW rooftop solar up to 10 kW (Net Plus; net metering closed to new systems).
+  # Decision effective 25 Aug 2026, valid to 24 Feb 2027. Check pucsl.gov.lk when it expires.
+  default_tariff_lkr: 23.11
+  tariff_source: "PUCSL feed-in tariff for new rooftop solar up to 10 kW, effective 25 Aug 2026, valid until 24 Feb 2027"
+  tariff_url: "https://www.pucsl.gov.lk/wp-content/uploads/2026/08/Annex-2-Summary-of-Approved-Feed-in-Tariffs.pdf"
+  tariff_valid_until: "2027-02-24"
   default_cost_lkr_per_kwp: 280000
 
 lightgbm:

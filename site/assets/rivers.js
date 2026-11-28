@@ -59,17 +59,24 @@ const RESERVOIRS = [
   { name: "Maduru Oya", river: "Maduru Oya", by: "Mahaweli Authority", lat: 7.65, lon: 81.2, catch: [[7.55, 81.05], [7.45, 81.15]] },
 ];
 
-const STATUS = { good: "var(--good)", warning: "var(--warning)", serious: "var(--serious)", critical: "var(--critical)" };
+const STATUS = { neutral: "var(--neutral)", good: "var(--good)", warning: "var(--warning)", serious: "var(--serious)", critical: "var(--critical)" };
 const badge = (l, t) => `<span class="status"><span class="dot" style="background:${STATUS[l]}"></span>${t}</span>`;
 const r0 = x => (x == null ? "–" : Math.round(x).toLocaleString());
 const fmtD = s => new Date(s + "T00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Colombo" });
 
-function riverStatus(peak, p75, max) {
+// The label follows the "× average" number shown beside it (peak flow ÷ long-term average for that date).
+// GloFAS's 75th percentile can sit below the average for these flashy rivers, so it isn't used for the label.
+export const RIVER_RULE = "Labels follow the × average column: under 0.5× lower than usual, 0.5–1.5× usual, 1.5–3× higher than usual, over 3× much higher than usual; red if the peak tops the wettest year on record for the date.";
+export function riverStatus(peak, mean, max) {
   if (peak == null) return ["good", "–"];
   if (max != null && peak > max) return ["critical", "Above the wettest year on record"];
-  if (p75 != null && peak > p75) return ["serious", "Higher than usual"];
-  return ["good", "Usual range"];
+  const r = mean ? peak / mean : null;
+  if (r == null) return ["good", "–"];
+  if (r >= 3) return ["serious", "Much higher than usual"];
+  if (r >= 1.5) return ["warning", "Higher than usual"];
+  if (r < 0.5) return ["neutral", "Lower than usual"];
+  return ["good", "Usual"];
 }
 function reservoirStatus(past, next) {
   // Rule of thumb on catchment rain, not an official threshold and not a release warning.
@@ -104,7 +111,7 @@ async function loadRivers() {
     const peak = d.river_discharge[pi];
     return { ...s, d, i0, pi, now: d.river_discharge[i0], peak, peakDate: d.time[pi],
       ratio: d.river_discharge_mean[pi] ? peak / d.river_discharge_mean[pi] : null,
-      status: riverStatus(peak, d.river_discharge_p75[pi], d.river_discharge_max[pi]) };
+      status: riverStatus(peak, d.river_discharge_mean[pi], d.river_discharge_max[pi]) };
   });
 }
 
@@ -188,13 +195,13 @@ function select(s) {
 }
 
 function tables() {
-  const order = { critical: 0, serious: 1, warning: 2, good: 3 };
+  const order = { critical: 0, serious: 1, warning: 2, good: 3, neutral: 4 };
   const rs = [...rivers].sort((a, b) => order[a.status[0]] - order[b.status[0]] || (b.ratio ?? 0) - (a.ratio ?? 0));
   $("rv-rivers").innerHTML = `<div class="table-scroll"><table class="data"><thead><tr><th>River</th><th>Station</th><th>Outlook (10 days)</th>
     <th class="num">Flow now</th><th class="num">Peak</th><th>Peak day</th><th class="num">× average</th></tr></thead><tbody>
     ${rs.map(s => `<tr data-k="${STATIONS.indexOf(STATIONS.find(x => x.name === s.name))}" style="cursor:pointer"><td>${s.river}</td><td>${s.name}</td><td>${badge(...s.status)}</td>
       <td class="num">${r0(s.now)} m³/s</td><td class="num">${r0(s.peak)} m³/s</td><td>${fmtD(s.peakDate)}</td><td class="num">${s.ratio ? s.ratio.toFixed(1) + "×" : "–"}</td></tr>`).join("")}
-    </tbody></table></div>`;
+    </tbody></table></div><p class="sub small" style="margin:8px 0 0">${RIVER_RULE} × average = the highest modelled flow in the next 10 days ÷ the long-term average flow for that date.</p>`;
   $("rv-rivers").querySelectorAll("tr[data-k]").forEach(tr => tr.addEventListener("click", () => select(rivers[+tr.dataset.k])));
   const ro = [...reservoirs].sort((a, b) => order[a.status[0]] - order[b.status[0]] || b.next - a.next);
   $("rv-res").innerHTML = `<div class="table-scroll"><table class="data"><thead><tr><th>Reservoir</th><th>River</th><th>Upstream rain</th>

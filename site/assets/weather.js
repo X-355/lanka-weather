@@ -4,6 +4,7 @@ import { fill, fitSoon } from "./fit.js?v=dev";
 //   Open-Meteo Forecast (ECMWF and other national models), Air Quality (Copernicus CAMS),
 //   Flood (Copernicus GloFAS), Marine; plus our own model's chance of rain and GDACS cyclones (nightly).
 import { bars } from "./charts.js?v=dev";
+import { riverStatus, RIVER_RULE } from "./rivers.js?v=dev";
 
 const OM = "https://api.open-meteo.com/v1/forecast";
 const AQ = "https://air-quality-api.open-meteo.com/v1/air-quality";
@@ -26,7 +27,7 @@ const wmo = c => WMO[c] || ["–", ""];
 const compass = d => d == null ? "" : ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(d / 45) % 8];
 
 // Status scales (colour always comes with a label).
-const STATUS = { good: "var(--good)", warning: "var(--warning)", serious: "var(--serious)", critical: "var(--critical)" };
+const STATUS = { neutral: "var(--neutral)", good: "var(--good)", warning: "var(--warning)", serious: "var(--serious)", critical: "var(--critical)" };
 const badge = (level, text) => `<span class="status"><span class="dot" style="background:${STATUS[level]}"></span>${text}</span>`;
 
 function aqiLevel(a) {  // US EPA AQI categories
@@ -193,7 +194,12 @@ const fail = (id, what) => { $(id).innerHTML = `<p class="muted small">Couldn't 
 function renderNow(place, f) {
   if (!f) return fail("wx-now", "the forecast");
   const c = f.current, [word, icon] = wmo(c.weather_code), ours = ourForecast(place);
-  const tomorrowP = f.daily.precipitation_probability_max?.[1];
+  // Look up the professional forecast for the same date as ours, never by position ("tomorrow").
+  const di = ours ? f.daily.time.indexOf(ours.target) : -1;
+  const proP = di >= 0 ? f.daily.precipitation_probability_max?.[di] : null;
+  const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: TZ });
+  const tomISO = new Date(Date.now() + 864e5).toLocaleDateString("en-CA", { timeZone: TZ });
+  const rel = ours ? (ours.target === todayISO ? "today" : ours.target === tomISO ? "tomorrow" : "") : "";
   $("wx-now").innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:18px 32px;align-items:center">
       <div><div class="muted small">${place.name} · now (${fmtTime(c.time)})</div>
@@ -208,8 +214,8 @@ function renderNow(place, f) {
       </div>
     </div>
     ${ours ? `<div class="card" style="margin-top:14px;background:var(--surface-2);border:0">
-      <b>Rain tomorrow (${new Date(ours.target + "T00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" })})</b>:
-      our model says <b>${pct(ours.p)}</b>${ours.clim != null ? ` (normal for the date ${pct(ours.clim)})` : ""}; the professional forecast's chance is <b>${tomorrowP == null ? "–" : tomorrowP + "%"}</b>.
+      <b>Rain ${rel ? rel + " " : "on "}(${new Date(ours.target + "T00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" })})</b>:
+      our model says <b>${pct(ours.p)}</b>${ours.clim != null ? ` (normal for the date ${pct(ours.clim)})` : ""}; the professional forecast's chance for the same day is <b>${proP == null ? "–" : proP + "%"}</b>.
       <span class="muted small">Ours is for ${ours.label}; see the Forecast checker tab for how each is tested.</span></div>` : ""}
     <p class="muted small" style="margin:8px 0 0">Conditions and forecast: <a href="https://open-meteo.com">Open-Meteo</a> (ECMWF and other national weather models). The model uses its own grid, so "now" means the model's latest estimate, not a station reading.</p>`;
 }
@@ -341,10 +347,9 @@ function renderRiver(fl, place) {
   const i0 = todayIdx >= 0 ? todayIdx : 7;
   const fut = d.river_discharge.slice(i0), peak = Math.max(...fut.filter(v => v != null)), pi = i0 + fut.indexOf(peak);
   const ratio = d.river_discharge_mean[pi] ? peak / d.river_discharge_mean[pi] : null;
-  const lvl = d.river_discharge_max[pi] && peak > d.river_discharge_max[pi] ? ["critical", "Higher than any year on record for the date"]
-    : d.river_discharge_p75[pi] && peak > d.river_discharge_p75[pi] ? ["serious", "Higher than usual"] : ["good", "Within the usual range"];
+  const lvl = riverStatus(peak, d.river_discharge_mean[pi], d.river_discharge_max[pi]);
   $("wx-river").innerHTML = `<p style="margin:0 0 8px">${badge(...lvl)} Peak flow in the next 10 days: <b>${r0(peak)} m³/s</b> on ${new Date(d.time[pi] + "T00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}${ratio ? ` (${r1(ratio)}× the long-term average for the date)` : ""}.</p><div id="wx-river-chart"></div>
-    <p class="muted small" style="margin:8px 0 0">Copernicus <a href="https://global-flood.emergency.copernicus.eu">GloFAS</a> river model, nearest ~5 km river cell to ${place.name}. It may be a small stream rather than the main river, and it is a model, not a gauge. For flood warnings, follow the Irrigation Department and the Disaster Management Centre.</p>`;
+    <p class="muted small" style="margin:8px 0 0">Copernicus <a href="https://global-flood.emergency.copernicus.eu">GloFAS</a> river model, nearest ~5 km river cell to ${place.name}. It may be a small stream rather than the main river, and it is a model, not a gauge. ${RIVER_RULE} For flood warnings, follow the Irrigation Department and the Disaster Management Centre.</p>`;
   fill($("wx-river-chart"), hr => bars($("wx-river-chart"), { categories: d.time.map(t => t.slice(5)), height: hr, fmt: v => v.toFixed(0), yTitle: "m³/s", min: 0,
     series: [{ name: "River flow (past week + forecast)", color: "var(--series-1)", values: d.river_discharge },
              { name: "Long-term average", color: "var(--neutral)", kind: "line", values: d.river_discharge_mean },
