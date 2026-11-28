@@ -1,0 +1,1 @@
+{"fetched_at":"2026-11-28T05:22:09Z","source":"GDACS","ok":false,"events":[],"error":"HTTPSConnectionPool(host='www.gdacs.org', port=443): Read timed out. (read timeout=60)"}
