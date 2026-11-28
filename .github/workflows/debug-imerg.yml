@@ -1,0 +1,25 @@
+name: Debug IMERG (temporary)
+on: workflow_dispatch
+permissions: { contents: read }
+jobs:
+  d:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -q requests numpy pandas pyyaml
+      - env: { EARTHDATA_TOKEN: "${{ secrets.EARTHDATA_TOKEN }}" }
+        run: |
+          python - <<'PY'
+          from datetime import date
+          from lankaweather import imerg as I
+          s = I._session()
+          d = date(2026, 11, 20)
+          name = I._file_name(s, "late", d)
+          print("file", name)
+          base = f"{I.BASE}/{I.PRODUCTS['late'][0]}/{d.year}/{d.month:02d}/{name}"
+          r = s.get(base + ".dds", timeout=60); print("DDS", r.status_code); print(r.text[:1500])
+          url = base + f".ascii?precipitation[0:0][{I.LON0}:{I.LON0+2}][{I.LAT0}:{I.LAT0+3}]"
+          r = s.get(url, timeout=60); print("ASCII", r.status_code); print(r.text[:2500])
+          PY
