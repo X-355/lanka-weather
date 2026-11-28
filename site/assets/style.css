@@ -190,3 +190,17 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: s
 
 /* keep Leaflet maps beneath the sticky header */
 .leaflet-container { z-index: 0; isolation: isolate; }
+
+/* Live sky: live/forecast tags, legend, timeline with a "now" marker, smoothed forecast grid */
+.tag { display: inline-block; font-size: 11px; font-weight: 650; letter-spacing: .04em; padding: 1px 6px; border-radius: 4px; vertical-align: 1px; }
+.tag.live { color: #fff; background: var(--critical); }
+.tag.fc { color: var(--text-primary); background: var(--surface-2); border: 1px solid var(--border); }
+.map-legend { display: flex; flex-wrap: wrap; gap: 6px 22px; padding: 0 14px 12px; font-size: 12px; color: var(--text-secondary); }
+.map-legend:empty { display: none; }
+.map-legend div { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.map-legend b { color: var(--text-primary); font-weight: 600; }
+.map-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.map-legend i { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+input.timeline { accent-color: var(--series-1);
+  background: linear-gradient(90deg, transparent calc(var(--now, 100%) - 1px), var(--text-tertiary) calc(var(--now, 100%) - 1px), var(--text-tertiary) calc(var(--now, 100%) + 1px), transparent calc(var(--now, 100%) + 1px)); }
+.fc-smooth { image-rendering: auto; }

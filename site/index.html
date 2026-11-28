@@ -124,24 +124,26 @@
   <!-- ======================================================= LIVE SKY -->
   <section id="live">
     <h1>Live sky</h1>
-    <p class="lede">The last three hours of clouds and rain moving over Sri Lanka, from the Meteosat satellite over the Indian Ocean. New pictures arrive every 15 minutes, about 30–40 minutes after they're taken. District shading shows tomorrow's rain chance.</p>
+    <p class="lede">Clouds and rain over Sri Lanka from the Meteosat satellite over the Indian Ocean: the last three hours, updated every 15 minutes (each picture arrives about 25–40 minutes after it's taken), then the next 12 hours from a forecast model. The page checks for new pictures every 5 minutes.</p>
     <div class="controls">
       <label>Imagery <div class="seg" id="ls-base">
-        <button data-v="ir" aria-pressed="true">Clouds (infrared)</button><button data-v="natural" aria-pressed="false">True colour (day)</button><button data-v="none" aria-pressed="false">Off</button></div></label>
+        <button data-v="enhanced" aria-pressed="true">Storm clouds</button><button data-v="ir" aria-pressed="false">Clouds (grey)</button><button data-v="natural" aria-pressed="false">True colour (day)</button><button data-v="none" aria-pressed="false">Off</button></div></label>
       <label>Rain <div class="seg" id="ls-rain">
         <button data-v="eum" aria-pressed="true">Satellite, 15 min</button><button data-v="imerg" aria-pressed="false">NASA IMERG (~5 h late)</button><button data-v="none" aria-pressed="false">Off</button></div></label>
+      <label class="check"><input type="checkbox" id="ls-future" checked> Next 12 hours (forecast)</label>
       <label class="check"><input type="checkbox" id="ls-tint" checked> Shade districts by tomorrow's forecast</label>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
       <div id="ls-map" style="height:min(70vh,620px);background:var(--surface-2)"></div>
       <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;flex-wrap:wrap">
         <button class="theme-btn" id="ls-play" aria-pressed="false">▶ Play</button>
-        <input type="range" id="ls-slider" min="0" max="11" value="11" style="flex:1;min-width:160px" aria-label="Time">
+        <input type="range" id="ls-slider" class="timeline" min="0" max="11" value="11" style="flex:1;min-width:160px" aria-label="Time">
         <span id="ls-time" class="small">Loading imagery…</span>
       </div>
+      <div id="ls-legend" class="map-legend"></div>
     </div>
     <p class="sub small" id="ls-note" style="margin-top:10px"></p>
-    <div class="notice" style="border-left-color:var(--warning)"><b>No weather radar here yet.</b> Public radar networks don't include a Sri Lankan radar, so this tab uses satellite pictures and satellite rain estimates. They're good for seeing storm systems approach, but coarser than radar. If the Department of Meteorology shares its radar feed, it would go here.</div>
+    <div class="notice" style="border-left-color:var(--warning)"><b>No weather radar here yet.</b> No public radar covers Sri Lanka, so this tab (like the big weather sites) uses satellite pictures and satellite rain estimates. They're good for seeing storm systems approach, but coarser than radar. Sri Lanka's first Doppler weather radar is being installed in Puttalam; if the Department of Meteorology shares its feed, it would go here.</div>
   </section>
 
   <!-- ======================================================= RIVERS -->
