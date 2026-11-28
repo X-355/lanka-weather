@@ -127,26 +127,33 @@ async function loadLeaflet() {
 
 function drawMap() {
   if (!map) {
-    map = L.map("rv-map", { minZoom: 6, maxZoom: 11, scrollWheelZoom: false }).setView([7.75, 80.75], 7);
+    const LK = [[5.88, 79.62], [9.86, 81.92]];
+    map = L.map("rv-map", { minZoom: 7, maxZoom: 11, zoomSnap: 0.25, scrollWheelZoom: false, maxBounds: [[4.8, 78.6], [10.9, 82.9]] });
+    map.fitBounds(LK, { padding: [6, 6] });
+    new ResizeObserver(() => { map.invalidateSize(); if (!map._lwMoved) map.fitBounds(LK, { padding: [6, 6] }); }).observe($("rv-map"));
+    map.on("dragstart", () => { map._lwMoved = true; });
+    map.getContainer().querySelector(".leaflet-control-zoom").addEventListener("click", () => { map._lwMoved = true; });
     L.tileLayer(`${GIBS}/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg`,
       { maxNativeZoom: 8, attribution: 'Basemap: NASA Blue Marble via <a href="https://earthdata.nasa.gov/gibs">GIBS</a>' }).addTo(map);
     L.tileLayer(`${GIBS}/Coastlines_15m/default/GoogleMapsCompatible_Level13/{z}/{y}/{x}.png`, { maxNativeZoom: 9 }).addTo(map);
     map.attributionControl.addAttribution('Rivers: Copernicus GloFAS via Open-Meteo');
   }
   map.eachLayer(l => { if (l.options?.lw) map.removeLayer(l); });
-  for (const s of rivers) {
-    L.circleMarker([s.lat, s.lon], { lw: 1, radius: 8, weight: 2, color: "#fff", fillColor: cssVar(STATUS[s.status[0]]), fillOpacity: 1 })
-      .bindTooltip(`<b>${s.river}</b> at ${s.name}<br>${s.status[1]}<br>Peak ${r0(s.peak)} m³/s ${fmtD(s.peakDate)}`).on("click", () => select(s)).addTo(map);
-  }
   for (const r of reservoirs) {
     const col = cssVar(STATUS[r.status[0]]);
-    L.marker([r.lat, r.lon], { lw: 1, icon: L.divIcon({ className: "", iconSize: [16, 16], html: `<div style="width:14px;height:14px;background:${col};border:2px solid #fff;border-radius:3px;transform:rotate(45deg)"></div>` }) })
+    L.marker([r.lat, r.lon], { lw: 1, icon: L.divIcon({ className: "", iconSize: [12, 12], iconAnchor: [6, 6], html: `<div style="width:8px;height:8px;margin:2px;background:${col};outline:1.5px solid rgba(255,255,255,.9);transform:rotate(45deg)"></div>` }) })
       .bindTooltip(`<b>${r.name} reservoir</b><br>${r.status[1]}<br>Rain upstream: ${Math.round(r.past)} mm past 3 days, ${Math.round(r.next)} mm next 3 days`).addTo(map);
+  }
+  for (const s of rivers) {
+    const on = s === selected;
+    L.circleMarker([s.lat, s.lon], { lw: 1, radius: on ? 7.5 : 5, weight: on ? 2.5 : 1.5, color: on ? "#111" : "rgba(255,255,255,.9)", fillColor: cssVar(STATUS[s.status[0]]), fillOpacity: 1 })
+      .bindTooltip(`<b>${s.river}</b> at ${s.name}<br>${s.status[1]}<br>Peak ${r0(s.peak)} m³/s ${fmtD(s.peakDate)}`).on("click", () => select(s)).addTo(map);
   }
 }
 
 function select(s) {
   selected = s;
+  if (map) drawMap();
   const d = s.d;
   $("rv-detail").innerHTML = `<h2 style="margin:0 0 4px">${s.river} at ${s.name}</h2>
     <p class="sub" style="margin:0 0 8px">${badge(...s.status)} Peak modelled flow in the next 10 days: <b>${r0(s.peak)} m³/s</b> on ${fmtD(s.peakDate)}${s.ratio ? `, ${s.ratio.toFixed(1)}× the long-term average for that date` : ""}.</p>
